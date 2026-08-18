@@ -29,6 +29,50 @@ export function resolveCommand(command: string): string {
   return command;
 }
 
+export interface PreparedCommand {
+  file: string;
+  args: string[];
+  windowsVerbatimArguments: boolean;
+}
+
+/**
+ * Work out how to actually start a command.
+ *
+ * On Windows most CLI tools installed through npm are `.cmd` shims, and since
+ * the fix for CVE-2024-27980 Node refuses to spawn those without a shell -
+ * it fails with `EINVAL`. The safe way is to invoke `cmd.exe` explicitly and
+ * build the command line ourselves, rather than setting `shell: true` and
+ * letting Node concatenate arguments with no escaping at all.
+ */
+export function prepareCommand(command: string, args: string[]): PreparedCommand {
+  const resolved = resolveCommand(command);
+
+  if (process.platform === 'win32' && /\.(cmd|bat)$/i.test(resolved)) {
+    const line = [resolved, ...args].map(quoteForCmd).join(' ');
+    return {
+      file: process.env.ComSpec ?? 'cmd.exe',
+      // /d skips AutoRun scripts, /s makes cmd strip exactly the outer quotes.
+      args: ['/d', '/s', '/c', `"${line}"`],
+      windowsVerbatimArguments: true,
+    };
+  }
+
+  return { file: resolved, args, windowsVerbatimArguments: false };
+}
+
+/**
+ * Quote one argument for cmd.exe.
+ *
+ * Note that cmd still expands `%VAR%` inside double quotes, so a prompt
+ * containing `%SOMETHING%` may come out altered. Presets that can take the
+ * prompt on stdin avoid the problem entirely, which is why they do.
+ */
+export function quoteForCmd(value: string): string {
+  if (value === '') return '""';
+  if (!/[\s"&|<>^()%!,;=]/.test(value)) return value;
+  return `"${value.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/, '$1$1')}"`;
+}
+
 export interface RunResult {
   stdout: string;
   stderr: string;
@@ -49,11 +93,14 @@ export interface RunOptions {
 
 export function runProcess(options: RunOptions): Promise<RunResult> {
   return new Promise((resolve, reject) => {
-    const child = spawn(resolveCommand(options.command), options.args, {
+    const prepared = prepareCommand(options.command, options.args);
+    const child = spawn(prepared.file, prepared.args, {
       cwd: options.cwd,
-      // No shell: prompts must not be re-parsed by cmd.exe or sh.
+      // Never `shell: true`: that would concatenate arguments with no escaping.
+      // Windows batch shims are handled explicitly in prepareCommand instead.
       shell: false,
       windowsHide: true,
+      windowsVerbatimArguments: prepared.windowsVerbatimArguments,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 

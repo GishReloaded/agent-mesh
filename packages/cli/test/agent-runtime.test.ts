@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { PRESETS, getPreset, substitute } from '../src/agent-runtime/presets.js';
-import { resolveCommand, runProcess } from '../src/agent-runtime/spawn.js';
+import { prepareCommand, quoteForCmd, resolveCommand, runProcess } from '../src/agent-runtime/spawn.js';
 
 describe('agent presets', () => {
   it('ships a preset for each subscription-backed tool', () => {
@@ -45,6 +45,32 @@ describe('command resolution', () => {
 
   it('returns the bare name when nothing matches, so the error stays readable', () => {
     assert.equal(resolveCommand('definitely-not-installed-xyz'), 'definitely-not-installed-xyz');
+  });
+});
+
+describe('preparing a command', () => {
+  it('runs a plain executable directly', () => {
+    const prepared = prepareCommand('node', ['-e', 'x']);
+    assert.equal(prepared.windowsVerbatimArguments, false);
+    assert.deepEqual(prepared.args, ['-e', 'x']);
+  });
+
+  it('routes Windows batch shims through cmd.exe', { skip: process.platform !== 'win32' }, () => {
+    // Node refuses to spawn .cmd files without a shell since the fix for
+    // CVE-2024-27980; npm-installed CLI tools on Windows are all .cmd shims.
+    const prepared = prepareCommand('npm', ['--version']);
+    assert.match(prepared.file.toLowerCase(), /cmd\.exe$/);
+    assert.equal(prepared.windowsVerbatimArguments, true);
+    assert.equal(prepared.args[0], '/d');
+    assert.equal(prepared.args[2], '/c');
+  });
+
+  it('quotes arguments for cmd without letting them become syntax', () => {
+    assert.equal(quoteForCmd('simple'), 'simple');
+    assert.equal(quoteForCmd('with space'), '"with space"');
+    assert.equal(quoteForCmd('a & b'), '"a & b"');
+    assert.equal(quoteForCmd('say "hi"'), '"say \\"hi\\""');
+    assert.equal(quoteForCmd(''), '""');
   });
 });
 
