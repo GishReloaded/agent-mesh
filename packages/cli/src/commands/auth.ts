@@ -1,6 +1,6 @@
 import type { Command } from 'commander';
 import { createContext } from '../client.js';
-import { loadConfig, updateProfile } from '../config.js';
+import { currentProfile, loadConfig, updateProfile } from '../config.js';
 import { info, style, success } from '../output.js';
 import { ask } from '../prompt.js';
 
@@ -25,14 +25,30 @@ export function registerAuthCommands(program: Command): void {
           })
         : await rest.login({ email, password });
 
+      // Sessions and agent tokens belong to the server that issued them.
+      // Carrying them across a server switch produces a confusing 404 on the
+      // next command, so they are dropped along with the old credentials.
+      const previous = currentProfile(loadConfig());
+      const switchedServer = previous.url !== rest.baseUrl && previous.currentSession !== undefined;
+
       updateProfile({
         url: rest.baseUrl,
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
         userId: tokens.user.id,
         displayName: tokens.user.displayName,
+        ...(previous.url !== rest.baseUrl ? { currentSession: undefined, agentTokens: {} } : {}),
       });
+
       success(`Signed in as ${style.bold(tokens.user.displayName)} on ${rest.baseUrl}`);
+      if (switchedServer) {
+        info(
+          style.dim(
+            `Switched from ${previous.url}. Its session and agent tokens were cleared - they do not exist here.`,
+          ),
+        );
+        info(style.dim('Create or join one:  agentmesh session create "<name>"  |  agentmesh session join <token>'));
+      }
     });
 
   program

@@ -39,6 +39,18 @@ import {
   type VersionResponse,
 } from '@agentmesh/protocol';
 
+/** Pull something readable out of a fetch failure, including its cause chain. */
+function describeCause(error: unknown): string {
+  const parts: string[] = [];
+  let current: unknown = error;
+  for (let depth = 0; depth < 4 && current instanceof Error; depth += 1) {
+    const code = (current as NodeJS.ErrnoException).code;
+    parts.push(code ? `${current.message} [${code}]` : current.message);
+    current = (current as { cause?: unknown }).cause;
+  }
+  return parts.length > 0 ? parts.join(' <- ') : String(error);
+}
+
 export interface RestClientOptions {
   /** Base server URL, e.g. `http://localhost:4000`. */
   url: string;
@@ -111,11 +123,23 @@ export class RestClient {
     if (options.body !== undefined) headers['content-type'] = 'application/json';
     if (this.token) headers.authorization = `Bearer ${this.token}`;
 
-    const response = await this.doFetch(url, {
-      method,
-      headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
-    });
+    let response: Response;
+    try {
+      response = await this.doFetch(url, {
+        method,
+        headers,
+        body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      });
+    } catch (cause) {
+      // `fetch` reports every transport failure as "fetch failed", which tells
+      // the user nothing. The address being called is almost always the answer.
+      throw new AgentMeshError(
+        ErrorCode.Internal,
+        `Could not reach the AgentMesh server at ${this.base} (${describeCause(cause)}). ` +
+          'Check the URL, or sign in against the right server with: agentmesh login --url <url>',
+        { cause },
+      );
+    }
 
     if (response.status === 401 && options.retryOn401 !== false && this.options.onUnauthorized) {
       const refreshed = await this.options.onUnauthorized();
