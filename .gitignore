@@ -5,6 +5,7 @@ node_modules/
 
 # Build output
 dist/
+dist-lambda/
 build/
 out/
 *.tsbuildinfo

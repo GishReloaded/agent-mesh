@@ -261,6 +261,14 @@ export const versionResponseSchema = z.object({
   version: z.string(),
   protocol: z.string(),
   limits: z.record(z.string(), z.number()),
+  /**
+   * Where to open the realtime connection.
+   *
+   * Usually `/ws` on the same origin, but a deployment may terminate WebSocket
+   * somewhere else entirely - on AWS the API and the socket are different
+   * gateways - so clients ask rather than assume.
+   */
+  realtimeUrl: z.string().nullable().optional(),
 });
 export type VersionResponse = z.infer<typeof versionResponseSchema>;
 

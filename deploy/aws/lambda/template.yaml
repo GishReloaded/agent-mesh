@@ -1,0 +1,223 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  AgentMesh, serverless. Two Lambda functions - one behind an HTTP API for the
+  REST surface and the web client, one behind a WebSocket API for realtime -
+  sharing a PostgreSQL database you host yourself.
+
+  Nothing here is billed while idle. The database is deliberately not part of
+  this stack: point DatabaseUrl at whatever you already run.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: agentmesh
+
+  CodeBucket:
+    Type: String
+    Description: S3 bucket holding the built Lambda package.
+
+  CodeKey:
+    Type: String
+    Description: Key of the package zip inside that bucket.
+
+  DatabaseUrl:
+    Type: String
+    NoEcho: true
+    Description: >
+      PostgreSQL connection string, e.g.
+      postgres://user:pass@host:5432/agentmesh?sslmode=require
+      Use a provider that tolerates short-lived connections.
+
+  JwtSecret:
+    Type: String
+    NoEcho: true
+    MinLength: 32
+    Description: >
+      Signing key for access tokens. The deploy script generates one and keeps
+      it in SSM Parameter Store so redeploys do not sign everyone out.
+
+  AllowRegistration:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Set to false once your accounts exist - the URL is public.
+
+  StageName:
+    Type: String
+    Default: prod
+
+  LogRetentionDays:
+    Type: Number
+    Default: 14
+    Description: CloudWatch log retention. Logs are the only steady cost here.
+
+Globals:
+  Function:
+    Runtime: nodejs22.x
+    Architectures: [arm64]
+    Timeout: 30
+    MemorySize: 1024
+    Environment:
+      Variables:
+        NODE_ENV: production
+        DATABASE_URL: !Ref DatabaseUrl
+        DATABASE_SSL: 'true'
+        # A Lambda container serves one request at a time; more connections
+        # would only exhaust the database's slots under concurrency.
+        DATABASE_POOL_MAX: '2'
+        JWT_SECRET: !Ref JwtSecret
+        ALLOW_REGISTRATION: !Ref AllowRegistration
+        LOG_LEVEL: info
+
+Resources:
+  # --- REST API and web client ---------------------------------------------
+
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      # Left as the implicit `$default` stage on purpose: any other name would
+      # prefix every path, and the web client's routes assume they sit at the
+      # root of the origin.
+      DisableExecuteApiEndpoint: false
+
+  HttpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-http'
+      CodeUri:
+        Bucket: !Ref CodeBucket
+        Key: !Ref CodeKey
+      Handler: http.handler
+      Description: REST API and web client
+      Environment:
+        Variables:
+          # Told to clients through GET /version, because the socket lives on a
+          # different gateway than the API. PUBLIC_URL is not set here on
+          # purpose: the function learns it from the first request, which is
+          # what keeps this template free of a dependency cycle.
+          REALTIME_URL: !Sub 'wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'
+          WEB_DIST: web
+      Events:
+        Root:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /
+            Method: ANY
+        Proxy:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /{proxy+}
+            Method: ANY
+
+  HttpLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-http'
+      RetentionInDays: !Ref LogRetentionDays
+
+  # --- realtime -------------------------------------------------------------
+
+  WebSocketApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub '${ProjectName}-ws'
+      ProtocolType: WEBSOCKET
+      # No frame carries an "action", so every route falls through to $default
+      # and the shared frame handler decides what to do.
+      RouteSelectionExpression: $request.body.action
+
+  WsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-ws'
+      CodeUri:
+        Bucket: !Ref CodeBucket
+        Key: !Ref CodeKey
+      Handler: ws.handler
+      Description: WebSocket frames
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: execute-api:ManageConnections
+              Resource: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*'
+
+  WsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-ws'
+      RetentionInDays: !Ref LogRetentionDays
+
+  WsInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref WsFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*'
+
+  WsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WebSocketApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WsFunction.Arn}/invocations'
+
+  ConnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: $connect
+      Target: !Sub 'integrations/${WsIntegration}'
+
+  DisconnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: $disconnect
+      Target: !Sub 'integrations/${WsIntegration}'
+
+  DefaultRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: $default
+      Target: !Sub 'integrations/${WsIntegration}'
+
+  WsDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn: [ConnectRoute, DisconnectRoute, DefaultRoute]
+    Properties:
+      ApiId: !Ref WebSocketApi
+
+  WsStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref WebSocketApi
+      DeploymentId: !Ref WsDeployment
+      StageName: !Ref StageName
+      # Both are free-tier friendly at this scale and make debugging possible.
+      DefaultRouteSettings:
+        DetailedMetricsEnabled: false
+        ThrottlingBurstLimit: 50
+        ThrottlingRateLimit: 25
+
+Outputs:
+  Url:
+    Description: Open this. Share it with your collaborators.
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+
+  RealtimeUrl:
+    Description: Advertised to clients through GET /version.
+    Value: !Sub 'wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'
+
+  HealthCheck:
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/api/v1/healthz'
+
+  HttpLogs:
+    Value: !Sub 'aws logs tail /aws/lambda/${ProjectName}-http --follow'
+
+  WsLogs:
+    Value: !Sub 'aws logs tail /aws/lambda/${ProjectName}-ws --follow'

@@ -2,17 +2,9 @@ import { AgentMeshError, ErrorCode, type Actor, type Event } from '@agentmesh/pr
 import { sql, type Transaction } from 'kysely';
 import { jsonb, type Db } from '../db/client.js';
 import type { Database } from '../db/types.js';
+import type { EventSink } from '../realtime/registry.js';
 import { IdPrefix, newId } from '../ids.js';
 import { toEvent } from '../mappers.js';
-
-/**
- * Anything that wants to hear about committed events. The realtime hub is the
- * only implementation today; a Redis-backed fan-out would slot in here when a
- * deployment outgrows a single process.
- */
-export interface EventSink {
-  publish(event: Event): void;
-}
 
 /**
  * Payload of an event, or a factory that receives the sequence number the
@@ -80,7 +72,7 @@ export class EventLog {
       return fn(ctx);
     });
 
-    for (const event of pending) this.sink.publish(event);
+    for (const event of pending) await this.sink.publish(event);
     return result;
   }
 

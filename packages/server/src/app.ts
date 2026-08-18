@@ -5,8 +5,7 @@ import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { Config } from './config.js';
-import { createServices, type Services } from './container.js';
-import type { DbHandle } from './db/client.js';
+import { createServices, type ServiceOverrides, type Services } from './container.js';
 import { registerErrorHandler } from './http/errors.js';
 import { agentRoutes } from './http/routes/agents.js';
 import { authRoutes } from './http/routes/auth.js';
@@ -26,8 +25,8 @@ export interface BuiltApp {
   close(): Promise<void>;
 }
 
-export async function buildApp(config: Config, existingDb?: DbHandle): Promise<BuiltApp> {
-  const services = createServices(config, existingDb);
+export async function buildApp(config: Config, overrides: ServiceOverrides = {}): Promise<BuiltApp> {
+  const services = createServices(config, overrides);
 
   const app = Fastify({
     logger: { level: config.logLevel },
@@ -102,7 +101,7 @@ export async function buildApp(config: Config, existingDb?: DbHandle): Promise<B
     close: async () => {
       await gateway?.close();
       await app.close();
-      if (!existingDb) await services.db.close();
+      if (!overrides.db) await services.db.close();
     },
   };
 }

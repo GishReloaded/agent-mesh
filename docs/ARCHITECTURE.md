@@ -88,6 +88,8 @@ One `Hub` holds live connections and fans committed events out to session subscr
 
 **One socket carries many subscriptions.** That is what lets the web client keep unread counts for every session while displaying one. Agents subscribe to exactly one: their token names it.
 
+**The transport is replaceable.** Frame handling lives in `realtime/commands.ts` and knows nothing about sockets; a transport supplies a `ConnectionHandle` with `send` and `close`, and a `ConnectionRegistry` that answers who is connected. The self-hosted server backs both with process memory. The AWS Lambda deployment backs `send` with API Gateway's management API and the registry with two PostgreSQL tables, because there no process survives between frames. Neither deployment reimplements the protocol.
+
 **Realtime writes require a subscription.** Otherwise a client could write into a session it is not watching and never see the result — a reliable source of "my message vanished" reports.
 
 ## 4. Shared context
@@ -161,7 +163,7 @@ All JSON columns are `jsonb` and written through one helper, because node-postgr
 
 Stated plainly, so the README makes no false claims:
 
-- **No horizontal scaling.** The hub is in-process. Two servers would not see each other's connections. The `EventSink` seam is where Redis pub/sub goes when that changes.
+- **No horizontal scaling of the self-hosted server.** The in-process hub means two instances would not see each other's connections. The `ConnectionRegistry` seam is what the serverless deployment already swaps out — see `realtime/pgRegistry.ts` — and where a Redis-backed implementation would go.
 - **No autonomous orchestration.** Capabilities are declared, stored and queryable; nothing routes work by them. `AGENT_HANDOFF` exists as an event so a runtime can implement routing above the protocol.
 - **No repository access.** The server stores paths, branches and commit hashes as claims. It never reads a repository, and file contents are never stored.
 - **No end-to-end encryption.** A self-hosted server sees session content. Treat the deployment boundary as the trust boundary.

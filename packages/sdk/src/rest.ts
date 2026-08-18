@@ -76,9 +76,25 @@ export class RestClient {
     return this.base;
   }
 
-  /** Websocket endpoint derived from the REST base URL. */
+  /** Websocket endpoint assumed to sit on this origin. */
   get websocketUrl(): string {
     return `${this.base.replace(/^http/, 'ws')}/ws`;
+  }
+
+  /**
+   * Ask the server where its realtime endpoint is.
+   *
+   * Most deployments answer "same origin", but the serverless one terminates
+   * WebSocket on a different gateway entirely. Asking costs one request at
+   * startup and removes an assumption clients would otherwise bake in.
+   */
+  async resolveRealtimeUrl(): Promise<string> {
+    try {
+      const version = await this.version();
+      return version.realtimeUrl ?? this.websocketUrl;
+    } catch {
+      return this.websocketUrl;
+    }
   }
 
   async request<T>(

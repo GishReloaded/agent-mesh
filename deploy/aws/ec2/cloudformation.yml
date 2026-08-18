@@ -251,7 +251,7 @@ Resources:
           fi
 
           # Migrations run on server boot, so this is the only step needed.
-          docker compose -f deploy/aws/docker-compose.prod.yml --env-file .env up -d --build
+          docker compose -f deploy/aws/ec2/docker-compose.prod.yml --env-file .env up -d --build
 
           # Bring the stack back up after a reboot.
           cat > /etc/systemd/system/agentmesh.service <<'UNIT'
@@ -264,8 +264,8 @@ Resources:
           Type=oneshot
           RemainAfterExit=yes
           WorkingDirectory=/opt/agentmesh
-          ExecStart=/usr/bin/docker compose -f deploy/aws/docker-compose.prod.yml --env-file .env up -d
-          ExecStop=/usr/bin/docker compose -f deploy/aws/docker-compose.prod.yml --env-file .env down
+          ExecStart=/usr/bin/docker compose -f deploy/aws/ec2/docker-compose.prod.yml --env-file .env up -d
+          ExecStop=/usr/bin/docker compose -f deploy/aws/ec2/docker-compose.prod.yml --env-file .env down
 
           [Install]
           WantedBy=multi-user.target

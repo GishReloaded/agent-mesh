@@ -45,6 +45,12 @@ const envSchema = z.object({
    */
   WEB_DIST: z.string().optional(),
 
+  /**
+   * Public WebSocket endpoint, when it is not `/ws` on this origin. Advertised
+   * through `GET /version` so clients do not have to guess.
+   */
+  REALTIME_URL: z.string().optional(),
+
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 
   /** Set to `false` to close registration on a private deployment. */
@@ -78,6 +84,8 @@ export interface Config {
   publicUrl: string;
   /** Absolute path to the built web client, or null when not serving it. */
   webDist: string | null;
+  /** Public WebSocket endpoint, or null when it is `/ws` on this origin. */
+  realtimeUrl: string | null;
   logLevel: Env['LOG_LEVEL'];
   rateLimit: { max: number; window: string; wsFramesPerSecond: number };
   agentChainLimit: number;
@@ -149,6 +157,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     corsOrigins,
     publicUrl: env.PUBLIC_URL.replace(/\/+$/, ''),
     webDist: resolveWebDist(env.WEB_DIST),
+    realtimeUrl: env.REALTIME_URL?.trim() ? env.REALTIME_URL.trim() : null,
     logLevel: env.LOG_LEVEL,
     rateLimit: { max: env.RATE_LIMIT_MAX, window: env.RATE_LIMIT_WINDOW, wsFramesPerSecond: env.WS_RATE_LIMIT },
     agentChainLimit: env.AGENT_CHAIN_LIMIT,

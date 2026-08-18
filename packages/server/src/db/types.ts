@@ -154,6 +154,24 @@ export interface ContextRevisionsTable {
   created_at: Timestamp;
 }
 
+export interface WsConnectionsTable {
+  id: string;
+  principal_kind: 'user' | 'agent';
+  user_id: string | null;
+  agent_id: string | null;
+  display_name: string;
+  agent_session_id: string | null;
+  agent_owner_id: string | null;
+  connected_at: Timestamp;
+  last_seen_at: Timestamp;
+}
+
+export interface WsSubscriptionsTable {
+  connection_id: string;
+  session_id: string;
+  subscribed_at: Timestamp;
+}
+
 export interface MigrationsTable {
   name: string;
   applied_at: Timestamp;
@@ -171,6 +189,8 @@ export interface Database {
   tasks: TasksTable;
   context_entries: ContextEntriesTable;
   context_revisions: ContextRevisionsTable;
+  ws_connections: WsConnectionsTable;
+  ws_subscriptions: WsSubscriptionsTable;
   _agentmesh_migrations: MigrationsTable;
 }
 

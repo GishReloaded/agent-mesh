@@ -21,5 +21,8 @@ export async function metaRoutes(app: FastifyInstance, services: Services): Prom
     version: SERVER_VERSION,
     protocol: PROTOCOL_VERSION,
     limits: { ...PROTOCOL_LIMITS, agentChainLimit: services.config.agentChainLimit },
+    // null means "/ws on this origin"; a value means the realtime endpoint
+    // lives elsewhere, which is the case on the serverless deployment.
+    realtimeUrl: services.config.realtimeUrl,
   }));
 }

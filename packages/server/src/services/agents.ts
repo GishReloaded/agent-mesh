@@ -1,4 +1,4 @@
-import {
+﻿import {
   AgentMeshError,
   ErrorCode,
   LifecycleEventType,
@@ -14,14 +14,14 @@ import { TokenPrefix, createOpaqueToken, hashToken } from '../auth/tokens.js';
 import { CloseCode } from '@agentmesh/protocol';
 import { IdPrefix, newId } from '../ids.js';
 import { toAgent } from '../mappers.js';
-import type { Hub } from '../realtime/hub.js';
+import type { ConnectionRegistry } from '../realtime/registry.js';
 import type { EventLog } from './eventLog.js';
 
 export class AgentService {
   constructor(
     private readonly db: Db,
     private readonly log: EventLog,
-    private readonly hub: Hub,
+    private readonly registry: ConnectionRegistry,
   ) {}
 
   async register(
@@ -82,7 +82,7 @@ export class AgentService {
       .where('revoked_at', 'is', null)
       .orderBy('created_at', 'asc')
       .execute();
-    const online = this.hub.onlineAgentIds(sessionId);
+    const online = await this.registry.onlineAgentIds(sessionId);
     return rows.map((row) => toAgent(row, online.has(row.id)));
   }
 
@@ -95,7 +95,7 @@ export class AgentService {
       .where('revoked_at', 'is', null)
       .executeTakeFirst();
     if (!row) throw new AgentMeshError(ErrorCode.NotFound, 'Agent not found.');
-    return toAgent(row, this.hub.onlineAgentIds(sessionId).has(agentId));
+    return toAgent(row, (await this.registry.onlineAgentIds(sessionId)).has(agentId));
   }
 
   /** Look up a live agent by its opaque token. Revoked agents never resolve. */
@@ -149,7 +149,7 @@ export class AgentService {
             .returningAll()
             .executeTakeFirstOrThrow();
 
-    const agent = toAgent(row, this.hub.onlineAgentIds(access.sessionId).has(agentId));
+    const agent = toAgent(row, (await this.registry.onlineAgentIds(access.sessionId)).has(agentId));
 
     if (input.status !== undefined && input.status !== existing.status) {
       await this.log.write(access.sessionId, async (ctx) => {
@@ -202,7 +202,7 @@ export class AgentService {
       .where('id', '=', agentId)
       .execute();
 
-    this.hub.closeAgent(agentId, CloseCode.TokenRevoked, 'Agent access revoked.');
+    await this.registry.closeAgent(agentId, CloseCode.TokenRevoked, 'Agent access revoked.');
 
     await this.log.write(access.sessionId, async (ctx) => {
       await ctx.append(LifecycleEventType.AgentRevoked, access.actor, {
@@ -235,3 +235,4 @@ export class AgentService {
     });
   }
 }
+

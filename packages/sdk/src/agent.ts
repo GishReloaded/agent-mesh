@@ -236,7 +236,7 @@ export class AgentMeshSession {
 export async function connect(options: ConnectOptions): Promise<AgentMeshSession> {
   const rest = new RestClient({ url: options.url, token: options.token });
   const realtime = new RealtimeClient({
-    url: rest.websocketUrl,
+    url: await rest.resolveRealtimeUrl(),
     token: options.token,
     ...(options.sessionId ? { sessions: [options.sessionId] } : {}),
     ...(options.WebSocketImpl ? { WebSocketImpl: options.WebSocketImpl } : {}),

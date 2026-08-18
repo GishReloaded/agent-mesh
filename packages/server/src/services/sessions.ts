@@ -14,14 +14,14 @@ import { jsonb, type Db } from '../db/client.js';
 import { principalActor, systemActor, type Principal, type SessionAccess } from '../auth/principal.js';
 import { IdPrefix, newId } from '../ids.js';
 import { toAgent, toSession, toSessionMember } from '../mappers.js';
-import type { Hub } from '../realtime/hub.js';
+import type { ConnectionRegistry } from '../realtime/registry.js';
 import type { EventLog } from './eventLog.js';
 
 export class SessionService {
   constructor(
     private readonly db: Db,
     private readonly log: EventLog,
-    private readonly hub: Hub,
+    private readonly registry: ConnectionRegistry,
   ) {}
 
   async create(principal: Extract<Principal, { kind: 'user' }>, input: CreateSessionRequest) {
@@ -93,13 +93,21 @@ export class SessionService {
     const memberCount = new Map(memberCounts.map((row) => [row.session_id, Number(row.count)]));
     const agentCount = new Map(agentCounts.map((row) => [row.session_id, Number(row.count)]));
 
-    return rows.map((row) => ({
-      ...toSession(row),
-      role: row.member_role as SessionRole,
-      memberCount: memberCount.get(row.id) ?? 0,
-      agentCount: agentCount.get(row.id) ?? 0,
-      onlineCount: this.hub.onlineUserIds(row.id).size + this.hub.onlineAgentIds(row.id).size,
-    }));
+    return Promise.all(
+      rows.map(async (row) => {
+        const [users, agents] = await Promise.all([
+          this.registry.onlineUserIds(row.id),
+          this.registry.onlineAgentIds(row.id),
+        ]);
+        return {
+          ...toSession(row),
+          role: row.member_role as SessionRole,
+          memberCount: memberCount.get(row.id) ?? 0,
+          agentCount: agentCount.get(row.id) ?? 0,
+          onlineCount: users.size + agents.size,
+        };
+      }),
+    );
   }
 
   async members(sessionId: string): Promise<SessionMember[]> {
@@ -118,7 +126,7 @@ export class SessionService {
       .orderBy('session_members.joined_at', 'asc')
       .execute();
 
-    const online = this.hub.onlineUserIds(sessionId);
+    const online = await this.registry.onlineUserIds(sessionId);
     return rows.map((row) => toSessionMember(row, online.has(row.user_id)));
   }
 
@@ -130,7 +138,7 @@ export class SessionService {
       .where('revoked_at', 'is', null)
       .orderBy('created_at', 'asc')
       .execute();
-    const online = this.hub.onlineAgentIds(sessionId);
+    const online = await this.registry.onlineAgentIds(sessionId);
     return rows.map((row) => toAgent(row, online.has(row.id)));
   }
 
@@ -169,7 +177,7 @@ export class SessionService {
     if (input.archived === true) {
       // The log is closed for writes once archived, so the archive notice is
       // broadcast directly instead of being appended.
-      this.hub.broadcast(access.sessionId, {
+      await this.registry.broadcast(access.sessionId, {
         type: 'event',
         payload: {
           event: {
@@ -193,10 +201,9 @@ export class SessionService {
   }
 
   async remove(sessionId: string): Promise<void> {
-    for (const connection of this.hub.subscribers(sessionId)) {
-      connection.send({ type: 'unsubscribed', payload: { sessionId } });
-      this.hub.unsubscribe(connection, sessionId);
-    }
+    // Tell subscribers before the row disappears; afterwards there is nothing
+    // left to name in the notification.
+    await this.registry.dropSession(sessionId);
     await this.db.deleteFrom('sessions').where('id', '=', sessionId).execute();
   }
 
@@ -264,9 +271,9 @@ export class SessionService {
         .execute();
     });
 
-    this.hub.closeUserSessionSubscriptions(userId, access.sessionId);
+    await this.registry.dropUserFromSession(userId, access.sessionId);
     for (const agent of revokedAgents) {
-      this.hub.closeAgent(agent.id, 4002, 'Agent owner was removed from the session.');
+      await this.registry.closeAgent(agent.id, 4002, 'Agent owner was removed from the session.');
     }
 
     await this.log.write(access.sessionId, async (ctx) => {

@@ -15,7 +15,7 @@ ALLOW_REGISTRATION="${ALLOW_REGISTRATION:-true}"
 DESTROY="${DESTROY:-}"
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "$here/../.." && pwd)"
+repo_root="$(cd "$here/../../.." && pwd)"
 
 step() { printf '\n== %s\n' "$1"; }
 note() { printf '   %s\n' "$1"; }

@@ -26,7 +26,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..\..')
 
 function Step($message) { Write-Host "`n== $message" -ForegroundColor Cyan }
 function Note($message) { Write-Host "   $message" }

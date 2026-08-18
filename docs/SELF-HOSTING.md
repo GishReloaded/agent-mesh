@@ -28,13 +28,14 @@ Migrations run automatically on boot, so a fresh volume needs no extra step.
 
 ## On AWS
 
-`deploy/aws/` holds a CloudFormation stack that puts this on one EC2 instance behind CloudFront, which supplies HTTPS without you owning a domain:
+Two supported shapes, both one command, both sharing the same frame-handling code:
 
 ```powershell
-./deploy/aws/deploy.ps1
+./deploy/aws/lambda/deploy.ps1 -DatabaseUrl "postgres://…"   # serverless, $0 idle, bring your own database
+./deploy/aws/ec2/deploy.ps1                                  # one instance behind CloudFront, ~$18/month
 ```
 
-About $18/month in `eu-north-1`, one command to tear down. It also explains why Lambda is not the target: the realtime gateway holds WebSocket connections in process, and moving that to API Gateway plus DynamoDB is a rewrite rather than a repackaging. See [deploy/aws/README.md](../deploy/aws/README.md).
+The serverless variant keeps its connection registry in PostgreSQL instead of process memory, since Lambda cannot hold a socket. The trade-offs — cold starts, a two-hour connection ceiling, presence that can lag by minutes — are set out in [deploy/aws/README.md](../deploy/aws/README.md).
 
 ## Without Docker
 

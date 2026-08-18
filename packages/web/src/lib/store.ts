@@ -10,7 +10,7 @@ import {
   type SessionMember,
   type Task,
 } from '@agentmesh/sdk';
-import { api, ensureAccessToken, serverUrl } from './auth.js';
+import { api, ensureAccessToken } from './auth.js';
 
 export interface SessionView {
   session: Session | null;
@@ -90,8 +90,10 @@ class MeshStore {
     const token = await ensureAccessToken();
     if (!token) return;
 
+    // The realtime endpoint is not always this origin - on the serverless
+    // deployment it is a separate gateway - so ask rather than assume.
     const client = new RealtimeClient({
-      url: `${serverUrl().replace(/^http/, 'ws')}/ws`,
+      url: await api().resolveRealtimeUrl(),
       token,
       clientName: 'agentmesh-web',
     });

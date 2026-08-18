@@ -12,6 +12,8 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/coverage/**',
       'packages/web/dist/**',
+      // Bundled Lambda output: generated, not source.
+      'dist-lambda/**',
     ],
   },
   js.configs.recommended,

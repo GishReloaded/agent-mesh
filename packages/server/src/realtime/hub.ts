@@ -1,47 +1,42 @@
-import type { Actor, Event } from '@agentmesh/protocol';
-import type { Principal } from '../auth/principal.js';
-import type { EventSink } from '../services/eventLog.js';
-
-export interface HubConnection {
-  id: string;
-  principal: Principal;
-  /** Sessions this connection currently receives events for. */
-  subscriptions: Set<string>;
-  send(frame: unknown): void;
-  close(code: number, reason: string): void;
-}
+import { ServerFrameType, type Actor, type Event } from '@agentmesh/protocol';
+import type { ConnectionHandle, ConnectionRecord, ConnectionRegistry, EventSink } from './registry.js';
 
 /**
- * In-process registry of live connections and the fan-out path for committed
- * events.
+ * In-process connection registry, used when AgentMesh runs as a normal server.
  *
- * Presence is derived from this registry rather than stored: a row saying "Bob
- * is online" is a lie the moment a process dies, whereas an open socket is
- * evidence. The cost is that presence is per-process — the point at which
- * AgentMesh runs more than one process is the point at which this class grows a
- * Redis-backed sibling, which is why everything else talks to it through
- * `EventSink`.
+ * Everything lives in memory because everything is in one process: the sockets
+ * are held here, so presence is simply "is there an open connection". The cost
+ * is that this is per-process, which is why the rest of the server talks to it
+ * through `ConnectionRegistry` - the Lambda deployment swaps in a
+ * database-backed implementation without touching a service.
  */
-export class Hub implements EventSink {
-  private readonly connections = new Map<string, HubConnection>();
-  private readonly bySession = new Map<string, Set<HubConnection>>();
+export class Hub implements ConnectionRegistry, EventSink {
+  private readonly connections = new Map<string, ConnectionHandle>();
+  private readonly bySession = new Map<string, Set<ConnectionHandle>>();
 
-  add(connection: HubConnection): void {
+  async add(connection: ConnectionHandle): Promise<void> {
     this.connections.set(connection.id, connection);
   }
 
-  remove(connectionId: string): HubConnection | undefined {
+  async remove(connectionId: string): Promise<ConnectionRecord | null> {
     const connection = this.connections.get(connectionId);
-    if (!connection) return undefined;
+    if (!connection) return null;
     for (const sessionId of connection.subscriptions) {
-      this.bySession.get(sessionId)?.delete(connection);
-      if (this.bySession.get(sessionId)?.size === 0) this.bySession.delete(sessionId);
+      const set = this.bySession.get(sessionId);
+      set?.delete(connection);
+      if (set && set.size === 0) this.bySession.delete(sessionId);
     }
     this.connections.delete(connectionId);
     return connection;
   }
 
-  subscribe(connection: HubConnection, sessionId: string): void {
+  async get(connectionId: string): Promise<ConnectionRecord | null> {
+    return this.connections.get(connectionId) ?? null;
+  }
+
+  async subscribe(connectionId: string, sessionId: string): Promise<void> {
+    const connection = this.connections.get(connectionId);
+    if (!connection) return;
     connection.subscriptions.add(sessionId);
     let set = this.bySession.get(sessionId);
     if (!set) {
@@ -51,31 +46,35 @@ export class Hub implements EventSink {
     set.add(connection);
   }
 
-  unsubscribe(connection: HubConnection, sessionId: string): void {
+  async unsubscribe(connectionId: string, sessionId: string): Promise<void> {
+    const connection = this.connections.get(connectionId);
+    if (!connection) return;
     connection.subscriptions.delete(sessionId);
     const set = this.bySession.get(sessionId);
     set?.delete(connection);
     if (set && set.size === 0) this.bySession.delete(sessionId);
   }
 
-  subscribers(sessionId: string): HubConnection[] {
-    return [...(this.bySession.get(sessionId) ?? [])];
+  async isSubscribed(connectionId: string, sessionId: string): Promise<boolean> {
+    return this.connections.get(connectionId)?.subscriptions.has(sessionId) ?? false;
   }
 
-  publish(event: Event): void {
-    this.broadcast(event.sessionId, { type: 'event', payload: { event } });
-  }
-
-  /** Send an already-built frame body to every subscriber of a session. */
-  broadcast(sessionId: string, frame: { type: string; payload: unknown }, exceptConnectionId?: string): void {
+  async broadcast(
+    sessionId: string,
+    frame: { type: string; payload: unknown },
+    exceptConnectionId?: string,
+  ): Promise<void> {
     for (const connection of this.bySession.get(sessionId) ?? []) {
       if (connection.id === exceptConnectionId) continue;
-      connection.send(frame);
+      await connection.send(frame);
     }
   }
 
-  /** Ids of users with at least one live subscription to the session. */
-  onlineUserIds(sessionId: string): Set<string> {
+  async publish(event: Event): Promise<void> {
+    await this.broadcast(event.sessionId, { type: ServerFrameType.Event, payload: { event } });
+  }
+
+  async onlineUserIds(sessionId: string): Promise<Set<string>> {
     const ids = new Set<string>();
     for (const connection of this.bySession.get(sessionId) ?? []) {
       if (connection.principal.kind === 'user') ids.add(connection.principal.userId);
@@ -83,7 +82,7 @@ export class Hub implements EventSink {
     return ids;
   }
 
-  onlineAgentIds(sessionId: string): Set<string> {
+  async onlineAgentIds(sessionId: string): Promise<Set<string>> {
     const ids = new Set<string>();
     for (const connection of this.bySession.get(sessionId) ?? []) {
       if (connection.principal.kind === 'agent') ids.add(connection.principal.agentId);
@@ -91,29 +90,39 @@ export class Hub implements EventSink {
     return ids;
   }
 
-  /** True when the actor still has another live connection to the session. */
-  isOnline(sessionId: string, actor: Actor): boolean {
+  async isOnline(sessionId: string, actor: Actor): Promise<boolean> {
     if (actor.id === null) return false;
-    const ids = actor.type === 'agent' ? this.onlineAgentIds(sessionId) : this.onlineUserIds(sessionId);
+    const ids = actor.type === 'agent' ? await this.onlineAgentIds(sessionId) : await this.onlineUserIds(sessionId);
     return ids.has(actor.id);
   }
 
-  /** Force-close every connection belonging to a principal, e.g. after revocation. */
-  closeAgent(agentId: string, code: number, reason: string): void {
+  async closeAgent(agentId: string, code: number, reason: string): Promise<void> {
     for (const connection of this.connections.values()) {
       if (connection.principal.kind === 'agent' && connection.principal.agentId === agentId) {
-        connection.close(code, reason);
+        await connection.close(code, reason);
       }
     }
   }
 
-  closeUserSessionSubscriptions(userId: string, sessionId: string): void {
-    for (const connection of this.bySession.get(sessionId) ?? []) {
+  async dropUserFromSession(userId: string, sessionId: string): Promise<void> {
+    for (const connection of [...(this.bySession.get(sessionId) ?? [])]) {
       if (connection.principal.kind === 'user' && connection.principal.userId === userId) {
-        this.unsubscribe(connection, sessionId);
-        connection.send({ type: 'unsubscribed', payload: { sessionId } });
+        await this.unsubscribe(connection.id, sessionId);
+        await connection.send({ type: ServerFrameType.Unsubscribed, payload: { sessionId } });
       }
     }
+  }
+
+  async dropSession(sessionId: string): Promise<void> {
+    for (const connection of [...(this.bySession.get(sessionId) ?? [])]) {
+      await connection.send({ type: ServerFrameType.Unsubscribed, payload: { sessionId } });
+      await this.unsubscribe(connection.id, sessionId);
+    }
+  }
+
+  /** Live handles for a session. Only meaningful for the in-process transport. */
+  handles(sessionId: string): ConnectionHandle[] {
+    return [...(this.bySession.get(sessionId) ?? [])];
   }
 
   get connectionCount(): number {
