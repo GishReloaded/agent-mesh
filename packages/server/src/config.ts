@@ -1,0 +1,154 @@
+import { randomBytes } from 'node:crypto';
+import { existsSync } from 'node:fs';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { z } from 'zod';
+
+/**
+ * Configuration is read from the environment once, validated, and then treated
+ * as immutable. Anything security-relevant fails loudly in production rather
+ * than falling back to a development default.
+ */
+const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  HOST: z.string().default('0.0.0.0'),
+  // 0 is allowed and means "let the OS pick a free port", which is how tests
+  // and some container setups bind.
+  PORT: z.coerce.number().int().min(0).max(65_535).default(4000),
+
+  DATABASE_URL: z.string().min(1),
+  DATABASE_POOL_MAX: z.coerce.number().int().positive().max(100).default(10),
+  DATABASE_SSL: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
+
+  /** Signing key for access tokens. Must be set outside development. */
+  JWT_SECRET: z.string().min(32).optional(),
+  ACCESS_TOKEN_TTL: z.coerce.number().int().positive().default(15 * 60),
+  REFRESH_TOKEN_TTL: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(30 * 24 * 60 * 60),
+
+  /** Comma-separated list of allowed browser origins, or `*` in development. */
+  CORS_ORIGINS: z.string().default('http://localhost:5173'),
+
+  /** Public base URL, used to build invite links. */
+  PUBLIC_URL: z.string().default('http://localhost:4000'),
+
+  /**
+   * Directory holding the built web client. When present the server serves the
+   * UI and the API from one origin, so a self-hosted AgentMesh is a single
+   * process on a single port with no CORS setup. Empty disables it.
+   */
+  WEB_DIST: z.string().optional(),
+
+  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
+
+  /** Set to `false` to close registration on a private deployment. */
+  ALLOW_REGISTRATION: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((value) => value === 'true'),
+
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
+  RATE_LIMIT_WINDOW: z.string().default('1 minute'),
+  /** Frames per second a single websocket connection may send. */
+  WS_RATE_LIMIT: z.coerce.number().int().positive().default(20),
+
+  /**
+   * How many agent-authored messages may address other agents in a row before
+   * the server requires a human turn. See docs/PROTOCOL.md.
+   */
+  AGENT_CHAIN_LIMIT: z.coerce.number().int().positive().max(50).default(3),
+});
+
+export type Env = z.infer<typeof envSchema>;
+
+export interface Config {
+  env: Env['NODE_ENV'];
+  isProduction: boolean;
+  host: string;
+  port: number;
+  database: { url: string; poolMax: number; ssl: boolean };
+  auth: { jwtSecret: string; accessTokenTtl: number; refreshTokenTtl: number; allowRegistration: boolean };
+  corsOrigins: string[] | true;
+  publicUrl: string;
+  /** Absolute path to the built web client, or null when not serving it. */
+  webDist: string | null;
+  logLevel: Env['LOG_LEVEL'];
+  rateLimit: { max: number; window: string; wsFramesPerSecond: number };
+  agentChainLimit: number;
+}
+
+/**
+ * Find the built web client. An explicit `WEB_DIST` wins; otherwise the usual
+ * monorepo and container layouts are probed, so `npm start` and `docker run`
+ * both serve the UI without extra configuration. Set `WEB_DIST=none` to run
+ * headless (API only).
+ */
+function resolveWebDist(configured: string | undefined): string | null {
+  if (configured === 'none' || configured === '') return null;
+  if (configured) {
+    const path = isAbsolute(configured) ? configured : resolve(process.cwd(), configured);
+    return existsSync(join(path, 'index.html')) ? path : null;
+  }
+
+  const here = dirname(fileURLToPath(import.meta.url));
+  const candidates = [
+    resolve(here, '..', '..', 'web', 'dist'), // packages/server/dist -> packages/web/dist
+    resolve(here, '..', '..', '..', 'web', 'dist'), // packages/server/src/x -> packages/web/dist
+    resolve(process.cwd(), 'packages', 'web', 'dist'),
+    resolve(process.cwd(), 'web'),
+  ];
+  return candidates.find((path) => existsSync(join(path, 'index.html'))) ?? null;
+}
+
+export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
+  const parsed = envSchema.safeParse(source);
+  if (!parsed.success) {
+    const issues = parsed.error.issues.map((issue) => `  ${issue.path.join('.')}: ${issue.message}`).join('\n');
+    throw new Error(`Invalid environment configuration:\n${issues}`);
+  }
+  const env = parsed.data;
+  const isProduction = env.NODE_ENV === 'production';
+
+  if (isProduction && !env.JWT_SECRET) {
+    throw new Error('JWT_SECRET must be set in production. Generate one with: openssl rand -hex 32');
+  }
+
+  const corsOrigins =
+    env.CORS_ORIGINS.trim() === '*'
+      ? true
+      : env.CORS_ORIGINS.split(',')
+          .map((origin) => origin.trim())
+          .filter(Boolean);
+
+  if (isProduction && corsOrigins === true) {
+    throw new Error('CORS_ORIGINS must list explicit origins in production.');
+  }
+
+  return {
+    env: env.NODE_ENV,
+    isProduction,
+    host: env.HOST,
+    port: env.PORT,
+    database: { url: env.DATABASE_URL, poolMax: env.DATABASE_POOL_MAX, ssl: env.DATABASE_SSL },
+    auth: {
+      // Outside production an ephemeral secret is fine: it only means tokens do
+      // not survive a restart, which is the correct default for a dev machine.
+      jwtSecret: env.JWT_SECRET ?? randomBytes(32).toString('hex'),
+      accessTokenTtl: env.ACCESS_TOKEN_TTL,
+      refreshTokenTtl: env.REFRESH_TOKEN_TTL,
+      allowRegistration: env.ALLOW_REGISTRATION,
+    },
+    corsOrigins,
+    publicUrl: env.PUBLIC_URL.replace(/\/+$/, ''),
+    webDist: resolveWebDist(env.WEB_DIST),
+    logLevel: env.LOG_LEVEL,
+    rateLimit: { max: env.RATE_LIMIT_MAX, window: env.RATE_LIMIT_WINDOW, wsFramesPerSecond: env.WS_RATE_LIMIT },
+    agentChainLimit: env.AGENT_CHAIN_LIMIT,
+  };
+}
