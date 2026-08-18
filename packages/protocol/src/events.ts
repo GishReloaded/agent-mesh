@@ -1,0 +1,271 @@
+import { z } from 'zod';
+import {
+  agentSchema,
+  contextEntrySchema,
+  messageSchema,
+  publicUserSchema,
+  sessionSchema,
+  taskSchema,
+} from './entities.js';
+import {
+  actorSchema,
+  agentStatusSchema,
+  fileRefSchema,
+  gitRefSchema,
+  idSchema,
+  seqSchema,
+  sessionRoleSchema,
+  timestampSchema,
+} from './primitives.js';
+
+/**
+ * AgentMesh has one append-only log per session. Chat messages, task changes,
+ * context updates and development events are all entries in that log, ordered
+ * by `seq`. Two naming conventions live in the same namespace, and the casing
+ * tells you which is which:
+ *
+ * - `lower.dotted` — lifecycle events. Produced by the server to describe what
+ *   happened to session state. Clients apply them to their local model.
+ * - `UPPER_SNAKE` — development events. Published by participants to describe
+ *   what happened in the software project itself. The server stores and routes
+ *   them but never interprets their meaning.
+ */
+
+// ---------------------------------------------------------------------------
+// Lifecycle events
+// ---------------------------------------------------------------------------
+
+export const LifecycleEventType = {
+  SessionCreated: 'session.created',
+  SessionUpdated: 'session.updated',
+  SessionArchived: 'session.archived',
+
+  ParticipantJoined: 'participant.joined',
+  ParticipantLeft: 'participant.left',
+  ParticipantRoleChanged: 'participant.role_changed',
+
+  AgentRegistered: 'agent.registered',
+  AgentConnected: 'agent.connected',
+  AgentDisconnected: 'agent.disconnected',
+  AgentStatusChanged: 'agent.status_changed',
+  AgentRevoked: 'agent.revoked',
+
+  MessageCreated: 'message.created',
+
+  TaskCreated: 'task.created',
+  TaskUpdated: 'task.updated',
+  TaskDeleted: 'task.deleted',
+
+  ContextCreated: 'context.created',
+  ContextUpdated: 'context.updated',
+  ContextDeleted: 'context.deleted',
+} as const;
+
+export type LifecycleEventType = (typeof LifecycleEventType)[keyof typeof LifecycleEventType];
+
+export const LIFECYCLE_EVENT_TYPES = Object.values(LifecycleEventType) as LifecycleEventType[];
+
+export const lifecyclePayloadSchemas = {
+  'session.created': z.object({ session: sessionSchema }),
+  'session.updated': z.object({ session: sessionSchema }),
+  'session.archived': z.object({ sessionId: idSchema }),
+
+  'participant.joined': z.object({ user: publicUserSchema, role: sessionRoleSchema }),
+  'participant.left': z.object({ userId: idSchema, removedBy: idSchema.nullable() }),
+  'participant.role_changed': z.object({ userId: idSchema, role: sessionRoleSchema }),
+
+  'agent.registered': z.object({ agent: agentSchema }),
+  'agent.connected': z.object({ agentId: idSchema, name: z.string() }),
+  'agent.disconnected': z.object({ agentId: idSchema, name: z.string(), reason: z.string().optional() }),
+  'agent.status_changed': z.object({
+    agentId: idSchema,
+    status: agentStatusSchema,
+    note: z.string().max(500).optional(),
+  }),
+  'agent.revoked': z.object({ agentId: idSchema, revokedBy: idSchema }),
+
+  'message.created': z.object({ message: messageSchema }),
+
+  'task.created': z.object({ task: taskSchema }),
+  'task.updated': z.object({ task: taskSchema, changed: z.array(z.string()) }),
+  'task.deleted': z.object({ taskId: idSchema }),
+
+  'context.created': z.object({ entry: contextEntrySchema }),
+  'context.updated': z.object({ entry: contextEntrySchema, previousVersion: z.number().int() }),
+  'context.deleted': z.object({ entryId: idSchema }),
+} as const satisfies Record<LifecycleEventType, z.ZodTypeAny>;
+
+// ---------------------------------------------------------------------------
+// Development events
+// ---------------------------------------------------------------------------
+
+export const DevEventType = {
+  ApiContractCreated: 'API_CONTRACT_CREATED',
+  ApiContractUpdated: 'API_CONTRACT_UPDATED',
+  CodeChanged: 'CODE_CHANGED',
+  GitCommitCreated: 'GIT_COMMIT_CREATED',
+  BuildFailed: 'BUILD_FAILED',
+  BuildSucceeded: 'BUILD_SUCCEEDED',
+  TestFailed: 'TEST_FAILED',
+  TestPassed: 'TEST_PASSED',
+  DecisionCreated: 'DECISION_CREATED',
+  AgentBlocked: 'AGENT_BLOCKED',
+  AgentUnblocked: 'AGENT_UNBLOCKED',
+  AgentHandoff: 'AGENT_HANDOFF',
+  HelpRequested: 'HELP_REQUESTED',
+} as const;
+
+export type DevEventType = (typeof DevEventType)[keyof typeof DevEventType];
+
+export const DEV_EVENT_TYPES = Object.values(DevEventType) as DevEventType[];
+
+/**
+ * Extension namespace. Anyone may publish `X_*` events without coordinating a
+ * protocol change; their payload is passed through untouched.
+ */
+export const CUSTOM_EVENT_TYPE_PATTERN = /^X_[A-Z0-9_]{1,60}$/;
+
+const apiContractPayload = z.object({
+  /** Logical service the endpoint belongs to, e.g. "auth". */
+  service: z.string().max(120),
+  method: z.string().max(12),
+  endpoint: z.string().max(300),
+  request: z.record(z.string(), z.unknown()).optional(),
+  response: z.record(z.string(), z.unknown()).optional(),
+  /** Optional pointer to the context entry holding the full contract. */
+  contextKey: z.string().max(200).optional(),
+  commit: z.string().max(80).optional(),
+  status: z.string().max(40).optional(),
+  note: z.string().max(2000).optional(),
+});
+
+const buildPayload = z.object({
+  pipeline: z.string().max(120).optional(),
+  target: z.string().max(200).optional(),
+  git: gitRefSchema.optional(),
+  durationMs: z.number().int().nonnegative().optional(),
+  /** Truncated log excerpt. Never send full build logs through the session. */
+  output: z.string().max(8000).optional(),
+});
+
+const testPayload = z.object({
+  suite: z.string().max(200).optional(),
+  passed: z.number().int().nonnegative().optional(),
+  failed: z.number().int().nonnegative().optional(),
+  skipped: z.number().int().nonnegative().optional(),
+  git: gitRefSchema.optional(),
+  output: z.string().max(8000).optional(),
+});
+
+export const devPayloadSchemas = {
+  API_CONTRACT_CREATED: apiContractPayload,
+  API_CONTRACT_UPDATED: apiContractPayload,
+  CODE_CHANGED: z.object({
+    files: z.array(fileRefSchema).max(200),
+    git: gitRefSchema.optional(),
+    summary: z.string().max(2000).optional(),
+  }),
+  GIT_COMMIT_CREATED: z.object({
+    git: gitRefSchema,
+    message: z.string().max(2000).optional(),
+    files: z.array(fileRefSchema).max(500).optional(),
+  }),
+  BUILD_FAILED: buildPayload,
+  BUILD_SUCCEEDED: buildPayload,
+  TEST_FAILED: testPayload,
+  TEST_PASSED: testPayload,
+  DECISION_CREATED: z.object({
+    title: z.string().max(300),
+    /** Pointer to the `decision` context entry carrying the full text. */
+    contextKey: z.string().max(200).optional(),
+    summary: z.string().max(4000).optional(),
+  }),
+  AGENT_BLOCKED: z.object({
+    reason: z.string().max(2000),
+    needs: z.string().max(2000).optional(),
+    taskId: idSchema.optional(),
+  }),
+  AGENT_UNBLOCKED: z.object({ taskId: idSchema.optional(), note: z.string().max(2000).optional() }),
+  AGENT_HANDOFF: z.object({
+    toAgentId: idSchema.optional(),
+    /** Capability filter when no specific agent is named. */
+    requiredCapabilities: z.array(z.string().max(64)).max(20).optional(),
+    taskId: idSchema.optional(),
+    summary: z.string().max(4000),
+  }),
+  HELP_REQUESTED: z.object({
+    question: z.string().max(4000),
+    /** Who the request is directed at; empty means anyone in the session. */
+    audience: z.array(z.string().max(120)).max(20).optional(),
+    taskId: idSchema.optional(),
+  }),
+} as const satisfies Record<DevEventType, z.ZodTypeAny>;
+
+// ---------------------------------------------------------------------------
+// Event record
+// ---------------------------------------------------------------------------
+
+export const eventTypeSchema = z.string().min(1).max(80);
+
+export function isLifecycleEventType(type: string): type is LifecycleEventType {
+  return (LIFECYCLE_EVENT_TYPES as string[]).includes(type);
+}
+
+export function isDevEventType(type: string): type is DevEventType {
+  return (DEV_EVENT_TYPES as string[]).includes(type);
+}
+
+export function isCustomEventType(type: string): boolean {
+  return CUSTOM_EVENT_TYPE_PATTERN.test(type);
+}
+
+/** Types a participant is allowed to publish directly. */
+export function isPublishableEventType(type: string): boolean {
+  return isDevEventType(type) || isCustomEventType(type);
+}
+
+/**
+ * Validate an event payload against its type. Custom `X_*` events accept any
+ * JSON object; unknown types are rejected.
+ */
+export function parseEventPayload(type: string, payload: unknown): unknown {
+  if (isLifecycleEventType(type)) {
+    return lifecyclePayloadSchemas[type].parse(payload);
+  }
+  if (isDevEventType(type)) {
+    return devPayloadSchemas[type].parse(payload);
+  }
+  if (isCustomEventType(type)) {
+    return z.record(z.string(), z.unknown()).parse(payload);
+  }
+  throw new z.ZodError([
+    {
+      code: z.ZodIssueCode.custom,
+      path: ['type'],
+      message: `Unknown event type: ${type}`,
+    },
+  ]);
+}
+
+export const eventSchema = z.object({
+  id: idSchema,
+  sessionId: idSchema,
+  seq: seqSchema,
+  type: eventTypeSchema,
+  actor: actorSchema,
+  payload: z.unknown(),
+  createdAt: timestampSchema,
+});
+export type Event = z.infer<typeof eventSchema>;
+
+/** Narrowed event record for a known lifecycle type. */
+export type LifecycleEvent<T extends LifecycleEventType = LifecycleEventType> = Omit<Event, 'type' | 'payload'> & {
+  type: T;
+  payload: z.infer<(typeof lifecyclePayloadSchemas)[T]>;
+};
+
+/** Narrowed event record for a known development type. */
+export type DevEvent<T extends DevEventType = DevEventType> = Omit<Event, 'type' | 'payload'> & {
+  type: T;
+  payload: z.infer<(typeof devPayloadSchemas)[T]>;
+};
