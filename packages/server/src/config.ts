@@ -90,7 +90,9 @@ export interface Config {
  * headless (API only).
  */
 function resolveWebDist(configured: string | undefined): string | null {
-  if (configured === 'none' || configured === '') return null;
+  // Only an explicit "none" disables the UI. An empty value means "unset",
+  // which is what `.env.example` ships and what auto-detection expects.
+  if (configured === 'none') return null;
   if (configured) {
     const path = isAbsolute(configured) ? configured : resolve(process.cwd(), configured);
     return existsSync(join(path, 'index.html')) ? path : null;
