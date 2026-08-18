@@ -1,0 +1,305 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  AgentMesh on AWS: one EC2 instance running the server and PostgreSQL in
+  containers, fronted by CloudFront for HTTPS and WebSocket termination.
+
+  CloudFront is what makes this work without owning a domain: it supplies a
+  *.cloudfront.net certificate, so credentials never travel in clear text, and
+  it proxies WebSocket upgrades to the origin. The instance itself accepts
+  traffic only from CloudFront's published address ranges.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: agentmesh
+    Description: Prefix for resource names and tags.
+
+  InstanceType:
+    Type: String
+    Default: t4g.small
+    AllowedValues: [t4g.small, t4g.medium, t3.small, t3.medium]
+    Description: >
+      t4g.small (2 GB, Graviton) is enough for a handful of people and agents.
+      Use a t3 type only if you supply an x86_64 AMI.
+
+  AmiId:
+    Type: AWS::EC2::Image::Id
+    Description: >
+      Amazon Linux 2023 AMI matching the instance architecture. The deploy
+      script resolves the current one; this account cannot read the public SSM
+      aliases, which is why it is a parameter rather than a lookup.
+
+  SourceBucket:
+    Type: String
+    Description: S3 bucket holding the source archive.
+
+  SourceKey:
+    Type: String
+    Default: agentmesh-src.tar.gz
+    Description: Key of the source archive inside the bucket.
+
+  KeyName:
+    Type: String
+    Default: ''
+    Description: Optional EC2 key pair for SSH access. Leave empty for none.
+
+  SshCidr:
+    Type: String
+    Default: ''
+    Description: >
+      Optional CIDR allowed to reach port 22, e.g. 203.0.113.4/32. Leave empty
+      to open no SSH at all - the instance is fully managed by user-data and
+      SSM is not required for it to work.
+
+  CloudFrontPrefixListId:
+    Type: String
+    Default: pl-fab65393
+    Description: >
+      AWS-managed prefix list com.amazonaws.global.cloudfront.origin-facing for
+      this region. Restricting the origin to it keeps the instance off the open
+      internet.
+
+  AllowRegistration:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: >
+      Set to false after you and your collaborators have accounts, so the
+      public URL cannot be used by strangers to sign up.
+
+  VolumeSizeGb:
+    Type: Number
+    Default: 20
+    MinValue: 8
+    MaxValue: 200
+    Description: Root volume size. Holds the database and Docker images.
+
+Conditions:
+  HasKeyName: !Not [!Equals [!Ref KeyName, '']]
+  HasSshCidr: !Not [!Equals [!Ref SshCidr, '']]
+
+Resources:
+  # --- networking ----------------------------------------------------------
+
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-ip'
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub '${ProjectName} origin - CloudFront only'
+      SecurityGroupIngress:
+        - Description: HTTP from CloudFront edge locations
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourcePrefixListId: !Ref CloudFrontPrefixListId
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-sg'
+
+  SshIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: HasSshCidr
+    Properties:
+      GroupId: !Ref SecurityGroup
+      Description: SSH from the operator
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: !Ref SshCidr
+
+  # --- instance identity ---------------------------------------------------
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ec2.amazonaws.com }
+            Action: sts:AssumeRole
+      # Read exactly one object, nothing else. The instance never needs more.
+      Policies:
+        - PolicyName: read-source-archive
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub 'arn:aws:s3:::${SourceBucket}/${SourceKey}'
+      ManagedPolicyArns:
+        # Lets you open a shell through the console without opening port 22.
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref InstanceRole]
+
+  # --- edge ----------------------------------------------------------------
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub '${ProjectName} - API, web UI and WebSocket'
+        HttpVersion: http2
+        PriceClass: PriceClass_100
+        Origins:
+          # Built from the Elastic IP so this resource does not depend on the
+          # instance, which in turn needs this distribution's domain name.
+          - Id: agentmesh-origin
+            DomainName: !Sub
+              - 'ec2-${DashedIp}.${AWS::Region}.compute.amazonaws.com'
+              - DashedIp: !Join ['-', !Split ['.', !Ref ElasticIP]]
+            CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+              HTTPPort: 80
+              OriginReadTimeout: 60
+              OriginKeepaliveTimeout: 60
+        DefaultCacheBehavior:
+          TargetOriginId: agentmesh-origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          # Nothing here is cacheable: the API is per-user and the websocket is
+          # a live connection. Caching would serve one person another's data.
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled
+          OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader
+
+  # --- compute -------------------------------------------------------------
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref InstanceProfile
+      SecurityGroupIds: [!GetAtt SecurityGroup.GroupId]
+      KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: !Ref VolumeSizeGb
+            VolumeType: gp3
+            Encrypted: true
+            DeleteOnTermination: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-server'
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euxo pipefail
+          exec > >(tee /var/log/agentmesh-bootstrap.log) 2>&1
+
+          dnf -y update
+          dnf -y install docker git tar gzip
+
+          # The compose plugin is not in the AL2023 repositories.
+          ARCH=$(uname -m)
+          mkdir -p /usr/local/lib/docker/cli-plugins
+          curl -fsSL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-${!ARCH}" \
+            -o /usr/local/lib/docker/cli-plugins/docker-compose
+          chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+          systemctl enable --now docker
+
+          # Building the web bundle and TypeScript on a 2 GB instance is close
+          # to the limit; swap keeps the build from being OOM-killed.
+          if [ ! -f /swapfile ]; then
+            dd if=/dev/zero of=/swapfile bs=1M count=2048
+            chmod 600 /swapfile
+            mkswap /swapfile
+            swapon /swapfile
+            echo '/swapfile none swap sw 0 0' >> /etc/fstab
+          fi
+
+          mkdir -p /opt/agentmesh
+          cd /opt/agentmesh
+          aws s3 cp "s3://${SourceBucket}/${SourceKey}" ./src.tar.gz
+          tar -xzf src.tar.gz
+          rm -f src.tar.gz
+
+          # Secrets are generated here, never passed through CloudFormation
+          # parameters, so they do not appear in the stack or in CloudTrail.
+          if [ ! -f /opt/agentmesh/.env ]; then
+            DB_PASSWORD=$(openssl rand -hex 24)
+            JWT_SECRET=$(openssl rand -hex 32)
+            cat > /opt/agentmesh/.env <<ENVFILE
+          NODE_ENV=production
+          HOST=0.0.0.0
+          PORT=4000
+          POSTGRES_PASSWORD=${!DB_PASSWORD}
+          DATABASE_URL=postgres://agentmesh:${!DB_PASSWORD}@postgres:5432/agentmesh
+          JWT_SECRET=${!JWT_SECRET}
+          PUBLIC_URL=https://${Distribution.DomainName}
+          CORS_ORIGINS=https://${Distribution.DomainName}
+          ALLOW_REGISTRATION=${AllowRegistration}
+          LOG_LEVEL=info
+          ENVFILE
+            chmod 600 /opt/agentmesh/.env
+          fi
+
+          # Migrations run on server boot, so this is the only step needed.
+          docker compose -f deploy/aws/docker-compose.prod.yml --env-file .env up -d --build
+
+          # Bring the stack back up after a reboot.
+          cat > /etc/systemd/system/agentmesh.service <<'UNIT'
+          [Unit]
+          Description=AgentMesh
+          Requires=docker.service
+          After=docker.service network-online.target
+
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          WorkingDirectory=/opt/agentmesh
+          ExecStart=/usr/bin/docker compose -f deploy/aws/docker-compose.prod.yml --env-file .env up -d
+          ExecStop=/usr/bin/docker compose -f deploy/aws/docker-compose.prod.yml --env-file .env down
+
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+          systemctl enable agentmesh.service
+
+          echo "AgentMesh bootstrap finished at $(date -Is)"
+
+  ElasticIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt ElasticIP.AllocationId
+      InstanceId: !Ref Instance
+
+Outputs:
+  Url:
+    Description: Open this. Share it with your collaborators.
+    Value: !Sub 'https://${Distribution.DomainName}'
+
+  HealthCheck:
+    Description: Returns ok once the server is up. The first build takes a few minutes.
+    Value: !Sub 'https://${Distribution.DomainName}/api/v1/healthz'
+
+  OriginIp:
+    Description: Elastic IP of the origin instance.
+    Value: !Ref ElasticIP
+
+  InstanceId:
+    Value: !Ref Instance
+
+  SsmSession:
+    Description: Open a shell without SSH.
+    Value: !Sub 'aws ssm start-session --target ${Instance} --region ${AWS::Region}'
+
+  BootstrapLog:
+    Description: Where to look if the site does not come up.
+    Value: /var/log/agentmesh-bootstrap.log

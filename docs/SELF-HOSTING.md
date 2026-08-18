@@ -26,6 +26,16 @@ The stack is:
 
 Migrations run automatically on boot, so a fresh volume needs no extra step.
 
+## On AWS
+
+`deploy/aws/` holds a CloudFormation stack that puts this on one EC2 instance behind CloudFront, which supplies HTTPS without you owning a domain:
+
+```powershell
+./deploy/aws/deploy.ps1
+```
+
+About $18/month in `eu-north-1`, one command to tear down. It also explains why Lambda is not the target: the realtime gateway holds WebSocket connections in process, and moving that to API Gateway plus DynamoDB is a rewrite rather than a repackaging. See [deploy/aws/README.md](../deploy/aws/README.md).
+
 ## Without Docker
 
 Requires Node 22.4+ and PostgreSQL 14+.

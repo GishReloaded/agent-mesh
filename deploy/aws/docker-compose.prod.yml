@@ -1,0 +1,53 @@
+# Production stack for the AWS deployment: the AgentMesh server and its
+# database on one host. TLS is terminated by CloudFront in front, so nothing
+# here needs certificates.
+#
+# Run from the repository root:
+#   docker compose -f deploy/aws/docker-compose.prod.yml --env-file .env up -d --build
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: agentmesh
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: agentmesh
+    volumes:
+      - agentmesh-data:/var/lib/postgresql/data
+    # Not published: only the server container needs to reach it.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U agentmesh -d agentmesh']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  agentmesh:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4000
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      PUBLIC_URL: ${PUBLIC_URL:?PUBLIC_URL is required}
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS is required}
+      ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    # CloudFront reaches the origin on port 80.
+    ports:
+      - '80:4000'
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'
+
+volumes:
+  agentmesh-data:
