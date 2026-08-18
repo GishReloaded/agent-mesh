@@ -55,6 +55,9 @@ export class AgentRunner {
     success(`Connected as ${style.bold(name)} to session ${mesh.sessionId}`);
     info(`  tool:      ${this.options.preset.label} (${this.options.preset.command})`);
     info(`  workspace: ${this.options.workspace}`);
+    if (this.options.dryRun) {
+      warn('DRY RUN: mentions will be printed here and never answered. Remove --dry-run to reply for real.');
+    }
     info(style.dim('  Waiting for mentions. Press Ctrl+C to disconnect.\n'));
 
     await mesh.setStatus('idle').catch(() => undefined);
@@ -128,11 +131,17 @@ export class AgentRunner {
     }).filter((arg) => arg !== '' || preset.promptVia === 'arg');
 
     if (this.options.dryRun) {
-      info(style.yellow('\n--- dry run: command ---'));
+      info(style.yellow('\n--- dry run: command that WOULD run ---'));
       info(`${preset.command} ${args.map(quoteForDisplay).join(' ')}`);
-      info(style.yellow('--- prompt ---'));
+      info(style.yellow('--- prompt that WOULD be sent ---'));
       info(prompt);
-      info(style.yellow('--- end ---\n'));
+      info(style.yellow('--- end of dry run ---'));
+      // The person who wrote the mention is now waiting for an answer that is
+      // never coming. Say so where the operator will see it.
+      warn(
+        `Nothing ran and nothing was posted, so ${message.author.name ?? 'the sender'} will get no reply.`,
+      );
+      warn('Restart without --dry-run to actually answer.\n');
       return;
     }
 
