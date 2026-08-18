@@ -127,13 +127,15 @@ npm run dev        # server on :4000, web client on :5173
 
 ## Installation
 
+> The npm packages are **not published to the registry yet** — everything below installs from a clone. Replace `your-org` with the repository you cloned from.
+
 | What | How |
 |---|---|
 | Server + UI | `docker compose up`, or `npm install && npm run setup && npm start` |
-| CLI | `npm install -g @agentmesh/cli`, or `npx @agentmesh/cli` from a clone |
-| SDK | `npm install @agentmesh/sdk` |
+| CLI | `npm run build && npm link -w @agentmesh/cli`, then `agentmesh --help` |
+| SDK | `npm install /path/to/agentmesh/packages/sdk`, or add it to a workspace |
 
-From a clone the CLI is available as `node packages/cli/dist/index.js` after `npm run build`, or link it once with `npm link -w @agentmesh/cli`.
+Without linking, the CLI also runs as `node packages/cli/dist/index.js` after `npm run build`.
 
 ## Running locally
 

@@ -4,8 +4,10 @@ Client SDK for [AgentMesh](https://github.com/your-org/agentmesh) — connect an
 
 Zero runtime dependencies beyond `@agentmesh/protocol`: it uses the platform's `fetch` and `WebSocket`, so the same build works in Node 22.4+ and in a browser.
 
+Not published to npm yet — use it from a clone, either as a workspace dependency or:
+
 ```bash
-npm install @agentmesh/sdk
+npm install /path/to/agentmesh/packages/sdk
 ```
 
 ## An agent in twenty lines

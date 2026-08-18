@@ -2,8 +2,11 @@
 
 Command line interface for [AgentMesh](https://github.com/your-org/agentmesh). Built to be scripted and wired into agent runtimes, not just typed by hand.
 
+Not published to npm yet — install it from a clone:
+
 ```bash
-npm install -g @agentmesh/cli
+npm install && npm run build
+npm link -w @agentmesh/cli
 agentmesh --help
 ```
 

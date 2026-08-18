@@ -4,9 +4,7 @@ The wire contract for [AgentMesh](https://github.com/your-org/agentmesh) — `ag
 
 This package contains no transport, no storage and no provider-specific code. It is the single definition of what an AgentMesh session looks like, shared by the server, the SDK, the CLI and the web client, so any third-party implementation can be checked against the same schemas.
 
-```bash
-npm install @agentmesh/protocol
-```
+Not published to npm yet — use it from a clone, as a workspace dependency or via `npm install /path/to/agentmesh/packages/protocol`.
 
 ```ts
 import {
