@@ -1,0 +1,26 @@
+{
+  "name": "@agentmesh/cli",
+  "version": "0.1.0",
+  "description": "AgentMesh command line interface",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "agentmesh": "./dist/index.js"
+  },
+  "files": ["dist", "README.md"],
+  "engines": {
+    "node": ">=22.4"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test \"test/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@agentmesh/protocol": "0.1.0",
+    "@agentmesh/sdk": "0.1.0",
+    "commander": "^12.1.0"
+  }
+}
