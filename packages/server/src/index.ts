@@ -10,7 +10,7 @@ async function main(): Promise<void> {
 
   // Applying pending migrations on boot keeps "clone, configure, start" true
   // for a self-hosted deployment. It is idempotent and cheap when up to date.
-  await runMigrations(config.database.url, () => undefined);
+  await runMigrations(config.database.url, () => undefined, { ssl: config.database.ssl });
 
   const built = await buildApp(config);
   await built.app.listen({ host: config.host, port: config.port });

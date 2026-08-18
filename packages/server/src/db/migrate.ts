@@ -31,8 +31,24 @@ async function migrationFiles(): Promise<string[]> {
   return entries.filter((name) => name.endsWith('.sql')).sort();
 }
 
-export async function runMigrations(connectionString: string, log = console.log): Promise<void> {
-  const client = new pg.Client({ connectionString });
+export interface MigrationOptions {
+  /**
+   * Use TLS without verifying the certificate chain. Managed PostgreSQL
+   * providers almost always require TLS and almost always present a
+   * certificate signed by their own authority.
+   */
+  ssl?: boolean;
+}
+
+export async function runMigrations(
+  connectionString: string,
+  log: (message: string) => void = console.log,
+  options: MigrationOptions = {},
+): Promise<void> {
+  const client = new pg.Client({
+    connectionString,
+    ...(options.ssl ? { ssl: { rejectUnauthorized: false } } : {}),
+  });
   await client.connect();
   try {
     await client.query(`
@@ -68,8 +84,15 @@ export async function runMigrations(connectionString: string, log = console.log)
 }
 
 /** Drops every AgentMesh table. Destructive; intended for local development. */
-export async function resetDatabase(connectionString: string, log = console.log): Promise<void> {
-  const client = new pg.Client({ connectionString });
+export async function resetDatabase(
+  connectionString: string,
+  log: (message: string) => void = console.log,
+  options: MigrationOptions = {},
+): Promise<void> {
+  const client = new pg.Client({
+    connectionString,
+    ...(options.ssl ? { ssl: { rejectUnauthorized: false } } : {}),
+  });
   await client.connect();
   try {
     const { rows } = await client.query<{ tablename: string }>(
@@ -93,12 +116,14 @@ if (isEntrypoint) {
   const config = loadConfig();
   const command = process.argv[2] ?? 'up';
 
+  const options: MigrationOptions = { ssl: config.database.ssl };
+
   const run = async () => {
     if (command === 'reset') {
-      await resetDatabase(config.database.url);
-      await runMigrations(config.database.url);
+      await resetDatabase(config.database.url, console.log, options);
+      await runMigrations(config.database.url, console.log, options);
     } else if (command === 'up') {
-      await runMigrations(config.database.url);
+      await runMigrations(config.database.url, console.log, options);
     } else {
       throw new Error(`Unknown command: ${command}. Use "up" or "reset".`);
     }

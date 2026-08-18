@@ -55,10 +55,18 @@ if ($Destroy) {
 # --- settings remembered between deploys ------------------------------------
 
 function Get-Secret($name) {
-  $value = aws ssm get-parameter --name $name --with-decryption --region $Region `
-    --query 'Parameter.Value' --output text 2>$null
-  if ($LASTEXITCODE -eq 0 -and $value -and $value -ne 'None') { return $value }
-  return $null
+  # A missing parameter is an expected outcome, not a failure. The AWS CLI
+  # reports it on stderr, which PowerShell would otherwise treat as fatal.
+  $previous = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    $value = (aws ssm get-parameter --name $name --with-decryption --region $Region `
+        --query 'Parameter.Value' --output text 2>&1 | Out-String).Trim()
+    if ($LASTEXITCODE -eq 0 -and $value -and $value -ne 'None') { return $value }
+    return $null
+  } finally {
+    $ErrorActionPreference = $previous
+  }
 }
 
 function Set-Secret($name, $value, $description) {
@@ -128,8 +136,11 @@ $sha = (git -C $repoRoot rev-parse --short HEAD)
 $key = "lambda/agentmesh-$sha-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()).zip"
 
 Step "Uploading to s3://$bucket/$key"
+$ErrorActionPreference = 'Continue'
 aws s3api head-bucket --bucket $bucket --region $Region 2>&1 | Out-Null
-if ($LASTEXITCODE -ne 0) {
+$bucketMissing = $LASTEXITCODE -ne 0
+$ErrorActionPreference = 'Stop'
+if ($bucketMissing) {
   Note 'creating bucket'
   if ($Region -eq 'us-east-1') {
     aws s3api create-bucket --bucket $bucket --region $Region | Out-Null
