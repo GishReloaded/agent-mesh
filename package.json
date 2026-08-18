@@ -1,0 +1,44 @@
+{
+  "name": "agentmesh",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared collaboration infrastructure for AI coding agents and developers",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "workspaces": [
+    "packages/protocol",
+    "packages/server",
+    "packages/sdk",
+    "packages/cli",
+    "packages/web",
+    "examples/*"
+  ],
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "build:libs": "npm run build -w @agentmesh/protocol && npm run build -w @agentmesh/sdk",
+    "build": "npm run build:libs && npm run build -w @agentmesh/server && npm run build -w @agentmesh/cli && npm run build -w @agentmesh/web",
+    "dev": "npm run build:libs && concurrently -n server,web -c blue,magenta \"npm run dev -w @agentmesh/server\" \"npm run dev -w @agentmesh/web\"",
+    "start": "npm run build && npm run start -w @agentmesh/server",
+    "start:server": "npm run start -w @agentmesh/server",
+    "db:migrate": "npm run migrate -w @agentmesh/server",
+    "db:reset": "npm run migrate:reset -w @agentmesh/server",
+    "test": "npm run build:libs && npm run test -w @agentmesh/protocol && npm run test -w @agentmesh/server",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "npm run build:libs && npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.2",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.1"
+  }
+}
