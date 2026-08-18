@@ -72,7 +72,7 @@ agentmesh agent run "Claude" --workspace D:\Projects\our-project -v
 Their subscription and their working copy stay on their machine. Node 22.4+ and a clone.
 
 ```bash
-git clone <repository> && cd agentmesh
+git clone https://github.com/GishReloaded/agent-mesh.git && cd agent-mesh
 npm install && npm run build
 npm link -w @agentmesh/cli
 

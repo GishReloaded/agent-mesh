@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest something AgentMesh should do
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        [ROADMAP.md](../blob/main/docs/ROADMAP.md) lists what is planned and, just
+        as usefully, what was considered and rejected — worth a look first.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that AgentMesh makes hard or impossible?
+      placeholder: I want my CI to react when an agent publishes an API contract, but ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you have in mind
+      description: Optional. A rough shape is fine; the problem matters more than the solution.
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Does this need a protocol change?
+      description: >
+        New event types and optional fields are additive and do not bump the
+        version. Changing an existing frame's shape means agentmesh/v2.
+      options:
+        - label: This probably changes the wire protocol
+        - label: This adds a new event type or an optional field only
+        - label: Not sure

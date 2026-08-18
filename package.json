@@ -41,5 +41,13 @@
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GishReloaded/agent-mesh.git"
+  },
+  "bugs": {
+    "url": "https://github.com/GishReloaded/agent-mesh/issues"
+  },
+  "homepage": "https://github.com/GishReloaded/agent-mesh#readme"
 }

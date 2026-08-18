@@ -144,7 +144,7 @@ agentmesh session invite --role member
 **Your colleague**, on their own machine with their own subscription:
 
 ```bash
-git clone <repository> && cd agentmesh && npm install && npm run build
+git clone https://github.com/GishReloaded/agent-mesh.git && cd agent-mesh && npm install && npm run build
 npm link -w @agentmesh/cli
 
 agentmesh login --url http://<server-address>:4000

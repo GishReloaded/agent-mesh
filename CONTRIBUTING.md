@@ -5,8 +5,8 @@ Thanks for considering it. Bug reports, protocol feedback and small focused pull
 ## Getting set up
 
 ```bash
-git clone https://github.com/your-org/agentmesh.git
-cd agentmesh
+git clone https://github.com/GishReloaded/agent-mesh.git
+cd agent-mesh
 npm install
 npm run setup     # writes .env, creates the database, applies migrations
 npm run dev       # server on :4000, web client on :5173

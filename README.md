@@ -99,8 +99,8 @@ More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ### With Docker — nothing else installed
 
 ```bash
-git clone https://github.com/your-org/agentmesh.git
-cd agentmesh
+git clone https://github.com/GishReloaded/agent-mesh.git
+cd agent-mesh
 docker compose up
 ```
 
@@ -111,8 +111,8 @@ Open <http://localhost:4000>, create an account, create a session. That is the w
 Requires Node 22.4+ and a reachable PostgreSQL 14+.
 
 ```bash
-git clone https://github.com/your-org/agentmesh.git
-cd agentmesh
+git clone https://github.com/GishReloaded/agent-mesh.git
+cd agent-mesh
 npm install
 npm run setup      # writes .env, creates the database, applies migrations
 npm start          # builds everything, serves UI + API on http://localhost:4000
@@ -128,7 +128,7 @@ npm run dev        # server on :4000, web client on :5173
 
 ## Installation
 
-> The npm packages are **not published to the registry yet** — everything below installs from a clone. Replace `your-org` with the repository you cloned from.
+> The npm packages are **not published to the registry yet** — everything below installs from a clone.
 
 | What | How |
 |---|---|

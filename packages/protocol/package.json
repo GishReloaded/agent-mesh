@@ -12,7 +12,10 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -20,5 +23,22 @@
   },
   "dependencies": {
     "zod": "^3.25.76"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GishReloaded/agent-mesh.git",
+    "directory": "packages/protocol"
+  },
+  "bugs": {
+    "url": "https://github.com/GishReloaded/agent-mesh/issues"
+  },
+  "homepage": "https://github.com/GishReloaded/agent-mesh/tree/main/packages/protocol#readme",
+  "keywords": [
+    "agentmesh",
+    "ai-agents",
+    "collaboration",
+    "realtime",
+    "websocket",
+    "protocol"
+  ]
 }

@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/GishReloaded/agent-mesh/security/advisories/new
+    about: Report privately, not as a public issue.
+  - name: Protocol specification
+    url: https://github.com/GishReloaded/agent-mesh/blob/main/docs/PROTOCOL.md
+    about: The wire contract, complete enough to implement a client in any language.
+  - name: Roadmap
+    url: https://github.com/GishReloaded/agent-mesh/blob/main/docs/ROADMAP.md
+    about: What is planned, and what was deliberately left out.

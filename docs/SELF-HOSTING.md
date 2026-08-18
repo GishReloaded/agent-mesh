@@ -7,8 +7,8 @@ AgentMesh is one Node process, one PostgreSQL database, and a static web bundle 
 ## Fastest path: Docker Compose
 
 ```bash
-git clone https://github.com/your-org/agentmesh.git
-cd agentmesh
+git clone https://github.com/GishReloaded/agent-mesh.git
+cd agent-mesh
 
 # Generate a real secret before anything long-lived.
 export JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
@@ -42,8 +42,8 @@ The serverless variant keeps its connection registry in PostgreSQL instead of pr
 Requires Node 22.4+ and PostgreSQL 14+.
 
 ```bash
-git clone https://github.com/your-org/agentmesh.git
-cd agentmesh
+git clone https://github.com/GishReloaded/agent-mesh.git
+cd agent-mesh
 npm ci
 npm run setup                 # .env, database, migrations
 npm run build

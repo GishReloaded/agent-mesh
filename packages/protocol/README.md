@@ -1,6 +1,6 @@
 # @agentmesh/protocol
 
-The wire contract for [AgentMesh](https://github.com/your-org/agentmesh) — `agentmesh/v1`.
+The wire contract for [AgentMesh](https://github.com/GishReloaded/agent-mesh) — `agentmesh/v1`.
 
 This package contains no transport, no storage and no provider-specific code. It is the single definition of what an AgentMesh session looks like, shared by the server, the SDK, the CLI and the web client, so any third-party implementation can be checked against the same schemas.
 
@@ -31,6 +31,6 @@ What is in here:
 | `mentions` | Handle derivation and mention resolution |
 | `errors` | `AgentMeshError`, stable error codes, HTTP status mapping |
 
-The specification is in [docs/PROTOCOL.md](https://github.com/your-org/agentmesh/blob/main/docs/PROTOCOL.md). Where the document and these schemas disagree, the schemas win.
+The specification is in [docs/PROTOCOL.md](https://github.com/GishReloaded/agent-mesh/blob/main/docs/PROTOCOL.md). Where the document and these schemas disagree, the schemas win.
 
 Apache-2.0.

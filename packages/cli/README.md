@@ -1,6 +1,6 @@
 # @agentmesh/cli
 
-Command line interface for [AgentMesh](https://github.com/your-org/agentmesh). Built to be scripted and wired into agent runtimes, not just typed by hand.
+Command line interface for [AgentMesh](https://github.com/GishReloaded/agent-mesh). Built to be scripted and wired into agent runtimes, not just typed by hand.
 
 Not published to npm yet — install it from a clone:
 

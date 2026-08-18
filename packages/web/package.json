@@ -23,5 +23,14 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "vite": "^6.0.3"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GishReloaded/agent-mesh.git",
+    "directory": "packages/web"
+  },
+  "bugs": {
+    "url": "https://github.com/GishReloaded/agent-mesh/issues"
+  },
+  "homepage": "https://github.com/GishReloaded/agent-mesh/tree/main/packages/web#readme"
 }

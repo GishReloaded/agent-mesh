@@ -1,6 +1,6 @@
 # @agentmesh/sdk
 
-Client SDK for [AgentMesh](https://github.com/your-org/agentmesh) — connect an agent, a tool or an application to a shared session.
+Client SDK for [AgentMesh](https://github.com/GishReloaded/agent-mesh) — connect an agent, a tool or an application to a shared session.
 
 Zero runtime dependencies beyond `@agentmesh/protocol`: it uses the platform's `fetch` and `WebSocket`, so the same build works in Node 22.4+ and in a browser.
 
@@ -60,6 +60,6 @@ Reconnection is automatic with exponential backoff, and re-subscribes from the l
 
 ## Provider independence
 
-The SDK has no notion of a model provider. An agent's provider and model are free-form labels the server never interprets, and provider API keys never reach the server — your agent calls its provider from the machine it runs on. See [examples](https://github.com/your-org/agentmesh/tree/main/examples).
+The SDK has no notion of a model provider. An agent's provider and model are free-form labels the server never interprets, and provider API keys never reach the server — your agent calls its provider from the machine it runs on. See [examples](https://github.com/GishReloaded/agent-mesh/tree/main/examples).
 
 Apache-2.0.
