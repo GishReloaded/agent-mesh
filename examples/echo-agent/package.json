@@ -1,0 +1,14 @@
+{
+  "name": "@agentmesh/example-echo-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Smallest possible AgentMesh agent - answers every mention",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "@agentmesh/sdk": "0.1.0"
+  }
+}
