@@ -1,7 +1,11 @@
 import { connect } from '@agentmesh/sdk';
 import type { Command } from 'commander';
+import { resolve } from 'node:path';
+import { PRESETS, getPreset } from '../agent-runtime/presets.js';
+import { AgentRunner } from '../agent-runtime/runner.js';
+import { resolveCommand } from '../agent-runtime/spawn.js';
 import { createContext, resolveSession } from '../client.js';
-import { loadConfig, updateProfile } from '../config.js';
+import { currentProfile, loadConfig, updateProfile } from '../config.js';
 import { actorLabel, clock, info, json, style, success, table, warn } from '../output.js';
 
 function parseCapabilities(list: string | undefined): Record<string, boolean> {
@@ -99,6 +103,129 @@ export function registerAgentCommands(program: Command): void {
       await rest.revokeAgent(resolveSession(options.session), agentId);
       success(`Revoked agent ${agentId}`);
     });
+
+  agent
+    .command('presets')
+    .description('List built-in integrations for local, subscription-backed coding agents')
+    .action(() => {
+      info(
+        style.dim(
+          'These run the command-line tool of a product you already pay for.\n' +
+            'They use the same login as its IDE extension - no API key involved.\n',
+        ),
+      );
+      for (const preset of Object.values(PRESETS)) {
+        const found = preset.command ? resolveCommand(preset.command) !== preset.command : false;
+        const mark = preset.command === '' ? style.dim('n/a') : found ? style.green('installed') : style.yellow('not found');
+        info(`${style.bold(preset.id.padEnd(8))} ${preset.label.padEnd(22)} ${mark}`);
+        info(style.dim(`         ${preset.notes}`));
+      }
+      info(style.dim('\nRun one with:  agentmesh agent run <agent-name> --preset <id>'));
+    });
+
+  agent
+    .command('run [name] [tool...]')
+    .description('Run a local coding agent as a participant, driven by its own subscription')
+    .option('-s, --session <id>', 'session id or slug')
+    .option('-t, --token <token>', 'agent token (defaults to AGENTMESH_TOKEN or the stored one)')
+    .option('-P, --preset <id>', 'claude | codex | gemini | custom', 'claude')
+    .option('-w, --workspace <dir>', 'directory the tool runs in', process.cwd())
+    .option('--command <bin>', 'override the executable')
+    .option('--args <json>', 'override the argument list, as a JSON array using {prompt} and {session}')
+    .option('--timeout <seconds>', 'how long one invocation may take', '600')
+    .option('--queue <count>', 'how many pending mentions to hold', '3')
+    .option('--dry-run', 'print the command and prompt instead of running the tool')
+    .option('-v, --verbose', 'stream the tool output into this terminal')
+    .action(
+      async (
+        name: string | undefined,
+        tool: string[],
+        options: {
+          session?: string;
+          token?: string;
+          preset: string;
+          workspace: string;
+          command?: string;
+          args?: string;
+          timeout: string;
+          queue: string;
+          dryRun?: boolean;
+          verbose?: boolean;
+        },
+      ) => {
+        // Commander treats operands after `--` as positionals too, so the first
+        // word of the tool command lands in `name`. Take the tool straight from
+        // argv and drop the misassigned name.
+        const dash = process.argv.indexOf('--');
+        let agentName = name;
+        if (dash >= 0) {
+          tool = process.argv.slice(dash + 1);
+          if (agentName === tool[0]) agentName = undefined;
+        }
+
+        const profile = currentProfile(loadConfig());
+        const sessionId = options.session ?? profile.currentSession;
+        const stored = agentName && sessionId ? profile.agentTokens?.[`${sessionId}:${agentName}`] : undefined;
+        const token = options.token ?? process.env.AGENTMESH_TOKEN ?? stored;
+
+        if (!token) {
+          throw new Error(
+            'No agent token. Register one first:\n' +
+              `  agentmesh agent register "${agentName ?? 'My Agent'}" --provider <provider> --model <model>\n` +
+              'then pass it with --token, or set AGENTMESH_TOKEN.',
+          );
+        }
+
+        const preset = { ...getPreset(options.preset) };
+
+        // `agentmesh agent run "Name" -- mytool --flag {prompt}` is the readable
+        // way to plug in an arbitrary tool; the JSON form below stays for
+        // scripts and config files.
+        if (tool.length > 0) {
+          preset.command = tool[0] as string;
+          preset.args = tool.slice(1);
+          preset.label = tool.join(' ');
+          delete preset.continueArgs;
+          // Without an explicit {prompt} placeholder the prompt goes to stdin,
+          // which is what most CLI tools accept and avoids argv length limits.
+          if (!preset.args.some((arg) => arg.includes('{prompt}'))) preset.promptVia = 'stdin';
+        }
+
+        if (options.command) preset.command = options.command;
+        if (options.args) {
+          const parsed: unknown = JSON.parse(options.args);
+          if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== 'string')) {
+            throw new Error('--args must be a JSON array of strings, e.g. \'["exec","{prompt}"]\'');
+          }
+          preset.args = parsed as string[];
+          // An overridden argument list invalidates the preset's resume flags.
+          delete preset.continueArgs;
+        }
+        if (!preset.command) {
+          throw new Error('This preset needs --command with the executable to run.');
+        }
+
+        const runner = new AgentRunner({
+          url: profile.url,
+          token,
+          preset,
+          workspace: resolve(options.workspace),
+          timeoutMs: Number(options.timeout) * 1000,
+          maxQueue: Number(options.queue),
+          dryRun: Boolean(options.dryRun),
+          verbose: Boolean(options.verbose),
+        });
+
+        await runner.start();
+
+        await new Promise<void>((resolvePromise) => {
+          process.on('SIGINT', () => {
+            info(style.dim('\ndisconnecting...'));
+            void runner.stop().then(() => resolvePromise());
+          });
+        });
+      },
+    );
 
   agent
     .command('connect [name]')

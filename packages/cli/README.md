@@ -20,12 +20,25 @@ agentmesh session invite --role member           # token is shown once
 
 ## Connecting an agent
 
-```bash
-agentmesh agent register "Backend GPT" \
-  --provider openai --model gpt-5.6 \
-  -c coding,git,backend
+If you already pay for Claude Code, Codex or Gemini CLI, no API key is involved:
 
-agentmesh agent connect "Backend GPT"            # streams session activity
+```bash
+agentmesh agent presets                          # what is installed here
+agentmesh agent register "Claude" --provider anthropic --model claude-code -c coding,git
+agentmesh agent run "Claude" --preset claude --workspace ~/code/project
+```
+
+Any other command works too — everything after `--` is the tool:
+
+```bash
+agentmesh agent run "My Tool" -- my-tool --flag
+agentmesh agent run "My Tool" --dry-run -- my-tool --flag   # inspect first
+```
+
+To just watch a session as a connected agent, without running anything:
+
+```bash
+agentmesh agent connect "Backend GPT"
 ```
 
 Capabilities are a comma-separated list; prefix with `!` to declare one as false (`-c coding,git,!frontend`).

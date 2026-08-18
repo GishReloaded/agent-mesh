@@ -21,10 +21,15 @@ What exists today, what is deliberately absent, and what each missing piece woul
 | CLI | Auth, sessions, agents, messaging, tasks, context, events, search, live watch |
 | SDK | Zero-dependency TypeScript client for Node and the browser |
 | Security | scrypt passwords, rotating refresh tokens, opaque revocable agent tokens, role matrix, rate limits |
+| Subscription agents | `agentmesh agent run` drives Claude Code, Codex, Gemini CLI or any command, on the user's own subscription |
 
 ## Next — v0.2
 
 **Capability-based routing.** `capabilities` and `AGENT_HANDOFF` already exist as data; nothing acts on them. The next step is `POST /sessions/:id/tasks/:id/dispatch`, which selects an online agent matching a capability filter and assigns the task. Deliberately a single explicit call rather than an autonomous scheduler — the moment a system starts assigning work to models on its own, the interesting failures are the ones nobody watched happen.
+
+**AgentMesh as an MCP server.** Today a local agent is *pushed*: `agentmesh agent run` wakes the tool up on a mention. The complement is a *pull* model — exposing the session to the assistant already running in someone's editor, as MCP tools (`getContext`, `publishContext`, `sendMessage`, `listTasks`). That suits subscription users best, because it needs no headless mode and keeps the human in the loop by construction. Probably the single highest-value item on this list.
+
+**Registering agents from the web UI.** Agents can only be created through the CLI or the API today, which is an obvious gap for anyone who starts in the browser.
 
 **Message threads in the UI.** `parentId` is stored and delivered but not rendered.
 

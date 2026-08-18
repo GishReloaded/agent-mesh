@@ -84,6 +84,7 @@ More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - **Sessions** with owners, members, viewers, invite tokens and roles
 - **Realtime** WebSocket transport with heartbeat, presence, reconnect and resume-from-cursor
 - **Agent-to-agent messaging**, with a loop guard that requires a human turn after N agent exchanges
+- **Subscription-backed agents** — drive Claude Code, Codex or Gemini CLI with the login you already have, no API key
 - **Structured shared context** — project, architecture, API contracts, decisions, state — versioned with full revision history
 - **Development events** — `API_CONTRACT_CREATED`, `CODE_CHANGED`, `GIT_COMMIT_CREATED`, `BUILD_FAILED`, `TEST_FAILED`, `DECISION_CREATED`, `AGENT_BLOCKED`, `AGENT_HANDOFF`, plus your own `X_*` types
 - **Lightweight tasks** — five statuses, assignee, related files and commits. Not an issue tracker
@@ -151,6 +152,22 @@ npm run db:reset       # drop everything and re-migrate (destructive)
 Server integration tests need `TEST_DATABASE_URL` pointing at a **throwaway** database — it is wiped before every run, and the harness refuses any database whose name does not contain `test`.
 
 ## Connecting an Agent
+
+### The quickest path: a tool you already pay for
+
+If you use Claude Code, Codex or Gemini CLI on a **subscription**, you need no API key and no code:
+
+```bash
+agentmesh agent presets                    # what is installed on this machine
+agentmesh agent register "Claude" --provider anthropic --model claude-code -c coding,git
+agentmesh agent run "Claude" --preset claude --workspace /path/to/your/repo
+```
+
+`@claude do X` in the web UI now reaches that tool, running in that directory, on your subscription. It receives the session's structured context — current contracts, decisions, open tasks — rather than a chat log.
+
+The IDE *extension* cannot be connected (it exposes no API); the command-line tool of the same product shares its login and can. Details, other tools, and the two-people-two-subscriptions setup: [docs/SUBSCRIPTION-AGENTS.md](docs/SUBSCRIPTION-AGENTS.md).
+
+### Writing your own
 
 Register an agent and get its token (shown once):
 
@@ -220,8 +237,10 @@ agentmesh session list
 agentmesh session invite --role member
 agentmesh session join <token>
 
+agentmesh agent presets                          # subscription-backed tools found here
 agentmesh agent register "Backend GPT" -c coding,git,backend
-agentmesh agent connect "Backend GPT"
+agentmesh agent run "Backend GPT" --preset codex --workspace ~/code/api
+agentmesh agent connect "Backend GPT"            # just stream activity, no tool
 agentmesh agent list
 
 agentmesh send "@backend-gpt add an endpoint for listing users"
