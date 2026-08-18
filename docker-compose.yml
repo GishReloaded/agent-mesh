@@ -1,0 +1,47 @@
+# The fastest way to run AgentMesh:
+#
+#   docker compose up
+#
+# Then open http://localhost:4000 and create an account.
+# Nothing else needs to be installed - not even Node.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: agentmesh
+      POSTGRES_PASSWORD: agentmesh
+      POSTGRES_DB: agentmesh
+    volumes:
+      - agentmesh-data:/var/lib/postgresql/data
+    # Exposed so `npm run dev` on the host can use this database too.
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U agentmesh -d agentmesh']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  agentmesh:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4000
+      DATABASE_URL: postgres://agentmesh:agentmesh@postgres:5432/agentmesh
+      # Generated per stack. Override it for anything longer-lived than a demo:
+      # a restart with a new secret signs everyone out.
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-0123456789abcdef0123}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:4000}
+      CORS_ORIGINS: ${PUBLIC_URL:-http://localhost:4000}
+      LOG_LEVEL: info
+    ports:
+      - '4000:4000'
+    restart: unless-stopped
+
+volumes:
+  agentmesh-data:

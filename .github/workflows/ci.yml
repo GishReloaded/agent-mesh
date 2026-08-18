@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: agentmesh
+          POSTGRES_PASSWORD: agentmesh
+          POSTGRES_DB: agentmesh_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agentmesh"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://agentmesh:agentmesh@localhost:5432/agentmesh_test
+      TEST_DATABASE_URL: postgres://agentmesh:agentmesh@localhost:5432/agentmesh_test
+      JWT_SECRET: ci-secret-value-that-is-long-enough-0123456789
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `npm ci` from the lockfile is what a fresh clone does.
+      - run: npm ci
+
+      - name: Build all packages
+        run: npm run build
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The one-command path in the README must keep working.
+      - name: Build the image
+        run: docker build -t agentmesh:ci .
