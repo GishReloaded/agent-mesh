@@ -58,18 +58,37 @@ export function currentAccessToken(): string | undefined {
   return accessToken;
 }
 
-/** Exchange the stored refresh token for a fresh access token. */
-export async function refreshAccessToken(): Promise<string | null> {
-  const stored = read();
-  if (!stored) return null;
-  try {
-    const tokens = await new RestClient({ url: stored.serverUrl }).refresh(stored.refreshToken);
-    persist(tokens, stored.serverUrl);
-    return tokens.accessToken;
-  } catch {
-    clearAuth();
-    return null;
-  }
+let refreshInFlight: Promise<string | null> | null = null;
+
+/**
+ * Exchange the stored refresh token for a fresh access token.
+ *
+ * Refresh tokens are single-use: presenting a consumed one is treated as a
+ * leak and revokes the whole family. A page that fires several requests at
+ * once - loading a session fetches its detail, messages, tasks and context in
+ * parallel - would otherwise have every one of them try to refresh with the
+ * same token, and all but the first would look exactly like an attack. So
+ * concurrent callers share one exchange.
+ */
+export function refreshAccessToken(): Promise<string | null> {
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = (async () => {
+    const stored = read();
+    if (!stored) return null;
+    try {
+      const tokens = await new RestClient({ url: stored.serverUrl }).refresh(stored.refreshToken);
+      persist(tokens, stored.serverUrl);
+      return tokens.accessToken;
+    } catch {
+      clearAuth();
+      return null;
+    }
+  })().finally(() => {
+    refreshInFlight = null;
+  });
+
+  return refreshInFlight;
 }
 
 /** A REST client that refreshes and retries once on 401. */

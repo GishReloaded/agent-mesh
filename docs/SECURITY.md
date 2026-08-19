@@ -30,7 +30,7 @@ Login returns the same `401` and takes comparable time whether the account exist
 
 ### Access tokens
 
-HS256 JWTs, issuer `agentmesh`, audience `agentmesh-api`, default lifetime 15 minutes. Verified without a database round trip, which is exactly why they are short-lived: there is no revocation list, and expiry is the revocation mechanism.
+HS256 JWTs, issuer `agentmesh`, audience `agentmesh-api`, default lifetime one hour. Verified without a database round trip, which is exactly why they are short-lived: there is no revocation list, and expiry *is* the revocation mechanism. Signing out, removing a member or disabling an account only takes effect once the token expires, so raising `ACCESS_TOKEN_TTL` to days or weeks buys convenience by giving up revocation for that long. Staying signed in is the refresh token's job.
 
 `JWT_SECRET` is **required** in production. In development an ephemeral secret is generated per process, so tokens simply do not survive a restart.
 
@@ -39,6 +39,8 @@ HS256 JWTs, issuer `agentmesh`, audience `agentmesh-api`, default lifetime 15 mi
 Opaque, 32 random bytes, stored only as a SHA-256 hash, single use.
 
 Rotation with reuse detection: presenting a token that was already exchanged revokes **every** refresh token for that account. A replayed refresh token means the token leaked, and denying only that one request would leave the attacker's copy working.
+
+With one deliberate exception. Two browser tabs cannot coordinate their refreshes, and a page that fires several requests in parallel will race with itself, so a token re-presented within `REFRESH_REUSE_GRACE` seconds of its own rotation (default 20) is treated as a race and served normally. Outside that window the revocation still fires. The alternative — signing people out of their account because their browser did something entirely ordinary — trades a real usability failure for a theoretical gain, since an attacker replaying a token seconds after the victim would have had a working session under any scheme.
 
 ### Agent and invite tokens
 

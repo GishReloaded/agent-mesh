@@ -10,7 +10,7 @@ import {
   type SessionMember,
   type Task,
 } from '@agentmesh/sdk';
-import { api, ensureAccessToken } from './auth.js';
+import { api, ensureAccessToken, refreshAccessToken } from './auth.js';
 
 export interface SessionView {
   session: Session | null;
@@ -94,7 +94,9 @@ class MeshStore {
     // deployment it is a separate gateway - so ask rather than assume.
     const client = new RealtimeClient({
       url: await api().resolveRealtimeUrl(),
-      token,
+      // Resolved per attempt: a socket that drops after the access token has
+      // expired must reconnect with a new one, not the one it started with.
+      token: ({ refresh }) => (refresh ? refreshAccessToken() : ensureAccessToken()),
       clientName: 'agentmesh-web',
     });
     this.client = client;

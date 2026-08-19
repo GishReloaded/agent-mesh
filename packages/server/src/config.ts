@@ -25,12 +25,33 @@ const envSchema = z.object({
 
   /** Signing key for access tokens. Must be set outside development. */
   JWT_SECRET: z.string().min(32).optional(),
-  ACCESS_TOKEN_TTL: z.coerce.number().int().positive().default(15 * 60),
+
+  /**
+   * Access token lifetime, in seconds.
+   *
+   * Access tokens are verified without a database lookup, which is what makes
+   * them fast and also what makes them impossible to revoke early: a signed-out
+   * user, a removed member and a disabled account all keep working until their
+   * token expires. That is the whole cost of raising this. An hour is a
+   * reasonable balance; a month would mean a month of un-revokable access.
+   *
+   * Staying signed in is the refresh token's job, not this one - see
+   * REFRESH_TOKEN_TTL, which defaults to 30 days.
+   */
+  ACCESS_TOKEN_TTL: z.coerce.number().int().positive().default(60 * 60),
   REFRESH_TOKEN_TTL: z.coerce
     .number()
     .int()
     .positive()
     .default(30 * 24 * 60 * 60),
+
+  /**
+   * Seconds during which re-presenting a just-rotated refresh token is treated
+   * as a race rather than a leak. Two browser tabs cannot coordinate their
+   * refreshes, and revoking the account over that is a worse outcome than a
+   * brief window in which a replayed token still works.
+   */
+  REFRESH_REUSE_GRACE: z.coerce.number().int().nonnegative().max(300).default(20),
 
   /** Comma-separated list of allowed browser origins, or `*` in development. */
   CORS_ORIGINS: z.string().default('http://localhost:5173'),
@@ -79,7 +100,13 @@ export interface Config {
   host: string;
   port: number;
   database: { url: string; poolMax: number; ssl: boolean };
-  auth: { jwtSecret: string; accessTokenTtl: number; refreshTokenTtl: number; allowRegistration: boolean };
+  auth: {
+    jwtSecret: string;
+    accessTokenTtl: number;
+    refreshTokenTtl: number;
+    refreshReuseGraceMs: number;
+    allowRegistration: boolean;
+  };
   corsOrigins: string[] | true;
   publicUrl: string;
   /** Absolute path to the built web client, or null when not serving it. */
@@ -152,6 +179,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       jwtSecret: env.JWT_SECRET ?? randomBytes(32).toString('hex'),
       accessTokenTtl: env.ACCESS_TOKEN_TTL,
       refreshTokenTtl: env.REFRESH_TOKEN_TTL,
+      refreshReuseGraceMs: env.REFRESH_REUSE_GRACE * 1000,
       allowRegistration: env.ALLOW_REGISTRATION,
     },
     corsOrigins,

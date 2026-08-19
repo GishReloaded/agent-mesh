@@ -48,7 +48,7 @@ describe('authentication', { skip: databaseAvailable() ? false : skipMessage }, 
     assert.deepEqual(wrongPassword.json(), unknownEmail.json());
   });
 
-  it('rotates refresh tokens and revokes the family when one is replayed', async () => {
+  it('rotates refresh tokens on every use', async () => {
     const user = await createUser(server, 'Carol');
 
     const first = await server.app.inject({
@@ -57,23 +57,87 @@ describe('authentication', { skip: databaseAvailable() ? false : skipMessage }, 
       payload: { refreshToken: user.refreshToken },
     });
     assert.equal(first.statusCode, 200);
-    const rotated = first.json() as { refreshToken: string };
+    const rotated = first.json() as { refreshToken: string; accessToken: string };
     assert.notEqual(rotated.refreshToken, user.refreshToken);
 
-    // Replaying the consumed token is treated as a leak: the whole family dies.
-    const replay = await server.app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/refresh',
-      payload: { refreshToken: user.refreshToken },
-    });
-    assert.equal(replay.statusCode, 401);
-
-    const afterRevocation = await server.app.inject({
+    const again = await server.app.inject({
       method: 'POST',
       url: '/api/v1/auth/refresh',
       payload: { refreshToken: rotated.refreshToken },
     });
-    assert.equal(afterRevocation.statusCode, 401);
+    assert.equal(again.statusCode, 200);
+    assert.notEqual((again.json() as { refreshToken: string }).refreshToken, rotated.refreshToken);
+  });
+
+  it('tolerates two clients refreshing the same token at once', async () => {
+    // A browser loading a session fires several requests in parallel; if the
+    // access token has just expired they all try to refresh together. Treating
+    // the losers of that race as a stolen token used to sign the user out
+    // completely, which is a far worse outcome than the narrow window this
+    // grace period opens.
+    const user = await createUser(server, 'Dana');
+
+    const [first, second] = await Promise.all([
+      server.app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/refresh',
+        payload: { refreshToken: user.refreshToken },
+      }),
+      server.app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/refresh',
+        payload: { refreshToken: user.refreshToken },
+      }),
+    ]);
+
+    assert.equal(first?.statusCode, 200, 'the first refresh must succeed');
+    assert.equal(second?.statusCode, 200, 'a simultaneous refresh must not revoke the account');
+
+    // The account still works afterwards.
+    const stillValid = await server.app.inject({
+      method: 'GET',
+      url: '/api/v1/auth/me',
+      headers: { authorization: `Bearer ${(first?.json() as { accessToken: string }).accessToken}` },
+    });
+    assert.equal(stillValid.statusCode, 200);
+  });
+
+  it('still revokes the family when a token is replayed long after rotation', async () => {
+    const server2 = await startTestServer({
+      auth: {
+        jwtSecret: 'test-secret-value-that-is-long-enough-32',
+        accessTokenTtl: 900,
+        refreshTokenTtl: 3600,
+        // No grace: a replay is a replay.
+        refreshReuseGraceMs: 0,
+        allowRegistration: true,
+      },
+    });
+    try {
+      const user = await createUser(server2, 'Erin');
+      const rotated = await server2.app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/refresh',
+        payload: { refreshToken: user.refreshToken },
+      });
+      assert.equal(rotated.statusCode, 200);
+
+      const replay = await server2.app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/refresh',
+        payload: { refreshToken: user.refreshToken },
+      });
+      assert.equal(replay.statusCode, 401);
+
+      const familyRevoked = await server2.app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/refresh',
+        payload: { refreshToken: (rotated.json() as { refreshToken: string }).refreshToken },
+      });
+      assert.equal(familyRevoked.statusCode, 401, 'a real replay must still revoke the whole family');
+    } finally {
+      await server2.close();
+    }
   });
 
   it('requires a bearer token on protected routes', async () => {

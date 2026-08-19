@@ -29,6 +29,7 @@ export class UserService {
     private readonly accessTokens: AccessTokenService,
     private readonly refreshTtlSeconds: number,
     private readonly registrationOpen: boolean,
+    private readonly reuseGraceMs: number = 20_000,
   ) {}
 
   async register(input: RegisterRequest, userAgent?: string): Promise<AuthTokens> {
@@ -93,16 +94,26 @@ export class UserService {
     if (!row) throw new AgentMeshError(ErrorCode.InvalidToken, 'Refresh token is not valid.');
 
     if (row.revoked_at !== null) {
-      await this.db
-        .updateTable('refresh_tokens')
-        .set({ revoked_at: new Date() })
-        .where('user_id', '=', row.user_id)
-        .where('revoked_at', 'is', null)
-        .execute();
-      throw new AgentMeshError(
-        ErrorCode.InvalidToken,
-        'Refresh token was already used. All sessions for this account have been revoked.',
-      );
+      // Two tabs refreshing at the same moment cannot coordinate, and both
+      // hold the same token. Within a short grace period after a rotation, a
+      // second presentation is a race, not theft - revoking the account over
+      // it would be a worse outcome than the narrow window this opens. Beyond
+      // the window, a replay still means the token leaked.
+      const rotatedMsAgo = Date.now() - new Date(row.revoked_at).getTime();
+      const raceWithAnotherTab = row.replaced_by !== null && rotatedMsAgo <= this.reuseGraceMs;
+
+      if (!raceWithAnotherTab) {
+        await this.db
+          .updateTable('refresh_tokens')
+          .set({ revoked_at: new Date() })
+          .where('user_id', '=', row.user_id)
+          .where('revoked_at', 'is', null)
+          .execute();
+        throw new AgentMeshError(
+          ErrorCode.InvalidToken,
+          'Refresh token was already used. All sessions for this account have been revoked.',
+        );
+      }
     }
 
     if (new Date(row.expires_at).getTime() <= Date.now()) {

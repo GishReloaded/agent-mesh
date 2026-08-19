@@ -40,7 +40,16 @@ export interface RealtimeEvents {
 
 export interface RealtimeOptions {
   url: string;
-  token: string;
+  /**
+   * The credential to present in `hello`.
+   *
+   * A function is resolved on every connection attempt, which is what lets a
+   * browser client hand over a freshly refreshed access token after a drop.
+   * `refresh` is true when the previous attempt was rejected, so the provider
+   * knows a cached credential will not do. Agent tokens never expire, so a
+   * plain string is right for them.
+   */
+  token: string | ((options: { refresh: boolean }) => string | null | Promise<string | null>);
   /** Sessions to subscribe to once connected. Agents may omit this. */
   sessions?: string[];
   /** Injectable for runtimes without a global WebSocket. */
@@ -76,6 +85,8 @@ export class RealtimeClient {
   private readonly subscriptions = new Set<string>();
   private readonly pending = new Map<string, Pending>();
   private reconnectAttempt = 0;
+  /** Guards against looping on a credential the server keeps rejecting. */
+  private unauthorizedRetries = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private closedByUser = false;
   private frameCounter = 0;
@@ -115,7 +126,7 @@ export class RealtimeClient {
         offHello();
         reject(error);
       });
-      this.open();
+      void this.open();
     });
   }
 
@@ -177,7 +188,7 @@ export class RealtimeClient {
 
   // -------------------------------------------------------------------------
 
-  private open(): void {
+  private async open(): Promise<void> {
     const Impl = this.options.WebSocketImpl ?? globalThis.WebSocket;
     if (!Impl) {
       this.events.emit(
@@ -187,6 +198,24 @@ export class RealtimeClient {
       return;
     }
 
+    // Resolved before connecting, so a reconnect after a long drop presents a
+    // current credential rather than the one that expired while we were away.
+    let token: string | null;
+    try {
+      token =
+        typeof this.options.token === 'function'
+          ? await this.options.token({ refresh: this.unauthorizedRetries > 0 })
+          : this.options.token;
+    } catch {
+      token = null;
+    }
+    if (!token) {
+      this.setState('closed');
+      this.events.emit('error', new AgentMeshError(ErrorCode.Unauthorized, 'No credential available to connect.'));
+      return;
+    }
+    if (this.closedByUser) return;
+
     this.setState(this.reconnectAttempt === 0 ? 'connecting' : 'reconnecting');
     const socket = new Impl(this.options.url);
     this.socket = socket;
@@ -195,7 +224,7 @@ export class RealtimeClient {
       // The token goes in the first frame rather than the URL so it never
       // appears in a proxy log or a browser history entry.
       this.send(ClientFrameType.Hello, {
-        token: this.options.token,
+        token,
         client: {
           name: this.options.clientName ?? 'agentmesh-sdk',
           version: this.options.clientVersion ?? '0.1.0',
@@ -224,9 +253,16 @@ export class RealtimeClient {
         this.setState('closed');
         return;
       }
-      // Credential failures are not transient: retrying with the same bad
-      // token would just hammer the server.
       if (event.code === CloseCode.Unauthorized || event.code === CloseCode.TokenRevoked) {
+        // An expired access token looks exactly like a bad one from here. When
+        // the caller can produce a fresh credential, it is worth one more
+        // attempt; when that also fails, the credential really is rejected and
+        // retrying would just hammer the server.
+        if (typeof this.options.token === 'function' && this.unauthorizedRetries === 0) {
+          this.unauthorizedRetries += 1;
+          this.scheduleReconnect();
+          return;
+        }
         this.setState('closed');
         this.events.emit(
           'error',
@@ -244,7 +280,7 @@ export class RealtimeClient {
     const base = Math.min(maxMs, initialMs * factor ** this.reconnectAttempt);
     const delay = base * (1 - jitter + Math.random() * jitter * 2);
     this.reconnectAttempt += 1;
-    this.reconnectTimer = setTimeout(() => this.open(), delay);
+    this.reconnectTimer = setTimeout(() => void this.open(), delay);
   }
 
   private handleFrame(raw: string): void {
@@ -259,6 +295,7 @@ export class RealtimeClient {
     switch (frame.type) {
       case ServerFrameType.HelloOk: {
         this.reconnectAttempt = 0;
+        this.unauthorizedRetries = 0;
         this.setState('connected');
         this.identity = payload.identity as Identity;
         this.events.emit('hello', this.identity);
