@@ -104,7 +104,9 @@ describe('realtime gateway', { skip: databaseAvailable() ? false : skipMessage }
   let sessionId: string;
 
   before(async () => {
-    server = await startTestServer();
+    // A small limit keeps the exchange short; the mechanism under test is the
+    // window, not the number.
+    server = await startTestServer({ agentChainLimit: 3, agentChainWindowMs: 5 * 60 * 1000 });
     alice = await createUser(server, 'Alice');
     const created = await authed(server, alice.accessToken)('POST', '/sessions', { name: 'Realtime Session' });
     sessionId = (created.body as { id: string }).id;
@@ -220,7 +222,8 @@ describe('realtime gateway', { skip: databaseAvailable() ? false : skipMessage }
     const frontend = await TestSocket.open(server.wsUrl);
     await frontend.hello(frontendToken);
 
-    // Three agent-to-agent turns are allowed; the fourth needs a human.
+    // Agents may exchange up to the configured number of messages inside the
+    // window; the next one needs a human to have spoken.
     backend.send('message.send', { sessionId, body: '@frontend-opus login contract is ready' });
     await watcher.waitForEvent('message.created');
 

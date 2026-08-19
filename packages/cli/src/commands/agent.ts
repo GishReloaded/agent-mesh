@@ -136,6 +136,8 @@ export function registerAgentCommands(program: Command): void {
     .option('--queue <count>', 'how many pending mentions to hold', '3')
     .option('--dry-run', 'print the command and prompt instead of running the tool')
     .option('-v, --verbose', 'stream the tool output into this terminal')
+    .option('--log-file <path>', 'where to append the full diagnostic log')
+    .option('--no-log', 'do not write a diagnostic log')
     .action(
       async (
         name: string | undefined,
@@ -151,6 +153,8 @@ export function registerAgentCommands(program: Command): void {
           queue: string;
           dryRun?: boolean;
           verbose?: boolean;
+          logFile?: string;
+          log?: boolean;
         },
       ) => {
         // Commander treats operands after `--` as positionals too, so the first
@@ -214,6 +218,8 @@ export function registerAgentCommands(program: Command): void {
           maxQueue: Number(options.queue),
           dryRun: Boolean(options.dryRun),
           verbose: Boolean(options.verbose),
+          // commander turns --no-log into `log: false`.
+          logFile: options.log === false ? null : (options.logFile ?? undefined),
         });
 
         await runner.start();

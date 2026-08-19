@@ -1,6 +1,7 @@
 import {
   AgentMeshError,
   ErrorCode,
+  randomAvatarColor,
   type AuthTokens,
   type LoginRequest,
   type RegisterRequest,
@@ -11,17 +12,6 @@ import { hashPassword, passwordProblems, verifyPassword } from '../auth/password
 import { type AccessTokenService, TokenPrefix, createOpaqueToken, hashToken } from '../auth/tokens.js';
 import { IdPrefix, newId } from '../ids.js';
 import { toUser } from '../mappers.js';
-
-const AVATAR_COLORS = [
-  '#6366f1',
-  '#ec4899',
-  '#f59e0b',
-  '#10b981',
-  '#3b82f6',
-  '#8b5cf6',
-  '#ef4444',
-  '#14b8a6',
-];
 
 export class UserService {
   constructor(
@@ -54,7 +44,9 @@ export class UserService {
         email,
         password_hash: await hashPassword(input.password),
         display_name: input.displayName.trim(),
-        avatar_color: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)] ?? '#6366f1',
+        // Assigned once, at creation, and never offered for editing: the point
+        // of the colour is that it identifies the person consistently.
+        avatar_color: randomAvatarColor(),
       })
       .returningAll()
       .executeTakeFirstOrThrow();

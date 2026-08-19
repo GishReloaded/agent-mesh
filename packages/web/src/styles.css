@@ -248,13 +248,6 @@ pre {
   color: var(--text-dim);
 }
 
-.kind-agent .name {
-  color: var(--agent);
-}
-
-.kind-user .name {
-  color: var(--human);
-}
 
 /* --- messages ------------------------------------------------------------- */
 
@@ -277,12 +270,23 @@ pre {
 .avatar {
   width: 28px;
   height: 28px;
-  border-radius: 7px;
   display: grid;
   place-items: center;
   font-size: 12px;
   font-weight: 600;
   color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
+
+/* Colour now identifies the individual, so shape carries the human/agent
+   distinction: people are round, agents are square-ish. */
+.avatar-user {
+  border-radius: 50%;
+}
+
+.avatar-agent,
+.avatar-system {
+  border-radius: 7px;
 }
 
 .message .head {
@@ -291,16 +295,10 @@ pre {
   gap: 8px;
 }
 
+/* The colour itself is set per participant from their account; this only
+   governs weight and spacing. */
 .message .author {
   font-weight: 600;
-}
-
-.message.agent .author {
-  color: var(--agent);
-}
-
-.message.user .author {
-  color: var(--human);
 }
 
 .message .time {

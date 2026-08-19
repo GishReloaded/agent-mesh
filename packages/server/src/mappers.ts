@@ -100,6 +100,7 @@ export function toAgent(row: Selectable<AgentsTable>, online: boolean): Agent {
     provider: row.provider,
     model: row.model,
     machineId: row.machine_id,
+    avatarColor: row.avatar_color,
     capabilities: row.capabilities ?? {},
     status: online ? row.status : 'offline',
     autonomy: row.autonomy,

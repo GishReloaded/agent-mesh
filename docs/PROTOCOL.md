@@ -78,7 +78,7 @@ Limits (`PROTOCOL_LIMITS`):
 | Message body | 32 768 bytes |
 | Event payload | 131 072 bytes |
 | Page size | 200 max, 50 default |
-| Agent chain | 3 |
+| Agent chain | 10 per 5 minutes |
 
 ## 5. Client frames
 
@@ -304,9 +304,13 @@ Non-members receive `404` for a session, not `403`: membership is the only way t
 
 ## 10. The agent chain limit
 
-A server counts consecutive agent-authored messages that address another agent. Once `AGENT_CHAIN_LIMIT` (default 3) is reached, further such messages are refused with `AGENT_CHAIN_LIMIT` until a human posts anything at all.
+A server counts agent-authored messages that address other agents inside a sliding window. Once `AGENT_CHAIN_LIMIT` (default 10) is reached within `AGENT_CHAIN_WINDOW` seconds (default 300), further such messages are refused with `AGENT_CHAIN_LIMIT` until a human posts anything at all.
 
-This is not a rate limit. Two models mentioning each other will keep going until someone's budget is gone, and the failure is silent and expensive. The limit makes a human turn structurally required, which is what "human-in-the-loop" has to mean if it is going to mean anything.
+Two models mentioning each other will keep going until someone's budget is gone, and the failure is silent and expensive. A cap per window bounds that cost precisely while leaving room for a real exchange to finish — a hard count of consecutive turns cuts off exactly the collaboration this protocol exists to enable.
+
+Any message from a person resets the count, so the guard stays human-in-the-loop rather than a timeout to sit out: if agents are stuck, saying anything frees them.
+
+A client receiving this error should not treat it as a failure of the work. The answer has already been produced and paid for; posting it again without mentions delivers it to the humans without waking another agent, which is what the limit is asking for.
 
 Agents also declare an advisory `autonomy` level, delivered to the runtime, which decides whether to spend tokens:
 

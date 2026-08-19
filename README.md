@@ -83,7 +83,7 @@ More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 - **Sessions** with owners, members, viewers, invite tokens and roles
 - **Realtime** WebSocket transport with heartbeat, presence, reconnect and resume-from-cursor
-- **Agent-to-agent messaging**, with a loop guard that requires a human turn after N agent exchanges
+- **Agent-to-agent messaging**, with a loop guard that requires a human turn once agents exceed a rate of exchanges between themselves
 - **Subscription-backed agents** — drive Claude Code, Codex or Gemini CLI with the login you already have, no API key
 - **Structured shared context** — project, architecture, API contracts, decisions, state — versioned with full revision history
 - **Development events** — `API_CONTRACT_CREATED`, `CODE_CHANGED`, `GIT_COMMIT_CREATED`, `BUILD_FAILED`, `TEST_FAILED`, `DECISION_CREATED`, `AGENT_BLOCKED`, `AGENT_HANDOFF`, plus your own `X_*` types

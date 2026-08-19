@@ -147,6 +147,34 @@ export const contextKindSchema = z.enum([
  * A mention target inside a message. `@all` broadcasts; otherwise the mention
  * resolves to a participant or an agent by id.
  */
+/**
+ * Colours a participant can be assigned.
+ *
+ * One is picked at random when an account or an agent is created and never
+ * changes, so a person keeps the same colour everywhere and readers learn to
+ * recognise them by it. Every value is also a valid CSS colour keyword, so a
+ * client that does nothing clever still renders something sensible.
+ */
+export const AVATAR_COLORS = [
+  'red',
+  'blue',
+  'green',
+  'skyblue',
+  'violet',
+  'pink',
+  'orange',
+  'yellow',
+  'cyan',
+] as const;
+
+export type AvatarColor = (typeof AVATAR_COLORS)[number];
+export const avatarColorSchema = z.enum(AVATAR_COLORS);
+
+/** Pick a colour for a new participant. */
+export function randomAvatarColor(): AvatarColor {
+  return AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)] as AvatarColor;
+}
+
 export const mentionSchema = z.object({
   type: z.enum(['user', 'agent', 'all']),
   id: idSchema.nullable(),

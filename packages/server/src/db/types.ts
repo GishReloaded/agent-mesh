@@ -68,6 +68,7 @@ export interface AgentsTable {
   provider: Generated<string>;
   model: Generated<string>;
   machine_id: string | null;
+  avatar_color: Generated<string>;
   capabilities: Json<Record<string, boolean>>;
   metadata: Json<Record<string, unknown>>;
   status: Generated<'idle' | 'working' | 'blocked' | 'offline'>;

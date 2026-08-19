@@ -22,6 +22,7 @@ export class MessageService {
     private readonly db: Db,
     private readonly log: EventLog,
     private readonly agentChainLimit: number = PROTOCOL_LIMITS.agentChainLimit,
+    private readonly agentChainWindowMs: number = PROTOCOL_LIMITS.agentChainWindowSeconds * 1000,
   ) {}
 
   /** Everyone who can be addressed with `@` in this session. */
@@ -102,40 +103,58 @@ export class MessageService {
   }
 
   /**
-   * Refuse to extend an agent-to-agent chain that has run too long.
+   * Refuse to extend an agent-to-agent exchange that has run away.
    *
    * Two models mentioning each other will happily keep going until someone's
-   * budget runs out. The server counts how many agent-authored messages
-   * addressed at agents have gone by since the last human turn, and once the
-   * limit is reached it stops accepting them. A human writing anything at all
-   * resets the count, which is the point: this is a human-in-the-loop guard,
-   * not a rate limit.
+   * budget runs out. The server counts agent-authored messages addressed at
+   * agents inside a sliding window, and stops accepting them past the limit.
+   *
+   * A rate over a window rather than a run of consecutive messages: a real
+   * exchange between two agents is worth letting finish, and cutting it off
+   * after three turns punishes the case this project exists for. What has to
+   * be stopped is the unbounded case, and a cap per window does that while
+   * bounding the cost precisely.
+   *
+   * Any message from a person resets the count. That keeps the guard
+   * human-in-the-loop rather than a timeout you have to sit out: if agents are
+   * stuck, saying anything at all frees them.
    */
   private async assertChainAllowed(sessionId: string, mentions: readonly Mention[]): Promise<void> {
     const addressesAgent = mentions.some((mention) => mention.type === 'agent' || mention.type === 'all');
     if (!addressesAgent) return;
 
-    const recent = await this.db
+    const lastHuman = await this.db
       .selectFrom('messages')
-      .select(['author_type', 'mentions'])
+      .select('seq')
       .where('session_id', '=', sessionId)
+      .where('author_type', '=', 'user')
       .orderBy('seq', 'desc')
-      .limit(this.agentChainLimit)
-      .execute();
+      .limit(1)
+      .executeTakeFirst();
 
-    if (recent.length < this.agentChainLimit) return;
+    let query = this.db
+      .selectFrom('messages')
+      .select('mentions')
+      .where('session_id', '=', sessionId)
+      .where('author_type', '=', 'agent')
+      .where('created_at', '>=', new Date(Date.now() - this.agentChainWindowMs));
+    if (lastHuman) query = query.where('seq', '>', lastHuman.seq);
 
-    const unbrokenChain = recent.every((row) => {
-      if (row.author_type !== 'agent') return false;
+    // Bounded read: past the limit the exact count stops mattering.
+    const recent = await query.orderBy('seq', 'desc').limit(this.agentChainLimit + 1).execute();
+
+    const addressed = recent.filter((row) => {
       const rowMentions = Array.isArray(row.mentions) ? (row.mentions as Mention[]) : [];
       return rowMentions.some((mention) => mention.type === 'agent' || mention.type === 'all');
-    });
+    }).length;
 
-    if (unbrokenChain) {
+    if (addressed >= this.agentChainLimit) {
+      const minutes = Math.round(this.agentChainWindowMs / 60_000);
       throw new AgentMeshError(
         ErrorCode.AgentChainLimit,
-        `Agent-to-agent chain limit of ${this.agentChainLimit} reached. A human must respond before agents continue addressing each other.`,
-        { details: { limit: this.agentChainLimit } },
+        `Agents have exchanged ${addressed} messages in the last ${minutes} minute(s) without a human. ` +
+          'Someone needs to say something before they continue addressing each other.',
+        { details: { limit: this.agentChainLimit, windowMs: this.agentChainWindowMs, observed: addressed } },
       );
     }
   }

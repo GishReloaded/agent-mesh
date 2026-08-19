@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { connect, type AgentMeshSession, type Message } from '@agentmesh/sdk';
 import { actorLabel, clock, info, style, success, warn } from '../output.js';
+import { RunLog } from './log.js';
 import { buildBrief, buildTurn } from './prompt.js';
 import { getPreset, substitute, type AgentPreset } from './presets.js';
 import { runProcess } from './spawn.js';
@@ -16,6 +17,8 @@ export interface RunnerOptions {
   /** Print the command and prompt instead of running the tool. */
   dryRun: boolean;
   verbose: boolean;
+  /** Where to append the diagnostic log; `null` disables it. */
+  logFile?: string | null;
 }
 
 interface Job {
@@ -41,6 +44,7 @@ export class AgentRunner {
   private started = false;
   private hasRunOnce = false;
   private consecutiveFailures = 0;
+  private log = RunLog.open(null, '', '');
   /** Pins one conversation in tools that can resume, so turns build on each other. */
   private readonly toolSessionId = randomUUID();
   private stopping = false;
@@ -56,9 +60,12 @@ export class AgentRunner {
     this.mesh = mesh;
 
     const name = mesh.identity?.kind === 'agent' ? mesh.identity.name : 'unknown';
+    this.log = RunLog.open(this.options.logFile, mesh.sessionId, name);
+
     success(`Connected as ${style.bold(name)} to session ${mesh.sessionId}`);
     info(`  tool:      ${this.options.preset.label} (${this.options.preset.command})`);
     info(`  workspace: ${this.options.workspace}`);
+    info(`  log:       ${this.log.path ?? 'disabled'}`);
     if (this.options.dryRun) {
       warn('DRY RUN: mentions will be printed here and never answered. Remove --dry-run to reply for real.');
     }
@@ -67,9 +74,14 @@ export class AgentRunner {
     await mesh.setStatus('idle').catch(() => undefined);
 
     mesh.on('state', (state) => {
+      this.log.event(`connection ${state}`);
       if (state === 'reconnecting') warn('connection lost, reconnecting...');
       if (state === 'connected' && this.started) info(style.dim('[reconnected]'));
       this.started = true;
+    });
+
+    mesh.on('error', (error) => {
+      this.log.event('protocol error', { code: error.code, message: error.message });
     });
 
     // Echo the room so the terminal is a usable transcript of what the agent sees.
@@ -152,6 +164,10 @@ export class AgentRunner {
 
     await mesh.setStatus('working', `handling a request from ${message.author.name ?? 'someone'}`);
     info(style.dim(`[running ${preset.command}...]`));
+    this.log.event('mention received', {
+      from: message.author.name,
+      body: message.body.slice(0, 200),
+    });
     const startedAt = Date.now();
 
     const result = await runProcess({
@@ -165,6 +181,22 @@ export class AgentRunner {
 
     this.hasRunOnce = true;
     const seconds = Math.round((Date.now() - startedAt) / 1000);
+
+    // Written before any branch below: whatever happens next, the evidence for
+    // why it happened is already on disk.
+    this.log.invocation({
+      command: preset.command,
+      args,
+      cwd: workspace,
+      promptVia: preset.promptVia,
+      prompt,
+      stdout: result.stdout,
+      stderr: result.stderr,
+      exitCode: result.code,
+      timedOut: result.timedOut,
+      durationMs: Date.now() - startedAt,
+      requestedBy: message.author.name ?? 'unknown',
+    });
 
     if (result.timedOut) {
       await this.reportFailure(

@@ -33,9 +33,14 @@ export const PROTOCOL_LIMITS = {
   /** Default page size when the caller does not ask for one. */
   defaultPageSize: 50,
   /**
-   * Maximum number of consecutive agent-authored messages that may address
-   * another agent without a human turn in between. Guards against two models
-   * talking each other into an infinite loop.
+   * How many agent-authored messages may address other agents within
+   * `agentChainWindowSeconds`, before a human has to take a turn.
+   *
+   * Guards against two models talking each other into an infinite loop while
+   * still leaving room for a real exchange: a rate over a window allows a
+   * genuine back-and-forth to finish, where a hard consecutive count cuts off
+   * conversations that were going somewhere.
    */
-  agentChainLimit: 3,
+  agentChainLimit: 10,
+  agentChainWindowSeconds: 300,
 } as const;

@@ -1,14 +1,17 @@
 import { mentionsActor, type Event as MeshEvent, type Identity, type Message } from '@agentmesh/sdk';
 import { useEffect, useRef } from 'react';
+import { participantColor } from '../lib/colors.js';
 import { Avatar } from './Presence.js';
 
 function time(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function colorFor(message: Message): string {
-  return message.author.type === 'agent' ? '#7c3aed' : '#0284c7';
-}
+/**
+ * A message carries only who wrote it, not what they look like. Colours come
+ * from the session's participant list, which the client already has.
+ */
+export type ColorLookup = (author: Message['author']) => string | null;
 
 function isAddressedTo(message: Message, identity: Identity | null): boolean {
   if (!identity) return false;
@@ -39,12 +42,14 @@ export function MessageList({
   identity,
   hasMore,
   onLoadMore,
+  colorOf,
 }: {
   messages: Message[];
   events: MeshEvent[];
   identity: Identity | null;
   hasMore: boolean;
   onLoadMore: () => void;
+  colorOf: ColorLookup;
 }) {
   const bottom = useRef<HTMLDivElement>(null);
   const container = useRef<HTMLDivElement>(null);
@@ -83,7 +88,12 @@ export function MessageList({
 
       {merged.map((item) =>
         'message' in item ? (
-          <MessageRow key={item.message.id} message={item.message} mentioned={isAddressedTo(item.message, identity)} />
+          <MessageRow
+            key={item.message.id}
+            message={item.message}
+            mentioned={isAddressedTo(item.message, identity)}
+            color={colorOf(item.message.author)}
+          />
         ) : (
           <EventRow key={item.event.id} event={item.event} />
         ),
@@ -93,13 +103,28 @@ export function MessageList({
   );
 }
 
-function MessageRow({ message, mentioned }: { message: Message; mentioned: boolean }) {
+function MessageRow({
+  message,
+  mentioned,
+  color,
+}: {
+  message: Message;
+  mentioned: boolean;
+  color: string | null;
+}) {
+  const palette = participantColor(color);
   return (
     <div className={`message ${message.author.type}${mentioned ? ' mentioned' : ''}`}>
-      <Avatar name={message.author.name ?? '?'} color={colorFor(message)} />
+      <Avatar
+        name={message.author.name ?? '?'}
+        color={color ?? ''}
+        kind={message.author.type as 'user' | 'agent' | 'system'}
+      />
       <div>
         <div className="head">
-          <span className="author">{message.author.name ?? 'unknown'}</span>
+          <span className="author" style={{ color: palette.text }}>
+            {message.author.name ?? 'unknown'}
+          </span>
           {message.author.type === 'agent' && <span className="badge">agent</span>}
           <span className="time">{time(message.createdAt)}</span>
         </div>

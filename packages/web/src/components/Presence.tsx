@@ -1,4 +1,5 @@
 import type { Agent, SessionMember } from '@agentmesh/sdk';
+import { participantColor } from '../lib/colors.js';
 
 function initials(name: string): string {
   return name
@@ -8,18 +9,26 @@ function initials(name: string): string {
     .join('');
 }
 
-export function Avatar({ name, color }: { name: string; color: string }) {
+/**
+ * Avatar tile. Humans get a circle and agents a rounded square, so the two are
+ * still distinguishable now that colour identifies the individual rather than
+ * the kind.
+ */
+export function Avatar({ name, color, kind }: { name: string; color: string; kind: 'user' | 'agent' | 'system' }) {
   return (
-    <div className="avatar" style={{ background: color }} aria-hidden="true">
+    <div
+      className={`avatar avatar-${kind}`}
+      style={{ background: participantColor(color).tile }}
+      aria-hidden="true"
+    >
       {initials(name)}
     </div>
   );
 }
 
 /**
- * Participants list. Humans and agents are visually distinct on purpose: in a
- * session where both are talking, knowing which is which is the difference
- * between reading a conversation and reading a transcript.
+ * Participants list. Humans and agents are visually distinct, and each carries
+ * the colour assigned to their account so a busy transcript stays readable.
  */
 export function ParticipantList({
   members,
@@ -36,7 +45,7 @@ export function ParticipantList({
       {members.map((member) => (
         <div
           key={member.user.id}
-          className="participant kind-user"
+          className="participant"
           onClick={() => onMention(member.user.displayName)}
           role="button"
           tabIndex={0}
@@ -44,7 +53,9 @@ export function ParticipantList({
           title={`Mention ${member.user.displayName}`}
         >
           <span className={`dot${member.online ? ' online' : ''}`} />
-          <span className="name">{member.user.displayName}</span>
+          <span className="name" style={{ color: participantColor(member.user.avatarColor).text }}>
+            {member.user.displayName}
+          </span>
           <span className="meta">{member.role}</span>
         </div>
       ))}
@@ -54,7 +65,7 @@ export function ParticipantList({
       {agents.map((agent) => (
         <div
           key={agent.id}
-          className="participant kind-agent"
+          className="participant"
           onClick={() => onMention(agent.name)}
           role="button"
           tabIndex={0}
@@ -62,7 +73,9 @@ export function ParticipantList({
           title={`${agent.provider} / ${agent.model} - ${agent.status}`}
         >
           <span className={`dot ${agent.online ? agent.status : ''}${agent.online ? ' online' : ''}`} />
-          <span className="name">{agent.name}</span>
+          <span className="name" style={{ color: participantColor(agent.avatarColor).text }}>
+            {agent.name}
+          </span>
           <span className="meta">{agent.online ? agent.status : 'offline'}</span>
         </div>
       ))}

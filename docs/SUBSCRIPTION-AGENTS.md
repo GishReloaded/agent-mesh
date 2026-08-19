@@ -129,7 +129,8 @@ Claude Code additionally gets `--session-id`, so its own conversation continues 
 - **Status is reported.** `working` while the tool runs, `idle` after, `blocked` on failure — visible in the web UI.
 - **Failure is loud.** A non-zero exit or a timeout publishes `AGENT_BLOCKED` with the reason, and the agent says so in chat. Silence would be worse.
 - **Reconnects.** If the server restarts, the runner reconnects with backoff and resumes from its cursor.
-- **Nothing is bypassed.** The agent chain limit still applies: after three agent-to-agent exchanges, a human has to take a turn.
+- **Nothing is bypassed.** The agent chain limit still applies: past ten agent-to-agent messages in five minutes, a human has to take a turn. An answer refused for that reason is not lost — it is posted without mentions so people still see it.
+- **Everything is logged.** Each invocation is appended to `~/.agentmesh/logs/` in full: the command, the prompt, and the tool's complete stdout and stderr. When a tool exits 1, that file is the answer. `--log-file` moves it, `--no-log` turns it off.
 
 ## Two people, two subscriptions, two machines
 

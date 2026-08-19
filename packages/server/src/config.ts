@@ -86,10 +86,12 @@ const envSchema = z.object({
   WS_RATE_LIMIT: z.coerce.number().int().positive().default(20),
 
   /**
-   * How many agent-authored messages may address other agents in a row before
-   * the server requires a human turn. See docs/PROTOCOL.md.
+   * How many agent-authored messages may address other agents within
+   * AGENT_CHAIN_WINDOW seconds before the server requires a human turn.
+   * Any message from a person resets the count. See docs/PROTOCOL.md.
    */
-  AGENT_CHAIN_LIMIT: z.coerce.number().int().positive().max(50).default(3),
+  AGENT_CHAIN_LIMIT: z.coerce.number().int().positive().max(500).default(10),
+  AGENT_CHAIN_WINDOW: z.coerce.number().int().positive().max(86_400).default(300),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -116,6 +118,7 @@ export interface Config {
   logLevel: Env['LOG_LEVEL'];
   rateLimit: { max: number; window: string; wsFramesPerSecond: number };
   agentChainLimit: number;
+  agentChainWindowMs: number;
 }
 
 /**
@@ -189,5 +192,6 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     logLevel: env.LOG_LEVEL,
     rateLimit: { max: env.RATE_LIMIT_MAX, window: env.RATE_LIMIT_WINDOW, wsFramesPerSecond: env.WS_RATE_LIMIT },
     agentChainLimit: env.AGENT_CHAIN_LIMIT,
+    agentChainWindowMs: env.AGENT_CHAIN_WINDOW * 1000,
   };
 }

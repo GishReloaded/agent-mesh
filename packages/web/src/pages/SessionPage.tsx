@@ -1,5 +1,5 @@
 import type { SearchResponse, Task } from '@agentmesh/sdk';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Composer, type ComposerHandle } from '../components/Composer.js';
 import { ContextPanel } from '../components/ContextPanel.js';
@@ -24,6 +24,15 @@ export function SessionPage() {
 
   const view = state.view;
   const readOnly = view.session === null || view.session.archivedAt !== null;
+
+  // Message authors carry only an id; their colour lives on the participant
+  // list, which is already in memory and updates as people join.
+  const colorOf = useMemo(() => {
+    const byId = new Map<string, string>();
+    for (const member of view.members) byId.set(member.user.id, member.user.avatarColor);
+    for (const agent of view.agents) byId.set(agent.id, agent.avatarColor);
+    return (author: { id: string | null }) => (author.id ? (byId.get(author.id) ?? null) : null);
+  }, [view.members, view.agents]);
 
   const runSearch = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -126,6 +135,7 @@ export function SessionPage() {
             identity={state.identity}
             hasMore={view.hasMoreMessages}
             onLoadMore={() => void store.loadOlderMessages()}
+            colorOf={colorOf}
           />
           {state.typing.length > 0 && (
             <div style={{ padding: '0 16px 6px', color: 'var(--text-dim)', fontSize: 12 }}>

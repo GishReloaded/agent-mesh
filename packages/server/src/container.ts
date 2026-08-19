@@ -75,7 +75,7 @@ export function createServices(config: Config, overrides: ServiceOverrides = {})
     sessions,
     invites: new InviteService(db.db, sessions, config.publicUrl),
     agents: new AgentService(db.db, log, registry),
-    messages: new MessageService(db.db, log, config.agentChainLimit),
+    messages: new MessageService(db.db, log, config.agentChainLimit, config.agentChainWindowMs),
     tasks: new TaskService(db.db, log),
     context: new ContextService(db.db, log),
     devEvents: new DevEventService(log),

@@ -67,6 +67,8 @@ export const agentSchema = z.object({
   model: z.string().max(120),
   /** Stable identifier of the machine the agent runs on. */
   machineId: z.string().max(120).nullable(),
+  /** Assigned at registration, never changes. See AVATAR_COLORS. */
+  avatarColor: z.string().max(16),
   capabilities: capabilitiesSchema,
   status: agentStatusSchema,
   autonomy: agentAutonomySchema,
