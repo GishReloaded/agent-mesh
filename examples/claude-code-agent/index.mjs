@@ -34,6 +34,15 @@ if (!token) {
 const mesh = await connect({ url, token, clientName: 'claude-code-agent' });
 console.log(`connected to ${mesh.sessionId} as ${mesh.identity?.name}, workspace ${workspace}`);
 
+/** "Backend GPT" -> "backend-gpt", the form mentions take in a message. */
+function handleOf(name) {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 async function git(...args) {
   try {
     const { stdout } = await run('git', args, { cwd: workspace });
@@ -64,7 +73,12 @@ async function reportGitState() {
 }
 
 mesh.onMention(async (message) => {
-  const instruction = message.body.replace(/@[a-zA-Z0-9._-]+/g, '').trim();
+  // Strip only this agent's own handle. Removing every mention would gut the
+  // instruction: "@claude say hello to @gpt" must not become "say hello to".
+  const self = mesh.identity?.kind === 'agent' ? handleOf(mesh.identity.name) : null;
+  const instruction = (
+    self ? message.body.replace(new RegExp(`(^|\\s)@${self}(?![a-z0-9._-])[,:]?\\s*`, 'gi'), '$1') : message.body
+  ).trim();
   if (!instruction) return;
 
   console.log(`<- ${message.author.name}: ${instruction}`);

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { PRESETS, getPreset, substitute } from '../src/agent-runtime/presets.js';
+import { stripSelfMention } from '../src/agent-runtime/prompt.js';
 import { prepareCommand, quoteForCmd, resolveCommand, runProcess } from '../src/agent-runtime/spawn.js';
 
 describe('agent presets', () => {
@@ -45,6 +46,38 @@ describe('command resolution', () => {
 
   it('returns the bare name when nothing matches, so the error stays readable', () => {
     assert.equal(resolveCommand('definitely-not-installed-xyz'), 'definitely-not-installed-xyz');
+  });
+});
+
+describe('building the instruction', () => {
+  it('removes only the agent being addressed', () => {
+    // "@claude say hello to @gpt" must not become "say hello to". Stripping
+    // every mention destroys the object of the sentence, and the agent has to
+    // ask what it was told to do.
+    assert.equal(
+      stripSelfMention('@claude поздоровайся с @gpt', 'Claude'),
+      'поздоровайся с @gpt',
+    );
+  });
+
+  it('handles the handle form of a multi-word name', () => {
+    assert.equal(
+      stripSelfMention('@backend-gpt ship it', 'Backend GPT'),
+      'ship it',
+    );
+  });
+
+  it('removes the mention wherever it appears, with trailing punctuation', () => {
+    assert.equal(stripSelfMention('hey @claude, look at @gpt', 'Claude'), 'hey look at @gpt');
+  });
+
+  it('leaves the message alone when the agent is not named', () => {
+    assert.equal(stripSelfMention('@all ship it', 'Claude'), '@all ship it');
+    assert.equal(stripSelfMention('@claude ship it', undefined), '@claude ship it');
+  });
+
+  it('does not strip a longer handle that merely starts the same', () => {
+    assert.equal(stripSelfMention('@claude-two ship it', 'Claude'), '@claude-two ship it');
   });
 });
 

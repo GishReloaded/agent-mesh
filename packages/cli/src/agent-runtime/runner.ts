@@ -122,7 +122,8 @@ export class AgentRunner {
     // re-sending it every turn would waste the context window it already has.
     const brief = first ? await buildBrief(mesh) : '';
     const recent = await mesh.getMessages(undefined, 10).then((page) => page.items).catch(() => []);
-    const prompt = [brief, buildTurn(message, recent)].filter(Boolean).join('\n\n---\n\n');
+    const self = mesh.identity?.kind === 'agent' ? mesh.identity.name : undefined;
+    const prompt = [brief, buildTurn(message, recent, self)].filter(Boolean).join('\n\n---\n\n');
 
     const argsTemplate = first ? preset.args : (preset.continueArgs ?? preset.args);
     const args = substitute(argsTemplate, {

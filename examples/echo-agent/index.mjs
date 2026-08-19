@@ -32,7 +32,12 @@ mesh.onMention(async (message) => {
   console.log(`<- ${message.author.name}: ${message.body}`);
 
   await mesh.setStatus('working');
-  const answer = message.body.replace(/@[a-zA-Z0-9._-]+/g, '').trim();
+  // Only this agent's own handle is removed; other mentions are part of what
+  // was said, not an envelope around it.
+  const self = mesh.identity?.kind === 'agent' ? mesh.identity.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : null;
+  const answer = (
+    self ? message.body.replace(new RegExp(`(^|\\s)@${self}(?![a-z0-9._-])[,:]?\\s*`, 'gi'), '$1') : message.body
+  ).trim();
   await mesh.reply(message, `echo: ${answer || '(nothing to echo)'}`);
   await mesh.setStatus('idle');
 });

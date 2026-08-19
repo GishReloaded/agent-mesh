@@ -54,9 +54,15 @@ export async function buildBrief(mesh: AgentMeshSession): Promise<string> {
   return truncate(sections.join('\n'), MAX_CONTEXT_CHARS);
 }
 
-/** The instruction turn: who asked, what they asked, and recent chat for flow. */
-export function buildTurn(message: Message, recent: Message[]): string {
-  const instruction = message.body.replace(/@[a-zA-Z0-9._-]+/g, '').trim();
+/**
+ * The instruction turn: who asked, what they asked, and recent chat for flow.
+ *
+ * Only the mention that addresses *this* agent is removed. Every other mention
+ * stays, because it is usually part of the sentence rather than an envelope -
+ * "@claude say hello to @gpt" means nothing once @gpt is stripped out.
+ */
+export function buildTurn(message: Message, recent: Message[], selfName?: string): string {
+  const instruction = stripSelfMention(message.body, selfName).trim();
 
   const transcript = recent
     .filter((item) => item.id !== message.id)
@@ -71,6 +77,28 @@ export function buildTurn(message: Message, recent: Message[]): string {
   ]
     .filter(Boolean)
     .join('\n');
+}
+
+/**
+ * Remove the agent's own handle from a message, wherever it appears.
+ *
+ * Kept deliberately narrow: an unknown `@name` is left alone, since guessing
+ * which mentions are addressing and which are content is how the instruction
+ * loses its object.
+ */
+export function stripSelfMention(body: string, selfName?: string): string {
+  if (!selfName) return body;
+  const self = handle(selfName).slice(1);
+  if (!self) return body;
+
+  // The lookahead matters: `\b` would also match inside `@claude-two`, which
+  // is a different participant entirely.
+  const pattern = new RegExp(`(^|\\s)@${escapeRegExp(self)}(?![a-z0-9._-])[,:]?\\s*`, 'gi');
+  return body.replace(pattern, '$1').replace(/[^\S\n]{2,}/g, ' ').trim();
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function identityName(mesh: AgentMeshSession): string {
