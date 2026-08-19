@@ -78,6 +78,21 @@ export class AgentMeshSession {
   }
 
   /**
+   * Post without addressing anyone: the message is delivered to the session but
+   * wakes no agent. Useful for status and for answering another agent without
+   * pulling it back into the exchange.
+   */
+  async sendUnaddressed(body: string, options: { parentId?: string } = {}): Promise<void> {
+    const handles = this.agents.map((agent) => slug(agent.name)).filter(Boolean);
+    let text = body;
+    for (const handle of [...handles, 'all']) {
+      const escaped = handle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      text = text.replace(new RegExp(`(^|\\s)@${escaped}(?![a-z0-9._-])[,:]?\\s*`, 'gi'), '$1');
+    }
+    await this.realtime.sendMessage(this.sessionId, text.replace(/[^\S\n]{2,}/g, ' ').trim(), options);
+  }
+
+  /**
    * Reply to a message, addressing its author by mention.
    *
    * The mention is only added when the answer does not already carry one: a

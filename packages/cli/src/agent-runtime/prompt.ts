@@ -28,7 +28,11 @@ export async function buildBrief(mesh: AgentMeshSession): Promise<string> {
     '',
     'Rules for this session:',
     '- Answer concisely. Your reply is posted verbatim into a team chat.',
-    '- To address someone, mention them as @their-handle. @all broadcasts.',
+    '- A mention wakes that participant and spends their budget. Mention someone',
+    '  only when you need them to do something. Never mention another agent just',
+    '  to acknowledge, greet or agree - that starts an exchange neither of you',
+    '  can stop. Refer to them by name without @ when you only mean to mention them.',
+    '- @all wakes every agent. Use it only for something everyone must act on.',
     '- If you change or decide something the others must know, say so explicitly.',
     '- If you cannot proceed, say what you are blocked on rather than guessing.',
   ];

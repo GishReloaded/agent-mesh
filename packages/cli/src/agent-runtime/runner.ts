@@ -258,7 +258,17 @@ export class AgentRunner {
     if (!mesh) return;
 
     try {
-      await mesh.reply(message, answer);
+      if (message.author.type === 'agent') {
+        // Answering another agent without addressing it back. The courtesy
+        // prefix is what turns "hello" into a permanent ping-pong: it wakes the
+        // other agent, which replies, which wakes this one. The other agent
+        // receives every message in the session anyway, so it will see this
+        // answer - it just will not be dragged into acting on it. A mention the
+        // model wrote deliberately is left alone, so a real handoff still works.
+        await mesh.sendMessage(answer, { parentId: message.id });
+      } else {
+        await mesh.reply(message, answer);
+      }
       return;
     } catch (error) {
       if ((error as { code?: string }).code !== 'AGENT_CHAIN_LIMIT') throw error;
