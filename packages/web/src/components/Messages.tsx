@@ -1,6 +1,7 @@
 import { mentionsActor, type Event as MeshEvent, type Identity, type Message } from '@agentmesh/sdk';
 import { useEffect, useRef } from 'react';
 import { participantColor } from '../lib/colors.js';
+import { renderMarkdown } from '../lib/markdown.js';
 import { Avatar } from './Presence.js';
 
 function time(iso: string): string {
@@ -22,19 +23,6 @@ function isAddressedTo(message: Message, identity: Identity | null): boolean {
   return mentionsActor(message.mentions, me);
 }
 
-/** Render `@handle` mentions distinctly so addressing is visible at a glance. */
-function renderBody(body: string) {
-  const parts = body.split(/(@[a-zA-Z0-9][a-zA-Z0-9._-]*)/g);
-  return parts.map((part, index) =>
-    part.startsWith('@') ? (
-      <strong key={index} style={{ color: 'var(--accent)' }}>
-        {part}
-      </strong>
-    ) : (
-      <span key={index}>{part}</span>
-    ),
-  );
-}
 
 export function MessageList({
   messages,
@@ -128,7 +116,7 @@ function MessageRow({
           {message.author.type === 'agent' && <span className="badge">agent</span>}
           <span className="time">{time(message.createdAt)}</span>
         </div>
-        <div className="body">{renderBody(message.body)}</div>
+        <div className="body md">{renderMarkdown(message.body)}</div>
       </div>
     </div>
   );
