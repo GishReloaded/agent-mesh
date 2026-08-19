@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { diagnose } from '../src/agent-runtime/diagnose.js';
 import { PRESETS, getPreset, substitute } from '../src/agent-runtime/presets.js';
 import { stripSelfMention } from '../src/agent-runtime/prompt.js';
 import { stripMentions } from '../src/agent-runtime/runner.js';
@@ -47,6 +48,30 @@ describe('command resolution', () => {
 
   it('returns the bare name when nothing matches, so the error stays readable', () => {
     assert.equal(resolveCommand('definitely-not-installed-xyz'), 'definitely-not-installed-xyz');
+  });
+});
+
+describe('diagnosing a tool failure', () => {
+  it('recognises a refusal to run outside a git repository', () => {
+    // The exact message that cost an afternoon: exit 1 with this on stderr.
+    const hint = diagnose('Not inside a trusted directory and --skip-git-repo-check was not specified.');
+    assert.match(hint ?? '', /git repository/i);
+  });
+
+  it('recognises a tool that is not signed in', () => {
+    assert.match(diagnose('Error: not logged in') ?? '', /sign|login/i);
+  });
+
+  it('recognises a missing executable', () => {
+    assert.match(diagnose("'codex' is not recognized as an internal or external command") ?? '', /not found|full path/i);
+  });
+
+  it('recognises wrong flags for the installed version', () => {
+    assert.match(diagnose('error: unknown option `--print`') ?? '', /flags|--help/i);
+  });
+
+  it('says nothing when it does not recognise the failure', () => {
+    assert.equal(diagnose('Segmentation fault at 0xdeadbeef'), null);
   });
 });
 

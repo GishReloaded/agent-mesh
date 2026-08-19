@@ -54,7 +54,9 @@ const CODEX: AgentPreset = {
   promptVia: 'arg',
   defaultProvider: 'openai',
   defaultModel: 'codex',
-  notes: 'Uses a ChatGPT subscription via "Sign in with ChatGPT". Verify the flags for your version with: codex --help',
+  notes:
+    'Uses a ChatGPT subscription via "Sign in with ChatGPT". Requires the workspace to be a git repository; ' +
+    'add --skip-git-repo-check to the command to override. Verify the flags for your version with: codex --help',
 };
 
 const GEMINI: AgentPreset = {

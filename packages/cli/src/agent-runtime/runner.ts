@@ -1,6 +1,9 @@
 import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { connect, type AgentMeshSession, type Message } from '@agentmesh/sdk';
 import { actorLabel, clock, info, style, success, warn } from '../output.js';
+import { diagnose } from './diagnose.js';
 import { RunLog } from './log.js';
 import { buildBrief, buildTurn } from './prompt.js';
 import { getPreset, substitute, type AgentPreset } from './presets.js';
@@ -69,6 +72,7 @@ export class AgentRunner {
     if (this.options.dryRun) {
       warn('DRY RUN: mentions will be printed here and never answered. Remove --dry-run to reply for real.');
     }
+    this.checkWorkspace();
     info(style.dim('  Waiting for mentions. Press Ctrl+C to disconnect.\n'));
 
     await mesh.setStatus('idle').catch(() => undefined);
@@ -91,6 +95,26 @@ export class AgentRunner {
     });
 
     mesh.onMention((message) => this.enqueue(message));
+  }
+
+  /**
+   * Warn about a workspace the tool is likely to refuse, at startup rather
+   * than on the first mention. Coding CLIs generally decline to touch a
+   * directory that is not a repository, and finding that out only when someone
+   * is waiting for an answer wastes everybody's time.
+   */
+  private checkWorkspace(): void {
+    const workspace = this.options.workspace;
+    if (!existsSync(workspace)) {
+      warn(`workspace does not exist: ${workspace}`);
+      this.log.event('workspace missing', { workspace });
+      return;
+    }
+    if (!existsSync(join(workspace, '.git'))) {
+      warn(`${workspace} is not a git repository.`);
+      warn('Most coding tools refuse to run outside one, and you would have no way to review or revert their edits.');
+      this.log.event('workspace is not a git repository', { workspace });
+    }
   }
 
   private enqueue(message: Message): void {
@@ -272,10 +296,24 @@ export class AgentRunner {
       return;
     }
 
+    // The most useful line of stderr is rarely the first one, so a recognised
+    // failure is reported as the fix rather than as the symptom.
+    const hint = diagnose(detail);
     const firstLine = detail.split('\n').find((line) => line.trim().length > 0) ?? '';
     const summary = firstLine.length > 300 ? `${firstLine.slice(0, 300)}...` : firstLine;
+
+    if (hint) warn(hint);
     await mesh
-      ?.sendMessage(`I could not run my local tool. ${reason}${summary ? `\n${summary}` : ''}`)
+      ?.sendMessage(
+        [
+          `I could not run my local tool. ${reason}`,
+          summary,
+          hint,
+          this.log.path ? `Full output: ${this.log.path}` : null,
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      )
       .catch(() => undefined);
   }
 
