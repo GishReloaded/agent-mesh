@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { PRESETS, getPreset, substitute } from '../src/agent-runtime/presets.js';
 import { stripSelfMention } from '../src/agent-runtime/prompt.js';
+import { stripMentions } from '../src/agent-runtime/runner.js';
 import { prepareCommand, quoteForCmd, resolveCommand, runProcess } from '../src/agent-runtime/spawn.js';
 
 describe('agent presets', () => {
@@ -78,6 +79,32 @@ describe('building the instruction', () => {
 
   it('does not strip a longer handle that merely starts the same', () => {
     assert.equal(stripSelfMention('@claude-two ship it', 'Claude'), '@claude-two ship it');
+  });
+});
+
+describe('posting past the chain limit', () => {
+  it('removes agent mentions but keeps the answer', () => {
+    // When the server refuses to extend an agent-to-agent exchange, the answer
+    // is still worth posting - it just must not wake another agent.
+    assert.equal(
+      stripMentions('@gpt exit 1 is a generic code, show me the log', ['gpt', 'claude']),
+      'exit 1 is a generic code, show me the log',
+    );
+  });
+
+  it('removes @all, which addresses agents too', () => {
+    assert.equal(stripMentions('@all the contract changed', ['gpt']), 'the contract changed');
+  });
+
+  it('leaves mentions of people alone', () => {
+    assert.equal(
+      stripMentions('@gish-reloaded done, @gpt was wrong', ['gpt']),
+      '@gish-reloaded done, was wrong',
+    );
+  });
+
+  it('leaves an answer without mentions untouched', () => {
+    assert.equal(stripMentions('just an answer', ['gpt']), 'just an answer');
   });
 });
 

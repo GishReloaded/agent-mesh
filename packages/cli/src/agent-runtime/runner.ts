@@ -183,8 +183,34 @@ export class AgentRunner {
 
     this.consecutiveFailures = 0;
     info(style.dim(`[done in ${seconds}s, ${answer.length} chars]`));
-    await mesh.reply(message, truncateForChat(answer));
+    await this.postAnswer(message, truncateForChat(answer));
     await mesh.setStatus('idle');
+  }
+
+  /**
+   * Post the tool's answer.
+   *
+   * The server refuses a message that would extend an agent-to-agent exchange
+   * past the chain limit. That refusal is about *routing*, not about the
+   * answer: the model has already run and the work is paid for. So the reply
+   * is posted again with the agent mentions taken out - it lands in the
+   * session for the humans, and wakes nobody, which is exactly what the limit
+   * is asking for.
+   */
+  private async postAnswer(message: Message, answer: string): Promise<void> {
+    const mesh = this.mesh;
+    if (!mesh) return;
+
+    try {
+      await mesh.reply(message, answer);
+      return;
+    } catch (error) {
+      if ((error as { code?: string }).code !== 'AGENT_CHAIN_LIMIT') throw error;
+    }
+
+    warn('agent-to-agent chain limit reached - posting without mentions so a human can pick it up');
+    const handles = mesh.agents.map((agent) => handleOf(agent.name)).filter(Boolean);
+    await mesh.sendMessage(stripMentions(answer, handles));
   }
 
   /**
@@ -238,6 +264,20 @@ function truncateForChat(text: string): string {
   const limit = 30_000;
   if (text.length <= limit) return text;
   return `${text.slice(0, limit)}\n\n... (truncated; full output is in the agent's terminal)`;
+}
+
+/**
+ * Remove mentions that would route the message to another agent, leaving the
+ * text otherwise intact. `@all` goes too: it addresses agents as well.
+ */
+export function stripMentions(body: string, handles: readonly string[]): string {
+  let result = body;
+  for (const handle of [...handles, 'all']) {
+    if (!handle) continue;
+    const escaped = handle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    result = result.replace(new RegExp(`(^|\\s)@${escaped}(?![a-z0-9._-])[,:]?\\s*`, 'gi'), '$1');
+  }
+  return result.replace(/[^\S\n]{2,}/g, ' ').trim();
 }
 
 function handleOf(name: string | null): string {
