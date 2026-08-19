@@ -77,10 +77,19 @@ export class AgentMeshSession {
     await this.realtime.sendMessage(this.sessionId, body, options);
   }
 
-  /** Reply to a message, addressing its author by mention. */
+  /**
+   * Reply to a message, addressing its author by mention.
+   *
+   * The mention is only added when the answer does not already carry one: a
+   * model that writes "@alice sure, done" would otherwise be posted as
+   * "@alice @alice sure, done".
+   */
   async reply(message: Message, body: string): Promise<void> {
-    const handle = message.author.name ? `@${slug(message.author.name)} ` : '';
-    await this.realtime.sendMessage(this.sessionId, `${handle}${body}`, { parentId: message.id });
+    const handle = message.author.name ? slug(message.author.name) : '';
+    const alreadyAddressed =
+      handle.length > 0 && new RegExp(`(^|\\s)@${handle}(?![a-z0-9._-])`, 'i').test(body);
+    const prefix = handle && !alreadyAddressed ? `@${handle} ` : '';
+    await this.realtime.sendMessage(this.sessionId, `${prefix}${body}`, { parentId: message.id });
   }
 
   async sendTask(input: {

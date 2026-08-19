@@ -22,6 +22,9 @@ interface Job {
   message: Message;
 }
 
+/** How many times the same failure is announced in chat before going quiet. */
+const MAX_REPORTED_FAILURES = 2;
+
 /**
  * Bridges a local, subscription-backed coding agent into an AgentMesh session.
  *
@@ -37,6 +40,7 @@ export class AgentRunner {
   private busy = false;
   private started = false;
   private hasRunOnce = false;
+  private consecutiveFailures = 0;
   /** Pins one conversation in tools that can resume, so turns build on each other. */
   private readonly toolSessionId = randomUUID();
   private stopping = false;
@@ -163,37 +167,63 @@ export class AgentRunner {
     const seconds = Math.round((Date.now() - startedAt) / 1000);
 
     if (result.timedOut) {
-      await mesh.publishEvent('AGENT_BLOCKED', {
-        reason: `The local tool did not finish within ${Math.round(timeoutMs / 1000)}s and was stopped.`,
-        needs: 'A human should check the agent workspace, or raise --timeout.',
-      });
-      await mesh.setStatus('blocked');
-      await mesh.reply(message, `I stopped after ${seconds}s without an answer. See AGENT_BLOCKED.`);
+      await this.reportFailure(
+        `${preset.command} did not finish within ${Math.round(timeoutMs / 1000)}s and was stopped.`,
+        'A human should check the agent workspace, or raise --timeout.',
+      );
       return;
     }
 
     const answer = result.stdout.trim();
     if (result.code !== 0 || answer.length === 0) {
       const detail = (result.stderr.trim() || result.stdout.trim() || 'no output').slice(0, 800);
-      await mesh.publishEvent('AGENT_BLOCKED', {
-        reason: `${preset.command} exited with code ${String(result.code)}.`,
-        needs: detail,
-      });
-      await mesh.setStatus('blocked');
-      await mesh.reply(message, `My local tool failed (exit ${String(result.code)}). Details in AGENT_BLOCKED.`);
+      await this.reportFailure(`${preset.command} exited with code ${String(result.code)}.`, detail);
       return;
     }
 
+    this.consecutiveFailures = 0;
     info(style.dim(`[done in ${seconds}s, ${answer.length} chars]`));
     await mesh.reply(message, truncateForChat(answer));
     await mesh.setStatus('idle');
   }
 
+  /**
+   * Announce that the local tool could not do its job.
+   *
+   * Two things matter here. The notice carries no mention, because a mention
+   * is what wakes another agent up - a failing agent that addresses someone
+   * gets answered, replies again, and two models spend a budget passing an
+   * error message back and forth. And the reason travels in the message
+   * itself: "see AGENT_BLOCKED" asks the reader to go dig for the one piece of
+   * information they need.
+   */
+  private async reportFailure(reason: string, detail: string): Promise<void> {
+    const mesh = this.mesh;
+    warn(`${reason} ${detail}`);
+    this.consecutiveFailures += 1;
+
+    await mesh?.publishEvent('AGENT_BLOCKED', { reason: reason.slice(0, 500), needs: detail.slice(0, 2000) }).catch(
+      () => undefined,
+    );
+    await mesh?.setStatus('blocked').catch(() => undefined);
+
+    // Repeating the same failure into the chat helps nobody after the first
+    // time; the events are still published for anyone watching.
+    if (this.consecutiveFailures > MAX_REPORTED_FAILURES) {
+      warn(`still failing (${this.consecutiveFailures}x) - staying quiet in chat until something succeeds`);
+      return;
+    }
+
+    const firstLine = detail.split('\n').find((line) => line.trim().length > 0) ?? '';
+    const summary = firstLine.length > 300 ? `${firstLine.slice(0, 300)}...` : firstLine;
+    await mesh
+      ?.sendMessage(`I could not run my local tool. ${reason}${summary ? `\n${summary}` : ''}`)
+      .catch(() => undefined);
+  }
+
   private async reportBlocked(error: unknown): Promise<void> {
     const reason = error instanceof Error ? error.message : String(error);
-    warn(reason);
-    await this.mesh?.publishEvent('AGENT_BLOCKED', { reason: reason.slice(0, 500) }).catch(() => undefined);
-    await this.mesh?.setStatus('blocked').catch(() => undefined);
+    await this.reportFailure(reason, '');
   }
 
   async stop(): Promise<void> {
