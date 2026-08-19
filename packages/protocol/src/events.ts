@@ -109,6 +109,7 @@ export const DevEventType = {
   TestFailed: 'TEST_FAILED',
   TestPassed: 'TEST_PASSED',
   DecisionCreated: 'DECISION_CREATED',
+  AgentProgress: 'AGENT_PROGRESS',
   AgentBlocked: 'AGENT_BLOCKED',
   AgentUnblocked: 'AGENT_UNBLOCKED',
   AgentHandoff: 'AGENT_HANDOFF',
@@ -179,6 +180,23 @@ export const devPayloadSchemas = {
     /** Pointer to the `decision` context entry carrying the full text. */
     contextKey: z.string().max(200).optional(),
     summary: z.string().max(4000).optional(),
+  }),
+  /**
+   * A step an agent took while working, published as it happens.
+   *
+   * Deliberately a summary, never content: a tool name and what it was pointed
+   * at, not what it read or wrote. The server has no business holding the
+   * contents of someone's workspace, and a session is not a place to stream a
+   * model's entire working memory.
+   */
+  AGENT_PROGRESS: z.object({
+    /** Monotonic within one task, so a client can order and deduplicate. */
+    step: z.number().int().nonnegative(),
+    kind: z.enum(['thinking', 'tool', 'text', 'status']),
+    /** Tool name, for `kind: "tool"`. */
+    tool: z.string().max(80).optional(),
+    /** Short summary - a path, a command, a first line. Never full output. */
+    detail: z.string().max(300).optional(),
   }),
   AGENT_BLOCKED: z.object({
     reason: z.string().max(2000),

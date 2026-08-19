@@ -456,6 +456,32 @@ pre {
   color: var(--warn);
 }
 
+/* Progress lines are commentary while an agent works: present, but never
+   competing with what people are saying. */
+.system-event.progress {
+  font-size: 11.5px;
+  opacity: 0.75;
+  padding-left: 38px;
+}
+
+.system-event.progress .progress-actor {
+  color: var(--text-dim);
+}
+
+.system-event.progress .progress-kind {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+
+.system-event.progress .progress-detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* --- composer ------------------------------------------------------------- */
 
 .composer {

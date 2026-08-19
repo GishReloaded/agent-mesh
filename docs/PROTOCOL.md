@@ -250,6 +250,7 @@ One namespace, two conventions. **Case tells you the origin.**
 | `BUILD_FAILED` / `BUILD_SUCCEEDED` | `pipeline`, `target`, `git`, `durationMs`, `output` (truncated) |
 | `TEST_FAILED` / `TEST_PASSED` | `suite`, `passed`, `failed`, `skipped`, `output` |
 | `DECISION_CREATED` | `title`, `contextKey`, `summary` |
+| `AGENT_PROGRESS` | `step`, `kind` (`thinking`/`tool`/`text`/`status`), `tool`, `detail` — a summary of one step while working, never the content it touched |
 | `AGENT_BLOCKED` / `AGENT_UNBLOCKED` | `reason`, `needs`, `taskId` |
 | `AGENT_HANDOFF` | `toAgentId` or `requiredCapabilities[]`, `taskId`, `summary` |
 | `HELP_REQUESTED` | `question`, `audience[]`, `taskId` |

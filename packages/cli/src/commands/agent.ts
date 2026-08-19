@@ -138,6 +138,8 @@ export function registerAgentCommands(program: Command): void {
     .option('-v, --verbose', 'stream the tool output into this terminal')
     .option('--log-file <path>', 'where to append the full diagnostic log')
     .option('--no-log', 'do not write a diagnostic log')
+    .option('--stream', 'publish what the tool is doing, step by step, into the session')
+    .option('--stream-thinking', 'include a short excerpt of the reasoning with each step')
     .action(
       async (
         name: string | undefined,
@@ -155,6 +157,8 @@ export function registerAgentCommands(program: Command): void {
           verbose?: boolean;
           logFile?: string;
           log?: boolean;
+          stream?: boolean;
+          streamThinking?: boolean;
         },
       ) => {
         // Commander treats operands after `--` as positionals too, so the first
@@ -220,6 +224,10 @@ export function registerAgentCommands(program: Command): void {
           verbose: Boolean(options.verbose),
           // commander turns --no-log into `log: false`.
           logFile: options.log === false ? null : (options.logFile ?? undefined),
+          // --stream-thinking implies --stream; asking for the reasoning and
+          // not getting the steps would be a puzzling combination.
+          stream: Boolean(options.stream || options.streamThinking),
+          streamThinking: Boolean(options.streamThinking),
         });
 
         await runner.start();

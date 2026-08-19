@@ -126,6 +126,20 @@ function MessageRow({
 function EventRow({ event }: { event: MeshEvent }) {
   const payload = event.payload as Record<string, unknown>;
   const summary = describe(event.type, payload);
+
+  // Progress is a running commentary, not an event to announce: it gets a
+  // quieter treatment so it never competes with what people are saying.
+  if (event.type === 'AGENT_PROGRESS') {
+    return (
+      <div className="system-event progress">
+        <span className="time">{time(event.createdAt)}</span>
+        <span className="progress-actor">{event.actor.name ?? 'agent'}</span>
+        <span className="progress-kind">{String(payload.kind ?? '')}</span>
+        <span className="progress-detail">{summary}</span>
+      </div>
+    );
+  }
+
   return (
     <div className="system-event">
       <span className="time">{time(event.createdAt)}</span>
@@ -151,6 +165,12 @@ function describe(type: string, payload: Record<string, unknown>): string {
     case 'TEST_FAILED':
     case 'TEST_PASSED':
       return `${String(payload.passed ?? 0)} passed, ${String(payload.failed ?? 0)} failed`;
+    case 'AGENT_PROGRESS': {
+      const detail = payload.detail ? ` ${String(payload.detail)}` : '';
+      if (payload.kind === 'tool') return `${String(payload.tool ?? 'tool')}${detail}`;
+      if (payload.kind === 'thinking') return String(payload.detail ?? 'thinking');
+      return String(payload.detail ?? payload.kind ?? '');
+    }
     case 'AGENT_BLOCKED':
       return String(payload.reason ?? '');
     case 'AGENT_HANDOFF':

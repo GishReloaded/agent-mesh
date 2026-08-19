@@ -8,6 +8,7 @@ import { RunLog } from './log.js';
 import { buildBrief, buildTurn } from './prompt.js';
 import { getPreset, substitute, type AgentPreset } from './presets.js';
 import { runProcess } from './spawn.js';
+import { ClaudeStreamParser, type ProgressStep } from './stream.js';
 
 export interface RunnerOptions {
   url: string;
@@ -22,6 +23,10 @@ export interface RunnerOptions {
   verbose: boolean;
   /** Where to append the diagnostic log; `null` disables it. */
   logFile?: string | null;
+  /** Publish what the tool is doing, step by step, into the session. */
+  stream?: boolean;
+  /** Include a short excerpt of the model's reasoning with each step. */
+  streamThinking?: boolean;
 }
 
 interface Job {
@@ -30,6 +35,10 @@ interface Job {
 
 /** How many times the same failure is announced in chat before going quiet. */
 const MAX_REPORTED_FAILURES = 2;
+
+/** Progress is throttled: it is a courtesy, not a metric to be complete about. */
+const PROGRESS_INTERVAL_MS = 2000;
+const MAX_PROGRESS_EVENTS = 40;
 
 /**
  * Bridges a local, subscription-backed coding agent into an AgentMesh session.
@@ -47,6 +56,8 @@ export class AgentRunner {
   private started = false;
   private hasRunOnce = false;
   private consecutiveFailures = 0;
+  private lastProgressAt = 0;
+  private progressCount = 0;
   private log = RunLog.open(null, '', '');
   /** Pins one conversation in tools that can resume, so turns build on each other. */
   private readonly toolSessionId = randomUUID();
@@ -165,7 +176,14 @@ export class AgentRunner {
     const self = mesh.identity?.kind === 'agent' ? mesh.identity.name : undefined;
     const prompt = [brief, buildTurn(message, recent, self)].filter(Boolean).join('\n\n---\n\n');
 
-    const argsTemplate = first ? preset.args : (preset.continueArgs ?? preset.args);
+    const streaming = this.options.stream && preset.streamFormat === 'claude-stream-json';
+    const argsTemplate = streaming
+      ? first
+        ? (preset.streamArgs ?? preset.args)
+        : (preset.streamContinueArgs ?? preset.streamArgs ?? preset.args)
+      : first
+        ? preset.args
+        : (preset.continueArgs ?? preset.args);
     const args = substitute(argsTemplate, {
       prompt: preset.promptVia === 'arg' ? prompt : '',
       session: this.toolSessionId,
@@ -194,14 +212,35 @@ export class AgentRunner {
     });
     const startedAt = Date.now();
 
+    const parser = streaming
+      ? new ClaudeStreamParser({
+          onStep: (step) => this.publishProgress(step),
+          includeThinking: Boolean(this.options.streamThinking),
+        })
+      : null;
+
     const result = await runProcess({
       command: preset.command,
       args,
       cwd: workspace,
       ...(preset.promptVia === 'stdin' ? { stdin: prompt } : {}),
       timeoutMs,
-      ...(this.options.verbose ? { onOutput: (chunk: string) => process.stdout.write(style.dim(chunk)) } : {}),
+      ...(parser || this.options.verbose
+        ? {
+            onOutput: (chunk: string) => {
+              parser?.push(chunk);
+              if (this.options.verbose) process.stdout.write(style.dim(chunk));
+            },
+          }
+        : {}),
     });
+
+    // In streaming mode stdout is NDJSON, so the answer comes from the tool's
+    // own result object rather than from the raw output.
+    const streamed = parser?.finish() ?? null;
+    if (streamed?.rateLimited) {
+      this.log.event('provider rate limit', { status: streamed.rateLimited });
+    }
 
     this.hasRunOnce = true;
     const seconds = Math.round((Date.now() - startedAt) / 1000);
@@ -230,9 +269,13 @@ export class AgentRunner {
       return;
     }
 
-    const answer = result.stdout.trim();
-    if (result.code !== 0 || answer.length === 0) {
-      const detail = (result.stderr.trim() || result.stdout.trim() || 'no output').slice(0, 800);
+    const answer = (streamed ? streamed.text : result.stdout).trim();
+    if (result.code !== 0 || streamed?.isError || answer.length === 0) {
+      const detail = (
+        streamed?.rateLimited
+          ? `The provider reported: ${streamed.rateLimited}`
+          : result.stderr.trim() || (streamed ? '' : result.stdout.trim()) || 'no output'
+      ).slice(0, 800);
       await this.reportFailure(`${preset.command} exited with code ${String(result.code)}.`, detail);
       return;
     }
@@ -241,6 +284,34 @@ export class AgentRunner {
     info(style.dim(`[done in ${seconds}s, ${answer.length} chars]`));
     await this.postAnswer(message, truncateForChat(answer));
     await mesh.setStatus('idle');
+  }
+
+  /**
+   * Publish one step of the work in progress.
+   *
+   * Rate-limited on purpose. Every event is a database write and a fan-out to
+   * each subscriber, and on a serverless deployment also a billed message; a
+   * model that touches forty files should not turn that into forty rounds of
+   * traffic. Steps are dropped rather than queued - stale progress is worth
+   * nothing.
+   */
+  private publishProgress(step: ProgressStep): void {
+    const now = Date.now();
+    if (this.progressCount >= MAX_PROGRESS_EVENTS) return;
+    if (now - this.lastProgressAt < PROGRESS_INTERVAL_MS && step.kind !== 'status') return;
+
+    this.lastProgressAt = now;
+    this.progressCount += 1;
+    this.log.event(`step ${step.kind}`, { tool: step.tool, detail: step.detail });
+
+    void this.mesh
+      ?.publishEvent('AGENT_PROGRESS', {
+        step: this.progressCount,
+        kind: step.kind,
+        ...(step.tool ? { tool: step.tool } : {}),
+        ...(step.detail ? { detail: step.detail.slice(0, 300) } : {}),
+      })
+      .catch(() => undefined);
   }
 
   /**

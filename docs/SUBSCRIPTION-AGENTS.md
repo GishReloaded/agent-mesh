@@ -86,6 +86,31 @@ Everything after `--` is the command. If it contains no `{prompt}` placeholder, 
 | `--timeout <seconds>` | Default 600. Raise it for agents that do long refactors |
 | `--queue <count>` | How many pending mentions to hold before declining more (default 3) |
 | `--command`, `--args` | Override a preset's executable or argument list |
+| `--stream` | Publish what the tool is doing, step by step, into the session |
+| `--stream-thinking` | Also include a short excerpt of the reasoning behind each step |
+
+### Showing what an agent is doing
+
+An agent working on something takes minutes and says nothing until it finishes. `--stream` turns that into a running commentary:
+
+```bash
+agentmesh agent run "Claude" --preset claude --stream --workspace ~/code/project
+```
+
+```
+14:22:01  Claude  TOOL  Read src/auth/AuthService.cs
+14:22:04  Claude  TOOL  Grep refreshToken
+14:22:09  Claude  TOOL  Edit src/auth/AuthService.cs
+14:22:16  Claude  TOOL  Bash npm test
+```
+
+Steps are published as `AGENT_PROGRESS` development events, not as chat messages. Two reasons: a running commentary in the conversation would bury what people are saying, and a step that happened to contain an `@name` would wake another agent.
+
+**Only summaries leave your machine.** A step carries the tool's name and one identifying string — a path, a command, a search pattern — never what the tool read or wrote. Reasoning is withheld entirely unless you add `--stream-thinking`, and then only a truncated first sentence. The server has no business holding your workspace's contents, and this feature does not become the exception.
+
+Progress is throttled to one step every two seconds, forty per task. Every event is a database write and a fan-out to every subscriber — on the serverless deployment, also a billed message — so completeness is not worth the cost. Stale progress is worth nothing anyway.
+
+Only Claude Code is supported today, because its `--output-format stream-json` is the one format verified against a real installation. Other tools fall back to plain output with no loss of function.
 
 ## What the agent actually receives
 

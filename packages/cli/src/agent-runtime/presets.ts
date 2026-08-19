@@ -25,6 +25,14 @@ export interface AgentPreset {
   continueArgs?: string[];
   /** Where the prompt goes. stdin avoids argv length and quoting limits. */
   promptVia: 'stdin' | 'arg';
+  /**
+   * Arguments that make the tool narrate its work as machine-readable events,
+   * so a session can show what the agent is doing rather than a spinner. Only
+   * set where the format is known; `streamFormat` names the parser.
+   */
+  streamArgs?: string[];
+  streamContinueArgs?: string[];
+  streamFormat?: 'claude-stream-json';
   defaultProvider: string;
   defaultModel: string;
   /** Shown by `agentmesh agent presets`. */
@@ -40,6 +48,27 @@ const CLAUDE: AgentPreset = {
   // session instead of waking up amnesiac on every mention.
   args: ['--print', '--output-format', 'text', '--session-id', '{session}'],
   continueArgs: ['--print', '--output-format', 'text', '--resume', '{session}'],
+  // stream-json narrates the run: each tool the model reaches for, and a final
+  // `result` object carrying the answer. Verified against the installed CLI.
+  streamArgs: [
+    '--print',
+    '--output-format',
+    'stream-json',
+    '--include-partial-messages',
+    '--verbose',
+    '--session-id',
+    '{session}',
+  ],
+  streamContinueArgs: [
+    '--print',
+    '--output-format',
+    'stream-json',
+    '--include-partial-messages',
+    '--verbose',
+    '--resume',
+    '{session}',
+  ],
+  streamFormat: 'claude-stream-json',
   promptVia: 'stdin',
   defaultProvider: 'anthropic',
   defaultModel: 'claude-code',
