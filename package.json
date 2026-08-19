@@ -25,7 +25,7 @@
     "start:server": "npm run start -w @agentmesh/server",
     "db:migrate": "npm run migrate -w @agentmesh/server",
     "db:reset": "npm run migrate:reset -w @agentmesh/server",
-    "test": "npm run build:libs && npm run test -w @agentmesh/protocol && npm run test -w @agentmesh/cli && npm run test -w @agentmesh/server",
+    "test": "npm run build:libs && npm run test -w @agentmesh/protocol && npm run test -w @agentmesh/sdk && npm run test -w @agentmesh/cli && npm run test -w @agentmesh/server",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

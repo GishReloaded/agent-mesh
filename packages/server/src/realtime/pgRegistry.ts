@@ -13,7 +13,11 @@ import type { ConnectionHandle, ConnectionRecord, ConnectionRegistry, EventSink 
  */
 export type FrameSender = (connectionId: string, frame: unknown) => Promise<boolean>;
 
-/** How long a connection may go without a frame before presence stops counting it. */
+/**
+ * How long a connection may go without a frame before presence stops counting
+ * it. Clients send a keep-alive every four minutes, so three missed pings mean
+ * the connection is gone whether or not `$disconnect` ever arrived.
+ */
 const STALE_AFTER_MS = 12 * 60 * 1000;
 
 /**

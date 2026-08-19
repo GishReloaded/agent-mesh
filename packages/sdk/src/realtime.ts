@@ -3,6 +3,7 @@ import {
   ClientFrameType,
   CloseCode,
   ErrorCode,
+  HEARTBEAT,
   PROTOCOL_VERSION,
   RECONNECT_BACKOFF,
   ServerFrameType,
@@ -58,6 +59,12 @@ export interface RealtimeOptions {
   clientVersion?: string;
   /** Set false to disable automatic reconnection. */
   autoReconnect?: boolean;
+  /**
+   * How often to send a keep-alive ping, in milliseconds. Defaults to
+   * `HEARTBEAT.clientIntervalMs`. Set to 0 to disable, which is only safe when
+   * the server pings you and no gateway sits in between.
+   */
+  heartbeatIntervalMs?: number;
 }
 
 interface Pending {
@@ -88,6 +95,7 @@ export class RealtimeClient {
   /** Guards against looping on a credential the server keeps rejecting. */
   private unauthorizedRetries = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private closedByUser = false;
   private frameCounter = 0;
   private identity: Identity | null = null;
@@ -134,6 +142,7 @@ export class RealtimeClient {
     this.closedByUser = true;
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.reconnectTimer = null;
+    this.stopHeartbeat();
     this.setState('closed');
     this.socket?.close(CloseCode.Normal, 'client closed');
     this.socket = null;
@@ -242,6 +251,7 @@ export class RealtimeClient {
 
     socket.onclose = (event: CloseEvent) => {
       this.socket = null;
+      this.stopHeartbeat();
       for (const [, pending] of this.pending) {
         clearTimeout(pending.timer);
         pending.reject(new AgentMeshError(ErrorCode.Internal, 'Connection closed before acknowledgement.'));
@@ -274,6 +284,37 @@ export class RealtimeClient {
     };
   }
 
+  /**
+   * Keep the connection warm.
+   *
+   * Without this a quiet agent is dropped by whatever sits between it and the
+   * server - on API Gateway that is a ten-minute idle timeout - and its
+   * presence goes stale even before the socket dies, because the server has no
+   * other evidence the client is still there.
+   */
+  private startHeartbeat(): void {
+    this.stopHeartbeat();
+    const interval = this.options.heartbeatIntervalMs ?? HEARTBEAT.clientIntervalMs;
+    if (interval <= 0) return;
+
+    this.heartbeatTimer = setInterval(() => {
+      if (this.state !== 'connected') return;
+      try {
+        this.send(ClientFrameType.Ping, {});
+      } catch {
+        // The socket went away between the check and the send; onclose will
+        // take it from here.
+      }
+    }, interval);
+    // Never hold a Node process open just to send pings.
+    (this.heartbeatTimer as { unref?: () => void }).unref?.();
+  }
+
+  private stopHeartbeat(): void {
+    if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = null;
+  }
+
   private scheduleReconnect(): void {
     this.setState('reconnecting');
     const { initialMs, maxMs, factor, jitter } = RECONNECT_BACKOFF;
@@ -296,6 +337,7 @@ export class RealtimeClient {
       case ServerFrameType.HelloOk: {
         this.reconnectAttempt = 0;
         this.unauthorizedRetries = 0;
+        this.startHeartbeat();
         this.setState('connected');
         this.identity = payload.identity as Identity;
         this.events.emit('hello', this.identity);

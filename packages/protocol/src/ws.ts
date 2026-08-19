@@ -266,10 +266,22 @@ export function makeFrame<T extends string>(
   return { v: PROTOCOL_VERSION, id, type, ts: new Date().toISOString(), payload };
 }
 
-/** Recommended heartbeat cadence and the deadline derived from it. */
+/**
+ * Heartbeat cadences.
+ *
+ * `intervalMs` / `timeoutMs` govern the server-driven ping on deployments that
+ * own their sockets.
+ *
+ * `clientIntervalMs` is the client's own keep-alive, and it is not optional:
+ * where the socket belongs to a gateway rather than to the server - API Gateway
+ * closes a WebSocket after ten minutes without traffic - nothing else proves a
+ * quiet connection is still alive. Four minutes clears that limit with room to
+ * spare while staying cheap on per-message billing.
+ */
 export const HEARTBEAT = {
   intervalMs: 20_000,
   timeoutMs: 60_000,
+  clientIntervalMs: 240_000,
 } as const;
 
 /** Reconnect backoff the reference clients implement. */

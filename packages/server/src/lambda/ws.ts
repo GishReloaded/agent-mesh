@@ -81,6 +81,14 @@ export const handler = async (event: WebSocketEvent): Promise<{ statusCode: numb
   try {
     switch (routeKey) {
       case '$connect':
+        // $disconnect is not guaranteed to arrive, so rows outlive their
+        // sockets and show people as present who left. Sweeping here costs one
+        // indexed DELETE at the only moment that is already slow anyway, and
+        // avoids a scheduled Lambda that would bill for doing nothing.
+        await registry()
+          .sweepStale()
+          .catch(() => 0);
+
         // Authentication happens in the first `hello` frame, not here: API
         // Gateway would only give us query strings and headers, and a token in
         // a query string ends up in access logs.
