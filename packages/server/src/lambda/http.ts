@@ -1,3 +1,4 @@
+import { AVATAR_MIME_TYPES } from '@agentmesh/protocol';
 import awsLambdaFastify from '@fastify/aws-lambda';
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2, Context } from 'aws-lambda';
 import { app } from './runtime.js';
@@ -35,8 +36,12 @@ export const handler = async (
 
   if (!proxy) {
     proxy = awsLambdaFastify(await app(), {
-      // Text assets pass through as-is; only these need base64 round-tripping.
-      binaryMimeTypes: ['image/png', 'image/x-icon', 'font/woff2'],
+      // Anything not listed here is handed back as a UTF-8 string, which
+      // silently destroys it: a JPEG came out as replacement characters, twice
+      // its original size. Every type the API can serve as bytes belongs in
+      // this list, so it is derived from the accepted types rather than
+      // hand-written.
+      binaryMimeTypes: [...AVATAR_MIME_TYPES, 'image/x-icon', 'image/svg+xml', 'font/woff2', 'application/octet-stream'],
       serializeLambdaArguments: false,
     }) as unknown as Proxy;
   }

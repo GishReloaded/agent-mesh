@@ -92,6 +92,59 @@ await check(
   200,
 );
 
+// --- avatars ----------------------------------------------------------------
+
+/**
+ * Every accepted image type, round-tripped through the Lambda adapter.
+ *
+ * This is the only harness that exercises that adapter, and it is where binary
+ * responses go wrong: a type missing from `binaryMimeTypes` is handed back as
+ * a UTF-8 string, which turns an image into replacement characters without any
+ * error anywhere. Testing one type is what let that ship.
+ */
+console.log('\nround-tripping avatars through the Lambda adapter...\n');
+
+const images = {
+  'image/png': Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(200, 0xa5)]),
+  'image/jpeg': Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(200, 0xa5)]),
+  'image/gif': Buffer.concat([Buffer.from('GIF89a', 'latin1'), Buffer.alloc(200, 0xa5)]),
+  'image/webp': Buffer.concat([
+    Buffer.from('RIFF', 'latin1'),
+    Buffer.alloc(4, 0),
+    Buffer.from('WEBP', 'latin1'),
+    Buffer.alloc(200, 0xa5),
+  ]),
+};
+
+for (const [type, bytes] of Object.entries(images)) {
+  const uploadEvent = {
+    ...request('POST', '/api/v1/auth/me/avatar', undefined, { ...auth, 'content-type': type }),
+    body: bytes.toString('base64'),
+    isBase64Encoded: true,
+  };
+  const uploaded = await http(uploadEvent, context);
+  if (uploaded.statusCode !== 200) {
+    failures += 1;
+    console.log(`FAIL ${type} upload -> ${uploaded.statusCode} ${uploaded.body}`);
+    continue;
+  }
+
+  const { avatarUrl } = JSON.parse(uploaded.body);
+  const served = await http(request('GET', avatarUrl), context);
+  const returned = served.isBase64Encoded
+    ? Buffer.from(served.body, 'base64')
+    : Buffer.from(served.body, 'utf8');
+
+  const intact = returned.equals(bytes);
+  if (!intact) failures += 1;
+  console.log(
+    `${intact ? 'ok  ' : 'FAIL'} ${type.padEnd(11)} ${bytes.length} bytes in, ${returned.length} out` +
+      `${intact ? '' : ' - CORRUPTED, check binaryMimeTypes'}`,
+  );
+}
+
+await http(request('DELETE', '/api/v1/auth/me/avatar', undefined, auth), context);
+
 // --- realtime ---------------------------------------------------------------
 
 console.log('\ninvoking the WebSocket bundle against a stub management API...\n');
