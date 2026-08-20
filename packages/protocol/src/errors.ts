@@ -26,6 +26,13 @@ export const ErrorCode = {
   SessionArchived: 'SESSION_ARCHIVED',
   /** Caller must subscribe to the session before addressing it. */
   NotSubscribed: 'NOT_SUBSCRIBED',
+  /**
+   * The connection is open but the server no longer recognises it, so the
+   * client must send `hello` again. Distinct from `UNAUTHORIZED` because the
+   * credential is fine and the client can recover by itself - a deployment
+   * where the socket outlives the server's memory of it needs a way to say so.
+   */
+  Reauthenticate: 'REAUTHENTICATE',
   /** Agent-to-agent chain limit reached; a human turn is required. */
   AgentChainLimit: 'AGENT_CHAIN_LIMIT',
   /** Requested `since_seq` is no longer replayable; refetch history instead. */
@@ -65,6 +72,7 @@ export const ERROR_HTTP_STATUS: Record<ErrorCode, number> = {
   MALFORMED_FRAME: 400,
   SESSION_ARCHIVED: 409,
   NOT_SUBSCRIBED: 409,
+  REAUTHENTICATE: 401,
   AGENT_CHAIN_LIMIT: 429,
   RESYNC_REQUIRED: 409,
   INTERNAL: 500,

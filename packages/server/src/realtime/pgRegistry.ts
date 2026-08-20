@@ -152,6 +152,18 @@ export class PostgresConnectionRegistry implements ConnectionRegistry, EventSink
     if (dead.length > 0) {
       await this.db.deleteFrom('ws_connections').where('id', 'in', dead).execute();
     }
+
+    // Delivering to a connection proves it is alive just as well as receiving
+    // from one. Without this a quiet reader - a browser tab watching a busy
+    // session - looks stale and gets swept while it is plainly still there.
+    const alive = results.filter((result) => result.alive).map((result) => result.connectionId);
+    if (alive.length > 0) {
+      await this.db
+        .updateTable('ws_connections')
+        .set({ last_seen_at: new Date() })
+        .where('id', 'in', alive)
+        .execute();
+    }
   }
 
   async publish(event: Event): Promise<void> {

@@ -67,6 +67,7 @@ class MeshStore {
 
   private listeners = new Set<() => void>();
   private client: RealtimeClient | null = null;
+  private connecting: Promise<void> | null = null;
   private typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   subscribe = (listener: () => void): (() => void) => {
@@ -85,8 +86,26 @@ class MeshStore {
     this.set({ view: { ...this.state.view, ...patch } });
   }
 
+  /**
+   * Open the shared realtime connection, once.
+   *
+   * The guard has to cover the whole async body, not just its first line: this
+   * is called from the app shell and again when a session page mounts, and both
+   * callers await a token and a version lookup before `this.client` is set. A
+   * plain `if (this.client) return` lets both through and leaves two sockets
+   * open per person - double the fan-out, double the billed messages, and an
+   * orphan that nothing ever unsubscribes.
+   */
   async connect(): Promise<void> {
     if (this.client) return;
+    if (this.connecting) return this.connecting;
+    this.connecting = this.openConnection().finally(() => {
+      this.connecting = null;
+    });
+    return this.connecting;
+  }
+
+  private async openConnection(): Promise<void> {
     const token = await ensureAccessToken();
     if (!token) return;
 

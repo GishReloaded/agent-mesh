@@ -303,6 +303,32 @@ export class RealtimeClient {
    * presence goes stale even before the socket dies, because the server has no
    * other evidence the client is still there.
    */
+  /**
+   * Say `hello` again on a socket the server no longer recognises. The
+   * subscriptions are restored by the `hello.ok` handler, which re-subscribes
+   * everything this client is watching from its stored cursor.
+   */
+  private reintroduce(): void {
+    void (async () => {
+      try {
+        const token =
+          typeof this.options.token === 'function'
+            ? await this.options.token({ refresh: false })
+            : this.options.token;
+        if (!token) return;
+        this.send(ClientFrameType.Hello, {
+          token,
+          client: {
+            name: this.options.clientName ?? 'agentmesh-sdk',
+            version: this.options.clientVersion ?? '0.1.0',
+          },
+        });
+      } catch {
+        // The socket went away first; onclose will reconnect from scratch.
+      }
+    })();
+  }
+
   private startHeartbeat(): void {
     this.stopHeartbeat();
     const interval = this.options.heartbeatIntervalMs ?? HEARTBEAT.clientIntervalMs;
@@ -389,6 +415,14 @@ export class RealtimeClient {
       }
 
       case ServerFrameType.Error: {
+        // The server forgot this connection but the credential is still good.
+        // Re-introducing ourselves costs one frame and spares the application
+        // an error it cannot do anything about.
+        if (payload.code === ErrorCode.Reauthenticate) {
+          this.reintroduce();
+          return;
+        }
+
         const error = AgentMeshError.fromBody({
           code: String(payload.code ?? ErrorCode.Internal),
           message: String(payload.message ?? 'Unknown error.'),

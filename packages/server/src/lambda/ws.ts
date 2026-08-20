@@ -154,13 +154,24 @@ async function handleFrame(
 
   const record = await svc.registry.get(connectionId);
   if (!record) {
+    // The socket is open but the server has forgotten it - the connection row
+    // aged out while the client was quiet, or a redeploy landed in between.
+    // Nothing is wrong with the credential, so this is recoverable: say so
+    // with a code the client can act on, then close, which puts it through its
+    // ordinary reconnect path instead of leaving it stuck holding a dead
+    // socket and an error message.
     await send(
       {
         type: ServerFrameType.Error,
-        payload: { code: ErrorCode.Unauthorized, message: 'Send a hello frame first.', ref: frame.id },
+        payload: {
+          code: ErrorCode.Reauthenticate,
+          message: 'This connection is no longer registered. Send hello again.',
+          ref: frame.id,
+        },
       },
       frame.id,
     );
+    await client.send(new DeleteConnectionCommand({ ConnectionId: connectionId })).catch(() => undefined);
     return;
   }
 

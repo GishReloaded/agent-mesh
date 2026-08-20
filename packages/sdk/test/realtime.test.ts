@@ -158,6 +158,36 @@ describe('realtime credentials', () => {
   });
 });
 
+describe('recovering a forgotten connection', () => {
+  it('says hello again instead of surfacing an error nobody can act on', async () => {
+    // The socket is fine and the credential is fine; the server simply no
+    // longer has a record of this connection. The client can fix that itself.
+    FakeSocket.reset();
+    const client = makeClient();
+    const errors: string[] = [];
+    client.on('error', (error) => errors.push(error.code));
+    const connected = client.connect();
+
+    await wait(10);
+    const socket = FakeSocket.instances[0];
+    assert.ok(socket);
+    socket.deliver('hello.ok', helloOk);
+    await connected;
+
+    const before = socket.sent.filter((frame) => frame.type === 'hello').length;
+    socket.deliver('error', { code: 'REAUTHENTICATE', message: 'no longer registered' });
+    await wait(20);
+
+    assert.equal(
+      socket.sent.filter((frame) => frame.type === 'hello').length,
+      before + 1,
+      'the client should re-introduce itself',
+    );
+    assert.deepEqual(errors, [], 'and not bother the application with it');
+    client.close();
+  });
+});
+
 describe('Codex control', () => {
   it('publishes typed control requests over the existing event channel', async () => {
     FakeSocket.reset();
