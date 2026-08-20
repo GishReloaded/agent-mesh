@@ -121,6 +121,7 @@ describe('Codex bridge', () => {
 
     assert.equal(server.startedThreads, 1);
     assert.equal(server.startedTurns, 2);
+    assert.equal((server.startedTurnInputs[0] as { summary?: string }).summary, 'concise');
     assert.equal(mesh.contexts.length, 1);
   });
 
@@ -306,6 +307,7 @@ describe('Codex bridge', () => {
       cwd: 'D:\\repo',
       model: 'gpt-test',
       effort: undefined,
+      summary: 'concise',
       approvalPolicy: 'on-request',
       approvalsReviewer: 'auto_review',
       sandbox: 'readOnly',

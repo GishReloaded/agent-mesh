@@ -48,6 +48,7 @@ export interface CodexBridgeServer {
     cwd: string;
     model?: string;
     effort?: string;
+    summary?: 'auto' | 'concise' | 'detailed' | 'none';
     approvalPolicy?: CodexApprovalPolicy;
     approvalsReviewer?: CodexApprovalsReviewer;
     sandbox?: CodexSandbox;
@@ -335,6 +336,7 @@ export class CodexBridge {
       cwd: this.options.workspace,
       model: options.model ?? thread.model,
       effort: options.reasoningEffort ?? thread.reasoningEffort,
+      summary: 'concise',
       approvalPolicy: options.approvalPolicy ?? thread.approvalPolicy,
       approvalsReviewer: options.approvalsReviewer ?? thread.approvalsReviewer,
       sandbox: options.sandbox ?? thread.sandbox,

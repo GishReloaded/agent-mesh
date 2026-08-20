@@ -229,6 +229,7 @@ export class CodexAppServer {
     cwd: string;
     model?: string;
     effort?: string;
+    summary?: 'auto' | 'concise' | 'detailed' | 'none';
     approvalPolicy?: CodexApprovalPolicy;
     approvalsReviewer?: CodexApprovalsReviewer;
     sandbox?: CodexSandbox;
@@ -239,6 +240,7 @@ export class CodexAppServer {
       cwd: input.cwd,
       ...(input.model ? { model: input.model } : {}),
       ...(input.effort ? { effort: input.effort } : {}),
+      ...(input.summary ? { summary: input.summary } : {}),
       ...(input.approvalPolicy ? { approvalPolicy: input.approvalPolicy } : {}),
       ...(input.approvalsReviewer ? { approvalsReviewer: input.approvalsReviewer } : {}),
       ...(input.sandbox ? { sandboxPolicy: sandboxPolicy(input.sandbox, input.cwd) } : {}),

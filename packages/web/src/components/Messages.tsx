@@ -66,6 +66,18 @@ export function selectTimelineEvents(events: MeshEvent[], _codexThreadId: string
 
   return enrichedEvents.filter((event) => {
     const payload = event.payload as Record<string, unknown>;
+    // Presence and the settings rail already expose routine runtime state.
+    // Repeating it in the conversation obscures useful activity and replies.
+    if (
+      event.type === 'CODEX_THREAD_STATE' &&
+      ['starting', 'working', 'idle'].includes(String(payload.status ?? '')) &&
+      !payload.error
+    ) return false;
+    if (
+      event.type === 'CODEX_ACTIVITY' &&
+      payload.kind === 'status' &&
+      ['inProgress', 'completed', 'working', 'idle'].includes(String(payload.status ?? ''))
+    ) return false;
     // Older runners published the final App Server agentMessage both as an
     // activity and as a normal chat reply. Keep historical timelines singular.
     if (event.type === 'CODEX_ACTIVITY' && payload.kind === 'message') return false;

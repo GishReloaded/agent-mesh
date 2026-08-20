@@ -240,6 +240,25 @@ describe('shared chat timeline', () => {
     assert.deepEqual(selectTimelineEvents([...events, emptyReasoning], null).map((item) => item.id), ['evt_1', 'evt_2', 'evt_3']);
   });
 
+  it('hides routine Codex lifecycle chatter but keeps failures visible', () => {
+    const lifecycle = [
+      event(20, 'CODEX_THREAD_STATE', { agentId: 'agt_1', threadId: 'thr_1', status: 'working' }),
+      event(21, 'CODEX_ACTIVITY', { agentId: 'agt_1', threadId: 'thr_1', kind: 'status', status: 'completed' }),
+      event(22, 'CODEX_THREAD_STATE', { agentId: 'agt_1', threadId: 'thr_1', status: 'idle' }),
+      event(23, 'CODEX_THREAD_STATE', { agentId: 'agt_1', threadId: 'thr_1', status: 'failed', error: 'Turn failed' }),
+    ];
+
+    assert.deepEqual(selectTimelineEvents(lifecycle).map((item) => item.id), ['evt_23']);
+  });
+
+  it('uses a tighter visual rail for operational Codex activity', () => {
+    const styles = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+
+    assert.match(styles, /\.messages\s*{[^}]*gap:\s*8px/s);
+    assert.match(styles, /\.codex-technical-event\s*{[^}]*margin-left:\s*32px/s);
+    assert.match(styles, /\.system-event\.progress\s*{[^}]*padding-left:\s*32px/s);
+  });
+
   it('hides historical agentMessage activities because the final answer is a normal chat message', () => {
     const duplicateAnswer = event(12, 'CODEX_ACTIVITY', {
       agentId: 'agt_1', threadId: 'thr_1', turnId: 'turn_1', itemId: 'msg_1', kind: 'message', summary: 'same answer',
