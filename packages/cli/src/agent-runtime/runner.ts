@@ -17,6 +17,7 @@ import { getPreset, substitute, type AgentPreset } from './presets.js';
 import { runProcess } from './spawn.js';
 import { ClaudeStreamParser, type ProgressStep } from './stream.js';
 import { CodexBridge } from './codex-bridge.js';
+import type { SanitizedCodexActivity } from './codex-app-server.js';
 
 export interface RunnerOptions {
   url: string;
@@ -35,8 +36,6 @@ export interface RunnerOptions {
   stream?: boolean;
   /** Include a short excerpt of the model's reasoning with each step. */
   streamThinking?: boolean;
-  /** Local opt-in ceiling for remotely selected Codex sandbox modes. */
-  allowDangerFullAccess?: boolean;
 }
 
 interface Job {
@@ -105,7 +104,9 @@ export class AgentRunner {
         workspace: this.options.workspace,
         command: this.options.preset.command,
         timeoutMs: this.options.timeoutMs,
-        allowDangerFullAccess: Boolean(this.options.allowDangerFullAccess),
+        ...(this.options.verbose
+          ? { onActivity: (activity) => info(style.dim(formatCodexActivity(activity))) }
+          : {}),
       });
     }
 
@@ -240,11 +241,13 @@ export class AgentRunner {
       await mesh.setStatus('working', `handling a request from ${message.author.name ?? 'someone'}`);
       this.log.event('mention received', { from: message.author.name, body: message.body.slice(0, 200) });
       const startedAt = Date.now();
-      const answer = await this.codex.runMention(prompt);
+      const result = await this.codex.runMention(prompt);
+      const answer = result.answer;
       this.hasRunOnce = true;
       this.consecutiveFailures = 0;
       info(style.dim(`[done in ${Math.round((Date.now() - startedAt) / 1000)}s, ${answer.length} chars]`));
       await this.postAnswer(message, truncateForChat(answer));
+      await this.codex.publishChangeSummary(result.changeSummary);
       await mesh.setStatus('idle');
       return;
     }
@@ -454,6 +457,20 @@ export class AgentRunner {
     await this.mesh?.setStatus('offline').catch(() => undefined);
     this.mesh?.close();
   }
+}
+
+export function formatCodexActivity(activity: SanitizedCodexActivity): string {
+  const status = activity.status ? ` (${activity.status})` : '';
+  if (activity.kind === 'command') return `[command] ${compact(activity.command)}${status}`;
+  if (activity.kind === 'fileChange') return `[files] ${(activity.files ?? []).map(compact).join(', ') || 'workspace diff'}${status}`;
+  if (activity.kind === 'mcpTool') return `[mcp] ${compact(activity.tool)}${status}`;
+  if (activity.kind === 'reasoningSummary') return `[summary] ${compact(activity.summary)}`;
+  if (activity.kind === 'error') return `[error] ${compact(activity.summary)}`;
+  return `[${activity.kind}] ${activity.status ?? compact(activity.summary)}`.trim();
+}
+
+function compact(value: string | undefined): string {
+  return (value ?? '').replace(/\s+/g, ' ').trim().slice(0, 240);
 }
 
 /** Chat messages have a hard size limit; point at the terminal for the rest. */

@@ -7,7 +7,7 @@ import {
 } from '@agentmesh/sdk';
 import { useEffect, useRef } from 'react';
 import { participantColor } from '../lib/colors.js';
-import { renderMarkdown } from '../lib/markdown.js';
+import { localFileHref, renderMarkdown } from '../lib/markdown.js';
 import { Avatar } from './Presence.js';
 
 function time(iso: string): string {
@@ -22,13 +22,27 @@ export type ColorLookup = (author: Message['author']) => string | null;
 
 /** A Session has one timeline. Codex thread ids correlate activity but never split the room. */
 export function selectTimelineEvents(events: MeshEvent[], _codexThreadId: string | null = null): MeshEvent[] {
+  const latestTechnicalItem = new Map<string, string>();
+  for (const event of events) {
+    const payload = event.payload as Record<string, unknown>;
+    if (event.type === 'CODEX_ACTIVITY' && payload.itemId && !['reasoningSummary', 'message'].includes(String(payload.kind))) {
+      latestTechnicalItem.set(`${String(payload.threadId)}:${String(payload.turnId)}:${String(payload.itemId)}:${String(payload.kind)}`, event.id);
+    }
+  }
   return events.filter((event) => {
     const payload = event.payload as Record<string, unknown>;
+    // Older runners published the final App Server agentMessage both as an
+    // activity and as a normal chat reply. Keep historical timelines singular.
+    if (event.type === 'CODEX_ACTIVITY' && payload.kind === 'message') return false;
     if (
       event.type === 'CODEX_ACTIVITY' &&
       (payload.kind === 'reasoningSummary' || payload.kind === 'message') &&
       String(payload.summary ?? '').trim() === ''
     ) return false;
+    if (event.type === 'CODEX_ACTIVITY' && payload.itemId && !['reasoningSummary', 'message'].includes(String(payload.kind))) {
+      const key = `${String(payload.threadId)}:${String(payload.turnId)}:${String(payload.itemId)}:${String(payload.kind)}`;
+      if (latestTechnicalItem.get(key) !== event.id) return false;
+    }
     return true;
   });
 }
@@ -211,6 +225,84 @@ function EventRow({
       );
     }
 
+    if (kind === 'command') {
+      const command = String(payload.command ?? '').trim();
+      const output = String(payload.output ?? '').trim();
+      return (
+        <details className="codex-technical-event codex-command-card">
+          <summary>
+            <span className="codex-tech-icon" aria-hidden="true">›_</span>
+            <span className="type">{payload.status === 'completed' ? 'Ran command' : 'Running command'}</span>
+            <code className="codex-command-preview">{command}</code>
+            <span className="codex-tech-meta">{commandMeta(payload)}</span>
+          </summary>
+          <div className="codex-terminal">
+            {typeof payload.cwd === 'string' && <div className="codex-terminal-cwd">{payload.cwd}</div>}
+            <div className="codex-terminal-command">$ {command}</div>
+            {output && <pre>{output}</pre>}
+          </div>
+        </details>
+      );
+    }
+
+    if (kind === 'fileChange') {
+      const files = Array.isArray(payload.files) ? payload.files.map(String) : [];
+      return (
+        <details className="codex-technical-event codex-file-card">
+          <summary>
+            <span className="codex-tech-icon" aria-hidden="true">±</span>
+            <span className="type">Changed {files.length || ''} {files.length === 1 ? 'file' : 'files'}</span>
+            <span className="codex-technical-summary">{files[0] ?? String(payload.status ?? '')}</span>
+          </summary>
+          <div className="codex-technical-detail">
+            {files.map((file) => <LocalFileLink path={file} key={file} />)}
+            {typeof payload.diff === 'string' && payload.diff && <DiffPreview diff={payload.diff} />}
+          </div>
+        </details>
+      );
+    }
+
+    if (kind === 'turnSummary') {
+      const files = Array.isArray(payload.files) ? payload.files.map(String) : [];
+      const fileStats = Array.isArray(payload.fileStats)
+        ? payload.fileStats.map(asObject).flatMap((stat) => {
+            const path = String(stat.path ?? '');
+            return path ? [{ path, additions: Number(stat.additions ?? 0), deletions: Number(stat.deletions ?? 0) }] : [];
+          })
+        : files.map((path) => ({ path, additions: null, deletions: null }));
+      const additions = Number(payload.additions ?? 0);
+      const deletions = Number(payload.deletions ?? 0);
+      return (
+        <div className="codex-technical-event codex-turn-summary">
+          <div className="codex-turn-summary-head">
+            <span className="codex-tech-icon" aria-hidden="true">±</span>
+            <span className="type">Changed {fileStats.length} {fileStats.length === 1 ? 'file' : 'files'}</span>
+            <span className="codex-change-additions">+{additions}</span>
+            <span className="codex-change-deletions">−{deletions}</span>
+          </div>
+          <div className="codex-turn-summary-files">
+            {fileStats.map((file) => (
+              <div className="codex-file-stat" key={file.path}>
+                <LocalFileLink path={file.path} />
+                {file.additions !== null && <span className="codex-change-additions">+{file.additions}</span>}
+                {file.deletions !== null && <span className="codex-change-deletions">−{file.deletions}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (kind === 'contextCompaction') {
+      return (
+        <div className="codex-technical-event codex-context-compaction">
+          <span className="codex-tech-icon" aria-hidden="true">↻</span>
+          <span className="type">Context compacted</span>
+          <span>Codex compressed earlier conversation history and continued.</span>
+        </div>
+      );
+    }
+
     return (
       <details className={`codex-technical-event kind-${kind}`}>
         <summary>
@@ -343,6 +435,37 @@ function describe(type: string, payload: Record<string, unknown>): string {
     default:
       return JSON.stringify(payload).slice(0, 120);
   }
+}
+
+function LocalFileLink({ path }: { path: string }) {
+  const href = localFileHref(path);
+  return href
+    ? <a className="codex-file-link" href={href} target="_blank" rel="noreferrer noopener">{path}</a>
+    : <span className="codex-file-link">{path}</span>;
+}
+
+function asObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function DiffPreview({ diff }: { diff: string }) {
+  return (
+    <pre className="codex-diff">
+      {diff.split('\n').map((line, index) => (
+        <span
+          className={line.startsWith('+') && !line.startsWith('+++') ? 'diff-add' : line.startsWith('-') && !line.startsWith('---') ? 'diff-remove' : 'diff-context'}
+          key={`${index}:${line}`}
+        >{line || ' '}{'\n'}</span>
+      ))}
+    </pre>
+  );
+}
+
+function commandMeta(payload: Record<string, unknown>): string {
+  const values: string[] = [];
+  if (typeof payload.exitCode === 'number') values.push(`exit ${payload.exitCode}`);
+  if (typeof payload.durationMs === 'number') values.push(payload.durationMs < 1000 ? `${payload.durationMs}ms` : `${(payload.durationMs / 1000).toFixed(1)}s`);
+  return values.join(' · ');
 }
 
 function codexKindLabel(kind: string): string {

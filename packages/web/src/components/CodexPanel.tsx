@@ -23,11 +23,14 @@ export interface CodexThreadView {
   model?: string;
   reasoningEffort?: string;
   approvalPolicy: CodexApprovalPolicy;
+  approvalsReviewer: CodexApprovalsReviewer;
   sandbox: CodexSandbox;
   primary: boolean;
   archived: boolean;
   status: string;
   activeTurnId?: string;
+  contextTokens?: number;
+  contextWindow?: number;
   error?: string;
   models: CodexModelView[];
 }
@@ -55,6 +58,8 @@ export interface CodexPanelView {
 
 export type CodexSandbox = 'readOnly' | 'workspaceWrite' | 'dangerFullAccess';
 export type CodexApprovalPolicy = 'untrusted' | 'on-request' | 'never';
+export type CodexApprovalsReviewer = 'user' | 'auto_review';
+type CodexPermissionMode = 'ask' | 'autoReview' | 'fullAccess' | 'custom';
 
 type CodexControlInput = CodexControlRequest extends infer Request
   ? Request extends { requestId: string }
@@ -123,13 +128,18 @@ export function deriveCodexView(context: ContextEntry[], events: MeshEvent[]): C
         agentId,
         title: asString(state.title) || asString(data.title) || entry.title,
         ...(asString(state.model) || asString(data.model) ? { model: asString(state.model) || asString(data.model) } : {}),
-        ...(asString(data.reasoningEffort) ? { reasoningEffort: asString(data.reasoningEffort) } : {}),
+        ...(asString(state.reasoningEffort) || asString(data.reasoningEffort)
+          ? { reasoningEffort: asString(state.reasoningEffort) || asString(data.reasoningEffort) }
+          : {}),
         approvalPolicy: asApprovalPolicy(state.approvalPolicy) ?? asApprovalPolicy(data.approvalPolicy) ?? 'on-request',
+        approvalsReviewer: asApprovalsReviewer(state.approvalsReviewer) ?? asApprovalsReviewer(data.approvalsReviewer) ?? 'user',
         sandbox: asSandbox(state.sandbox) ?? asSandbox(data.sandbox) ?? 'workspaceWrite',
         primary: data.primary === true,
         archived: data.archived === true || state.status === 'archived',
         status: asString(state.status) || (data.archived === true ? 'archived' : 'offline'),
         ...(asString(state.activeTurnId) ? { activeTurnId: asString(state.activeTurnId) } : {}),
+        ...(asNonnegativeNumber(state.contextTokens) !== undefined ? { contextTokens: asNonnegativeNumber(state.contextTokens) } : {}),
+        ...(asPositiveNumber(state.contextWindow) !== undefined ? { contextWindow: asPositiveNumber(state.contextWindow) } : {}),
         ...(asString(state.error) ? { error: asString(state.error) } : {}),
         models: modelsByAgent.get(agentId) ?? [],
       }];
@@ -176,6 +186,9 @@ export function CodexAgentSettings({
           agent.online &&
           (session?.ownerId === identity.userId || agent.ownerUserId === identity.userId);
         const modelLabel = thread?.models.find((model) => model.id === thread.model)?.displayName ?? thread?.model ?? agent.model;
+        const selectedModel = thread?.models.find((model) => model.id === thread.model);
+        const reasoningEfforts = selectedModel?.supportedReasoningEfforts ?? [];
+        const reasoningEffort = thread?.reasoningEffort ?? selectedModel?.defaultReasoningEffort ?? '';
         return (
           <details className="codex-agent-settings" key={agent.id}>
             <summary>
@@ -188,41 +201,78 @@ export function CodexAgentSettings({
             </summary>
             {thread ? (
               <div className="codex-settings-body">
+                {thread.contextTokens !== undefined && thread.contextWindow !== undefined && (
+                  <div className="codex-context-usage" title={`${thread.contextTokens.toLocaleString()} of ${thread.contextWindow.toLocaleString()} tokens`}>
+                    <div className="codex-context-label">
+                      <span>Context {contextPercent(thread)}% used</span>
+                      <span>{formatTokenCount(thread.contextTokens)} / {formatTokenCount(thread.contextWindow)} tokens</span>
+                    </div>
+                    <div className="codex-context-meter" role="progressbar" aria-label="Codex context used" aria-valuemin={0} aria-valuemax={100} aria-valuenow={contextPercent(thread)}>
+                      <span style={{ width: `${contextPercent(thread)}%` }} />
+                    </div>
+                  </div>
+                )}
                 <div className="codex-controls">
                   <label>
                     Model
                     <select
                       value={thread.model ?? ''}
                       disabled={!canControl || thread.models.length === 0}
-                      onChange={(event) => void control({ agentId: agent.id, action: 'configureThread', threadId: thread.id, model: event.target.value })}
+                      onChange={(event) => {
+                        const model = thread.models.find((candidate) => candidate.id === event.target.value);
+                        void control({
+                          agentId: agent.id,
+                          action: 'configureThread',
+                          threadId: thread.id,
+                          model: event.target.value,
+                          ...(model?.defaultReasoningEffort ? { reasoningEffort: model.defaultReasoningEffort } : {}),
+                        });
+                      }}
                     >
                       {thread.model && !thread.models.some((model) => model.id === thread.model) && <option value={thread.model}>{thread.model}</option>}
                       {thread.models.map((model) => <option key={model.id} value={model.id}>{model.displayName}</option>)}
                     </select>
                   </label>
                   <label>
-                    Sandbox
+                    Reasoning effort
                     <select
-                      value={thread.sandbox}
-                      disabled={!canControl}
-                      onChange={(event) => void control({ agentId: agent.id, action: 'configureThread', threadId: thread.id, sandbox: event.target.value as CodexSandbox })}
+                      value={reasoningEffort}
+                      disabled={!canControl || reasoningEfforts.length === 0}
+                      onChange={(event) => void control({
+                        agentId: agent.id,
+                        action: 'configureThread',
+                        threadId: thread.id,
+                        reasoningEffort: event.target.value,
+                      })}
                     >
-                      <option value="readOnly">read only</option>
-                      <option value="workspaceWrite">workspace write</option>
-                      <option value="dangerFullAccess">danger full access</option>
+                      {reasoningEffort && !reasoningEfforts.includes(reasoningEffort) && (
+                        <option value={reasoningEffort}>{formatReasoningEffort(reasoningEffort)}</option>
+                      )}
+                      {reasoningEfforts.map((effort) => (
+                        <option key={effort} value={effort}>{formatReasoningEffort(effort)}</option>
+                      ))}
                     </select>
                   </label>
                   <label>
-                    Approvals
+                    Permissions
                     <select
-                      value={thread.approvalPolicy}
+                      value={permissionMode(thread)}
                       disabled={!canControl}
-                      onChange={(event) => void control({ agentId: agent.id, action: 'configureThread', threadId: thread.id, approvalPolicy: event.target.value as CodexApprovalPolicy })}
+                      onChange={(event) => void control({
+                        agentId: agent.id,
+                        action: 'configureThread',
+                        threadId: thread.id,
+                        ...permissionSettings(event.target.value as Exclude<CodexPermissionMode, 'custom'>),
+                      })}
                     >
-                      <option value="untrusted">untrusted</option>
-                      <option value="on-request">on request</option>
-                      <option value="never">never</option>
+                      {permissionMode(thread) === 'custom' && <option value="custom">Custom</option>}
+                      <option value="ask">Ask for approval</option>
+                      <option value="autoReview">Approve for me</option>
+                      <option value="fullAccess">Full access</option>
                     </select>
+                    <span className={`codex-permissions-hint${permissionMode(thread) === 'fullAccess' ? ' danger' : ''}`}>
+                      {permissionDescription(permissionMode(thread))}
+                    </span>
                   </label>
                 </div>
                 <button
@@ -243,6 +293,51 @@ export function CodexAgentSettings({
       })}
     </div>
   );
+}
+
+function contextPercent(thread: Pick<CodexThreadView, 'contextTokens' | 'contextWindow'>): number {
+  if (thread.contextTokens === undefined || thread.contextWindow === undefined) return 0;
+  return Math.min(100, Math.max(0, Math.round((thread.contextTokens / thread.contextWindow) * 100)));
+}
+
+function formatTokenCount(value: number): string {
+  if (value < 1000) return String(value);
+  const thousands = value / 1000;
+  return `${Number.isInteger(thousands) ? thousands : thousands.toFixed(1)}k`;
+}
+
+function formatReasoningEffort(effort: string): string {
+  return effort.replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase());
+}
+
+function permissionMode(thread: Pick<CodexThreadView, 'sandbox' | 'approvalPolicy' | 'approvalsReviewer'>): CodexPermissionMode {
+  if (thread.sandbox === 'dangerFullAccess' && thread.approvalPolicy === 'never') return 'fullAccess';
+  if (thread.sandbox === 'workspaceWrite' && thread.approvalPolicy === 'on-request') {
+    return thread.approvalsReviewer === 'auto_review' ? 'autoReview' : 'ask';
+  }
+  return 'custom';
+}
+
+function permissionSettings(mode: Exclude<CodexPermissionMode, 'custom'>): {
+  sandbox: CodexSandbox;
+  approvalPolicy: CodexApprovalPolicy;
+  approvalsReviewer: CodexApprovalsReviewer;
+} {
+  if (mode === 'fullAccess') {
+    return { sandbox: 'dangerFullAccess', approvalPolicy: 'never', approvalsReviewer: 'user' };
+  }
+  return {
+    sandbox: 'workspaceWrite',
+    approvalPolicy: 'on-request',
+    approvalsReviewer: mode === 'autoReview' ? 'auto_review' : 'user',
+  };
+}
+
+function permissionDescription(mode: CodexPermissionMode): string {
+  if (mode === 'fullAccess') return 'Unrestricted files and network; Codex never asks.';
+  if (mode === 'autoReview') return 'Codex reviews eligible requests; the workspace stays sandboxed.';
+  if (mode === 'ask') return 'Codex asks before network access or leaving the workspace.';
+  return 'Custom permission settings are active.';
 }
 
 function approvalFrom(payload: Record<string, unknown>): CodexApprovalView | null {
@@ -279,8 +374,20 @@ function asString(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
 
+function asNonnegativeNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
+}
+
+function asPositiveNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
 function asApprovalPolicy(value: unknown): CodexApprovalPolicy | undefined {
   return value === 'untrusted' || value === 'on-request' || value === 'never' ? value : undefined;
+}
+
+function asApprovalsReviewer(value: unknown): CodexApprovalsReviewer | undefined {
+  return value === 'user' || value === 'auto_review' ? value : undefined;
 }
 
 function asSandbox(value: unknown): CodexSandbox | undefined {

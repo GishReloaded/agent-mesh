@@ -264,6 +264,11 @@ pre {
   min-height: 0;
 }
 
+/* A scrollable flex timeline must overflow instead of compressing older rows. */
+.messages > * {
+  flex-shrink: 0;
+}
+
 .message {
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr);
@@ -621,8 +626,8 @@ pre {
 }
 
 .codex-agent-settings {
+  width: 100%;
   min-width: 0;
-  max-width: 720px;
 }
 
 .codex-agent-settings > summary {
@@ -639,6 +644,12 @@ pre {
 
 .codex-agent-settings > summary::-webkit-details-marker {
   display: none;
+}
+
+.codex-agent-settings > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: 4px;
 }
 
 .codex-agent-settings > summary::before {
@@ -680,6 +691,7 @@ pre {
 
 .codex-settings-body {
   display: flex;
+  flex-wrap: wrap;
   align-items: end;
   gap: 12px;
   padding: 8px 0 10px 14px;
@@ -695,7 +707,7 @@ pre {
 
 .codex-controls {
   display: grid;
-  grid-template-columns: repeat(3, minmax(120px, 180px));
+  grid-template-columns: minmax(140px, 220px) minmax(140px, 190px) minmax(220px, 320px);
   gap: 8px;
 }
 
@@ -704,6 +716,223 @@ pre {
   gap: 4px;
   color: var(--text-dim);
   font-size: 11px;
+}
+
+.codex-permissions-hint {
+  color: var(--text-dim);
+  line-height: 1.35;
+}
+
+.codex-permissions-hint.danger {
+  color: var(--warn);
+}
+
+.codex-context-usage {
+  box-sizing: border-box;
+  width: 100%;
+  flex: 1 0 100%;
+  padding-right: 14px;
+}
+
+.codex-context-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.codex-context-meter {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bg-input);
+}
+
+.codex-context-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.md-file-link,
+.codex-file-link {
+  color: var(--accent);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+.md-file-link:hover,
+.codex-file-link:hover {
+  text-decoration: underline;
+}
+
+.codex-technical-event {
+  width: min(100%, 860px);
+  margin-left: 38px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.codex-technical-event > summary {
+  display: grid;
+  grid-template-columns: 22px auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.codex-technical-event > summary::-webkit-details-marker {
+  display: none;
+}
+
+.codex-tech-icon {
+  color: var(--accent);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-weight: 700;
+}
+
+.codex-command-preview,
+.codex-technical-summary {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.codex-command-preview {
+  border: 0;
+  background: transparent;
+}
+
+.codex-tech-meta {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.codex-terminal,
+.codex-diff {
+  margin: 3px 0 8px 29px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--bg) 78%, black);
+  font: 12px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.codex-terminal {
+  max-height: 260px;
+  padding: 9px 11px;
+}
+
+.codex-terminal pre {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+}
+
+.codex-terminal-cwd {
+  color: var(--text-dim);
+}
+
+.codex-terminal-command {
+  color: var(--text);
+}
+
+.codex-technical-detail {
+  display: grid;
+  gap: 5px;
+  padding-left: 29px;
+}
+
+.codex-file-link {
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.codex-diff {
+  width: calc(100% - 29px);
+  max-height: 300px;
+  margin-left: 0;
+  padding: 7px 0;
+}
+
+.codex-diff span {
+  display: block;
+  padding: 0 10px;
+  white-space: pre;
+}
+
+.codex-diff .diff-add {
+  color: #9be9a8;
+  background: rgb(46 160 67 / 16%);
+}
+
+.codex-diff .diff-remove {
+  color: #ffb4ae;
+  background: rgb(248 81 73 / 16%);
+}
+
+.codex-turn-summary {
+  overflow: hidden;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg-raised);
+}
+
+.codex-turn-summary-head {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.codex-change-additions {
+  color: #3fb950;
+  font-variant-numeric: tabular-nums;
+}
+
+.codex-change-deletions {
+  color: #f85149;
+  font-variant-numeric: tabular-nums;
+}
+
+.codex-turn-summary-files {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--border);
+}
+
+.codex-file-stat {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 12px 8px 41px;
+}
+
+.codex-file-stat + .codex-file-stat {
+  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+.codex-context-compaction {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
 }
 
 .codex-chat-event {
@@ -741,69 +970,17 @@ pre {
   letter-spacing: 0.04em;
 }
 
-.codex-technical-event {
-  margin-left: 38px;
-  color: var(--text-dim);
-  font-size: 11.5px;
-}
-
-.codex-technical-event summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  padding: 2px 0;
-  cursor: pointer;
-  list-style: none;
-}
-
-.codex-technical-event summary::-webkit-details-marker {
-  display: none;
-}
-
-.codex-technical-event summary::before {
-  content: '›';
-  color: var(--text-dim);
-}
-
-.codex-technical-event[open] summary::before {
-  transform: rotate(90deg);
-}
-
 .codex-technical-event .type {
-  flex: 0 0 auto;
   color: var(--accent);
-  font-family: var(--mono);
-  font-size: 10px;
-  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .codex-technical-event .time {
   flex: 0 0 auto;
 }
 
-.codex-technical-summary {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.codex-technical-detail {
-  padding: 4px 0 4px 16px;
-}
-
 .codex-approval {
   border-color: var(--accent);
-}
-
-.codex-diff {
-  max-height: 240px;
-  overflow: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-  background: var(--bg-input);
-  padding: 8px;
-  border-radius: 6px;
 }
 
 .codex-approval-actions {

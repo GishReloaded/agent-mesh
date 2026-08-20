@@ -53,6 +53,7 @@ Thumbs.db
 AgentMesh — промпт для разработки проекта.md
 
 # Caches
+.codebase-memory/
 .cache/
 .turbo/
 .eslintcache

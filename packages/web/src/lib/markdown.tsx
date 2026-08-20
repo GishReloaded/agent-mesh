@@ -17,6 +17,13 @@ import type { ReactNode } from 'react';
 type InlineOptions = { onMention?: (handle: string) => void };
 
 const SAFE_LINK = /^(https?:\/\/|mailto:)/i;
+const WINDOWS_FILE = /^[a-zA-Z]:[\\/]/;
+
+export function localFileHref(path: string): string | null {
+  if (WINDOWS_FILE.test(path)) return `vscode://file/${path.replaceAll('\\', '/')}`;
+  if (path.startsWith('/')) return `vscode://file${path}`;
+  return null;
+}
 
 export function renderMarkdown(source: string, options: InlineOptions = {}): ReactNode {
   const lines = source.split('\n');
@@ -167,9 +174,16 @@ function renderInline(text: string, options: InlineOptions): ReactNode[] {
     } else if (token.startsWith('[')) {
       const link = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(token);
       const href = link?.[2] ?? '';
+      const fileHref = localFileHref(href);
       nodes.push(
-        SAFE_LINK.test(href) ? (
-          <a key={key++} href={href} target="_blank" rel="noreferrer noopener">
+        SAFE_LINK.test(href) || fileHref ? (
+          <a
+            key={key++}
+            href={fileHref ?? href}
+            className={fileHref ? 'md-file-link' : undefined}
+            target="_blank"
+            rel="noreferrer noopener"
+          >
             {link?.[1]}
           </a>
         ) : (

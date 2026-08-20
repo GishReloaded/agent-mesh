@@ -29,7 +29,7 @@ agentmesh agent run "Claude" --preset claude --workspace ~/code/project
 agentmesh agent run "Codex" --preset codex --workspace ~/code/project
 ```
 
-The Codex preset runs the official local App Server protocol. Its ChatGPT/Codex credential remains in the local Codex installation; AgentMesh receives only selected thread metadata and sanitized activity. Remote `danger-full-access` stays disabled unless the local operator adds `--allow-danger-full-access`.
+The Codex preset runs the official local App Server protocol. Its ChatGPT/Codex credential remains in the local Codex installation; AgentMesh receives only selected thread metadata and sanitized activity. The session owner or agent registrar can select any Codex sandbox mode, including `danger-full-access`, from the Web UI.
 
 Any other command works too — everything after `--` is the tool:
 

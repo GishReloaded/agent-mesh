@@ -63,4 +63,30 @@ describe('Codex event sanitization', () => {
       summary: 'Checking the dependency graph',
     });
   });
+
+  it('keeps bounded command output and execution metadata', () => {
+    const safe = sanitizeCodexNotification('item/completed', {
+      threadId: 'thr_1',
+      turnId: 'turn_1',
+      item: {
+        id: 'cmd_1', type: 'commandExecution', command: 'npm test', cwd: 'D:\\repo', status: 'completed',
+        aggregatedOutput: '17 tests passed', exitCode: 0, durationMs: 742,
+        environment: { SECRET: 'must-not-leak' },
+      },
+    });
+    assert.deepEqual(safe, {
+      threadId: 'thr_1', turnId: 'turn_1', itemId: 'cmd_1', kind: 'command', command: 'npm test', cwd: 'D:\\repo',
+      status: 'completed', output: '17 tests passed', exitCode: 0, durationMs: 742,
+    });
+  });
+
+  it('exposes compaction as a safe lifecycle activity', () => {
+    const safe = sanitizeCodexNotification('item/completed', {
+      threadId: 'thr_1', turnId: 'turn_1',
+      item: { id: 'compact_1', type: 'contextCompaction', encryptedContent: 'secret' },
+    });
+    assert.deepEqual(safe, {
+      threadId: 'thr_1', turnId: 'turn_1', itemId: 'compact_1', kind: 'contextCompaction', status: 'completed',
+    });
+  });
 });

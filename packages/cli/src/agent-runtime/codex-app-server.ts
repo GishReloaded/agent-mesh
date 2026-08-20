@@ -124,6 +124,7 @@ export interface CodexTurn {
 export type CodexApprovalDecision = 'accept' | 'acceptForSession' | 'decline' | 'cancel';
 export type CodexSandbox = 'readOnly' | 'workspaceWrite' | 'dangerFullAccess';
 export type CodexApprovalPolicy = 'untrusted' | 'on-request' | 'never';
+export type CodexApprovalsReviewer = 'user' | 'auto_review';
 
 export interface CodexAppServerOptions {
   command?: string;
@@ -203,6 +204,7 @@ export class CodexAppServer {
     cwd: string;
     model?: string;
     approvalPolicy?: CodexApprovalPolicy;
+    approvalsReviewer?: CodexApprovalsReviewer;
     sandbox?: CodexSandbox;
   }): Promise<CodexThread> {
     const result = await this.rpc.request<{ thread: CodexThread }>('thread/start', {
@@ -210,6 +212,7 @@ export class CodexAppServer {
       serviceName: 'agentmesh',
       ...(input.model ? { model: input.model } : {}),
       ...(input.approvalPolicy ? { approvalPolicy: input.approvalPolicy } : {}),
+      ...(input.approvalsReviewer ? { approvalsReviewer: input.approvalsReviewer } : {}),
       ...(input.sandbox ? { sandbox: sandboxMode(input.sandbox) } : {}),
     });
     return result.thread;
@@ -227,6 +230,7 @@ export class CodexAppServer {
     model?: string;
     effort?: string;
     approvalPolicy?: CodexApprovalPolicy;
+    approvalsReviewer?: CodexApprovalsReviewer;
     sandbox?: CodexSandbox;
   }): Promise<CodexTurn> {
     const result = await this.rpc.request<{ turn: CodexTurn }>('turn/start', {
@@ -236,6 +240,7 @@ export class CodexAppServer {
       ...(input.model ? { model: input.model } : {}),
       ...(input.effort ? { effort: input.effort } : {}),
       ...(input.approvalPolicy ? { approvalPolicy: input.approvalPolicy } : {}),
+      ...(input.approvalsReviewer ? { approvalsReviewer: input.approvalsReviewer } : {}),
       ...(input.sandbox ? { sandboxPolicy: sandboxPolicy(input.sandbox, input.cwd) } : {}),
     });
     return result.turn;
@@ -285,12 +290,15 @@ export interface SanitizedCodexActivity {
   threadId: string;
   turnId?: string;
   itemId?: string;
-  kind: 'reasoningSummary' | 'command' | 'mcpTool' | 'fileChange' | 'message' | 'status' | 'error';
+  kind: 'reasoningSummary' | 'command' | 'mcpTool' | 'fileChange' | 'contextCompaction' | 'message' | 'status' | 'error';
   status?: string;
   summary?: string;
   tool?: string;
   command?: string;
   cwd?: string;
+  output?: string;
+  exitCode?: number;
+  durationMs?: number;
   files?: string[];
   diff?: string;
 }
@@ -332,12 +340,17 @@ export function sanitizeCodexNotification(method: string, input: unknown): Sanit
   const base = { ...common, ...(itemId ? { itemId } : {}) };
   const type = string(item.type);
   if (type === 'commandExecution') {
+    const exitCode = number(item.exitCode);
+    const durationMs = number(item.durationMs);
     return {
       ...base,
       kind: 'command',
       command: truncate(string(item.command), 4000),
       cwd: truncate(string(item.cwd), 1000),
       status: truncate(string(item.status), 40),
+      ...(string(item.aggregatedOutput) ? { output: truncate(string(item.aggregatedOutput), 16_000) } : {}),
+      ...(exitCode !== undefined ? { exitCode } : {}),
+      ...(durationMs !== undefined ? { durationMs } : {}),
     };
   }
   if (type === 'mcpToolCall' || type === 'dynamicToolCall') {
@@ -369,6 +382,9 @@ export function sanitizeCodexNotification(method: string, input: unknown): Sanit
     const summary = Array.isArray(item.summary) ? item.summary.filter((part): part is string => typeof part === 'string').join('\n') : '';
     return { ...base, kind: 'reasoningSummary', summary: truncate(summary, 4000) };
   }
+  if (type === 'contextCompaction') {
+    return { ...base, kind: 'contextCompaction', status: 'completed' };
+  }
   return null;
 }
 
@@ -378,6 +394,10 @@ function object(value: unknown): JsonObject {
 
 function string(value: unknown): string {
   return typeof value === 'string' ? value : '';
+}
+
+function number(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 function truncate(value: string, limit: number): string | undefined {

@@ -140,7 +140,6 @@ export function registerAgentCommands(program: Command): void {
     .option('--no-log', 'do not write a diagnostic log')
     .option('--stream', 'publish what the tool is doing, step by step, into the session')
     .option('--stream-thinking', 'include a short excerpt of the reasoning with each step')
-    .option('--allow-danger-full-access', 'allow the Web UI to select Codex danger-full-access mode')
     .action(
       async (
         name: string | undefined,
@@ -160,7 +159,6 @@ export function registerAgentCommands(program: Command): void {
           log?: boolean;
           stream?: boolean;
           streamThinking?: boolean;
-          allowDangerFullAccess?: boolean;
         },
       ) => {
         // Commander treats operands after `--` as positionals too, so the first
@@ -230,7 +228,6 @@ export function registerAgentCommands(program: Command): void {
           // not getting the steps would be a puzzling combination.
           stream: Boolean(options.stream || options.streamThinking),
           streamThinking: Boolean(options.streamThinking),
-          allowDangerFullAccess: Boolean(options.allowDangerFullAccess),
         });
 
         await runner.start();

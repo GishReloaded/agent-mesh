@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { CodexBridge, type CodexBridgeServer, type CodexMesh } from '../src/agent-runtime/codex-bridge.js';
 import type { RpcNotification, RpcServerRequest } from '../src/agent-runtime/codex-app-server.js';
+import { formatCodexActivity } from '../src/agent-runtime/runner.js';
 
 class FakeMesh implements CodexMesh {
   readonly sessionId = 'ses_1';
@@ -55,6 +56,37 @@ class FakeServer implements CodexBridgeServer {
 }
 
 describe('Codex bridge', () => {
+  it('formats useful one-line verbose activity without dumping payloads', () => {
+    assert.equal(formatCodexActivity({ threadId: 'thr_1', kind: 'command', command: 'npm test', status: 'completed' }), '[command] npm test (completed)');
+    assert.equal(formatCodexActivity({ threadId: 'thr_1', kind: 'fileChange', files: ['a.ts', 'b.ts'], status: 'completed' }), '[files] a.ts, b.ts (completed)');
+    assert.equal(formatCodexActivity({ threadId: 'thr_1', kind: 'reasoningSummary', summary: 'Checking files' }), '[summary] Checking files');
+  });
+
+  it('reports sanitized activity to the local verbose observer', async () => {
+    const mesh = new FakeMesh();
+    const server = new FakeServer();
+    const activities: Record<string, unknown>[] = [];
+    const bridge = new CodexBridge({
+      mesh,
+      workspace: 'D:\\repo',
+      onActivity: (activity) => activities.push(activity as unknown as Record<string, unknown>),
+      createServer: async (handlers) => {
+        server.notifications = handlers.onNotification;
+        server.requests = handlers.onServerRequest;
+        return server;
+      },
+    });
+    await bridge.start();
+    server.notifications({
+      method: 'item/completed',
+      params: { threadId: 'thr_1', turnId: 'turn_1', item: { id: 'cmd_1', type: 'commandExecution', command: 'npm test', status: 'completed' } },
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+
+    assert.equal(activities[0]?.kind, 'command');
+    assert.equal(activities[0]?.command, 'npm test');
+  });
+
   it('creates one primary thread and reuses it for mention turns', async () => {
     const mesh = new FakeMesh();
     const server = new FakeServer();
@@ -76,7 +108,7 @@ describe('Codex bridge', () => {
       params: { threadId: 'thr_1', turnId: 'turn_1', item: { id: 'msg_1', type: 'agentMessage', text: 'done' } },
     });
     server.notifications({ method: 'turn/completed', params: { threadId: 'thr_1', turn: { id: 'turn_1', status: 'completed' } } });
-    assert.equal(await first, 'done');
+    assert.equal((await first).answer, 'done');
 
     const second = bridge.runMention('second request');
     await new Promise((resolve) => setImmediate(resolve));
@@ -85,20 +117,130 @@ describe('Codex bridge', () => {
       params: { threadId: 'thr_1', turnId: 'turn_1', item: { id: 'msg_2', type: 'agentMessage', text: 'again' } },
     });
     server.notifications({ method: 'turn/completed', params: { threadId: 'thr_1', turn: { id: 'turn_1', status: 'completed' } } });
-    assert.equal(await second, 'again');
+    assert.equal((await second).answer, 'again');
 
     assert.equal(server.startedThreads, 1);
     assert.equal(server.startedTurns, 2);
     assert.equal(mesh.contexts.length, 1);
   });
 
-  it('rejects a remotely requested danger-full-access mode outside the local ceiling', async () => {
+  it('uses the App Server agent message as the turn result without publishing a duplicate activity', async () => {
     const mesh = new FakeMesh();
     const server = new FakeServer();
     const bridge = new CodexBridge({
       mesh,
       workspace: 'D:\\repo',
-      allowDangerFullAccess: false,
+      createServer: async (handlers) => {
+        server.notifications = handlers.onNotification;
+        server.requests = handlers.onServerRequest;
+        return server;
+      },
+    });
+    await bridge.start();
+
+    const turn = bridge.runMention('answer once');
+    await new Promise((resolve) => setImmediate(resolve));
+    server.notifications({
+      method: 'item/completed',
+      params: { threadId: 'thr_1', turnId: 'turn_1', item: { id: 'msg_1', type: 'agentMessage', text: 'single answer' } },
+    });
+    server.notifications({ method: 'turn/completed', params: { threadId: 'thr_1', turn: { id: 'turn_1', status: 'completed' } } });
+
+    assert.equal((await turn).answer, 'single answer');
+    assert.equal(mesh.events.some((entry) => entry.type === 'CODEX_ACTIVITY' && entry.payload.kind === 'message'), false);
+  });
+
+  it('collects one final change summary and publishes it on demand', async () => {
+    const mesh = new FakeMesh();
+    const server = new FakeServer();
+    const bridge = new CodexBridge({
+      mesh,
+      workspace: 'D:\\repo',
+      createServer: async (handlers) => {
+        server.notifications = handlers.onNotification;
+        server.requests = handlers.onServerRequest;
+        return server;
+      },
+    });
+    await bridge.start();
+
+    const turn = bridge.runMention('change files');
+    await new Promise((resolve) => setImmediate(resolve));
+    server.notifications({ method: 'item/completed', params: {
+      threadId: 'thr_1', turnId: 'turn_1',
+      item: { id: 'file_1', type: 'fileChange', status: 'completed', changes: [{ path: 'a.ts', diff: '@@ -1 +1,2 @@\n-old\n+new\n+more' }] },
+    } });
+    server.notifications({ method: 'item/completed', params: {
+      threadId: 'thr_1', turnId: 'turn_1',
+      item: { id: 'file_2', type: 'fileChange', status: 'completed', changes: [{ path: 'b.ts', diff: '@@ -0,0 +1 @@\n+added' }] },
+    } });
+    server.notifications({ method: 'item/completed', params: {
+      threadId: 'thr_1', turnId: 'turn_1', item: { id: 'msg_1', type: 'agentMessage', text: 'done' },
+    } });
+    server.notifications({ method: 'turn/completed', params: { threadId: 'thr_1', turn: { id: 'turn_1', status: 'completed' } } });
+
+    const result = await turn;
+    assert.deepEqual(result.changeSummary, {
+      threadId: 'thr_1', turnId: 'turn_1', files: ['a.ts', 'b.ts'], additions: 3, deletions: 1,
+      fileStats: [
+        { path: 'a.ts', additions: 2, deletions: 1 },
+        { path: 'b.ts', additions: 1, deletions: 0 },
+      ],
+    });
+    assert.equal(mesh.events.some((entry) => entry.payload.kind === 'turnSummary'), false);
+    await bridge.publishChangeSummary(result.changeSummary);
+    assert.deepEqual(mesh.events.at(-1)?.payload, {
+      agentId: 'agt_1', threadId: 'thr_1', turnId: 'turn_1', kind: 'turnSummary', status: 'completed',
+      files: ['a.ts', 'b.ts'], additions: 3, deletions: 1,
+      fileStats: [
+        { path: 'a.ts', additions: 2, deletions: 1 },
+        { path: 'b.ts', additions: 1, deletions: 0 },
+      ],
+    });
+  });
+
+  it('publishes the current context usage from official App Server notifications', async () => {
+    const mesh = new FakeMesh();
+    const server = new FakeServer();
+    const bridge = new CodexBridge({
+      mesh,
+      workspace: 'D:\\repo',
+      createServer: async (handlers) => {
+        server.notifications = handlers.onNotification;
+        server.requests = handlers.onServerRequest;
+        return server;
+      },
+    });
+    await bridge.start();
+    const turn = bridge.runMention('inspect context');
+    await new Promise((resolve) => setImmediate(resolve));
+    server.notifications({ method: 'thread/tokenUsage/updated', params: {
+      threadId: 'thr_1', turnId: 'turn_1',
+      tokenUsage: {
+        total: { totalTokens: 70_000 },
+        last: { totalTokens: 42_000, inputTokens: 40_000, outputTokens: 2_000 },
+        modelContextWindow: 100_000,
+      },
+    } });
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const state = mesh.events.filter((entry) => entry.type === 'CODEX_THREAD_STATE').at(-1)?.payload;
+    assert.equal(state?.contextTokens, 42_000);
+    assert.equal(state?.contextWindow, 100_000);
+
+    server.notifications({ method: 'item/completed', params: {
+      threadId: 'thr_1', turnId: 'turn_1', item: { id: 'msg_1', type: 'agentMessage', text: 'done' },
+    } });
+    server.notifications({ method: 'turn/completed', params: { threadId: 'thr_1', turn: { id: 'turn_1', status: 'completed' } } });
+    await turn;
+  });
+
+  it('allows danger-full-access directly from the session settings', async () => {
+    const mesh = new FakeMesh();
+    const server = new FakeServer();
+    const bridge = new CodexBridge({
+      mesh,
+      workspace: 'D:\\repo',
       createServer: async (handlers) => {
         server.notifications = handlers.onNotification;
         server.requests = handlers.onServerRequest;
@@ -112,9 +254,8 @@ describe('Codex bridge', () => {
       action: 'createThread',
       sandbox: 'dangerFullAccess',
     });
-    assert.equal(server.startedThreads, 0);
-    assert.equal(mesh.events.at(-1)?.type, 'CODEX_THREAD_STATE');
-    assert.match(String(mesh.events.at(-1)?.payload.error), /local runner/i);
+    assert.equal(server.startedThreads, 1);
+    assert.equal(mesh.events.some((event) => event.payload.error !== undefined), false);
   });
 
   it('applies primary thread settings to later mention turns', async () => {
@@ -146,7 +287,8 @@ describe('Codex bridge', () => {
       action: 'configureThread',
       threadId: 'thr_1',
       sandbox: 'readOnly',
-      approvalPolicy: 'never',
+      approvalPolicy: 'on-request',
+      approvalsReviewer: 'auto_review',
     });
 
     const second = bridge.runMention('use settings');
@@ -164,7 +306,8 @@ describe('Codex bridge', () => {
       cwd: 'D:\\repo',
       model: 'gpt-test',
       effort: undefined,
-      approvalPolicy: 'never',
+      approvalPolicy: 'on-request',
+      approvalsReviewer: 'auto_review',
       sandbox: 'readOnly',
     });
   });

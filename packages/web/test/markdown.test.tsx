@@ -43,6 +43,12 @@ describe('markdown rendering', () => {
     assert.doesNotMatch(render('[click](data:text/html;base64,PHNjcmlwdD4=)'), /<a /);
   });
 
+  it('opens absolute workspace file links in the local editor', () => {
+    const html = render('[random.md](D:\\PROJECTCODE\\123123\\random.md)');
+    assert.match(html, /href="vscode:\/\/file\/D:\/PROJECTCODE\/123123\/random\.md"/);
+    assert.match(html, /class="md-file-link"/);
+  });
+
   it('never emits markup that came from the message', () => {
     // The renderer produces React elements, so there is no path from message
     // text to a tag - this asserts that property directly.

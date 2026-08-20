@@ -167,6 +167,7 @@ const codexRequestIdSchema = z.string().min(1).max(120);
 const codexExternalIdSchema = z.string().min(1).max(200);
 const codexModelSchema = z.string().min(1).max(120);
 const codexApprovalPolicySchema = z.enum(['untrusted', 'on-request', 'never']);
+const codexApprovalsReviewerSchema = z.enum(['user', 'auto_review']);
 const codexSandboxSchema = z.enum(['readOnly', 'workspaceWrite', 'dangerFullAccess']);
 const codexModelOptionSchema = z
   .object({
@@ -192,6 +193,7 @@ const codexControlPayload = z.discriminatedUnion('action', [
       model: codexModelSchema.optional(),
       reasoningEffort: z.string().max(40).optional(),
       approvalPolicy: codexApprovalPolicySchema.optional(),
+      approvalsReviewer: codexApprovalsReviewerSchema.optional(),
       sandbox: codexSandboxSchema.optional(),
     })
     .strict(),
@@ -204,6 +206,7 @@ const codexControlPayload = z.discriminatedUnion('action', [
       model: codexModelSchema.optional(),
       reasoningEffort: z.string().max(40).optional(),
       approvalPolicy: codexApprovalPolicySchema.optional(),
+      approvalsReviewer: codexApprovalsReviewerSchema.optional(),
       sandbox: codexSandboxSchema.optional(),
     })
     .strict(),
@@ -239,6 +242,7 @@ const codexControlPayload = z.discriminatedUnion('action', [
       model: codexModelSchema.optional(),
       reasoningEffort: z.string().max(40).optional(),
       approvalPolicy: codexApprovalPolicySchema.optional(),
+      approvalsReviewer: codexApprovalsReviewerSchema.optional(),
       sandbox: codexSandboxSchema.optional(),
     })
     .strict(),
@@ -312,10 +316,13 @@ export const devPayloadSchemas = {
       model: codexModelSchema.optional(),
       reasoningEffort: z.string().max(40).optional(),
       approvalPolicy: codexApprovalPolicySchema.optional(),
+      approvalsReviewer: codexApprovalsReviewerSchema.optional(),
       sandbox: codexSandboxSchema.optional(),
       status: z.enum(['offline', 'idle', 'working', 'waitingForApproval', 'failed', 'archived']),
       activeTurnId: codexExternalIdSchema.optional(),
       primary: z.boolean().optional(),
+      contextTokens: z.number().int().nonnegative().max(10_000_000).optional(),
+      contextWindow: z.number().int().positive().max(10_000_000).optional(),
       error: z.string().max(2000).optional(),
       models: z.array(codexModelOptionSchema).max(100).optional(),
     })
@@ -326,14 +333,24 @@ export const devPayloadSchemas = {
       threadId: codexExternalIdSchema,
       turnId: codexExternalIdSchema.optional(),
       itemId: codexExternalIdSchema.optional(),
-      kind: z.enum(['reasoningSummary', 'command', 'mcpTool', 'fileChange', 'message', 'status', 'error']),
+      kind: z.enum(['reasoningSummary', 'command', 'mcpTool', 'fileChange', 'turnSummary', 'contextCompaction', 'message', 'status', 'error']),
       status: z.string().max(40).optional(),
       summary: z.string().max(4000).optional(),
       tool: z.string().max(160).optional(),
       command: z.string().max(4000).optional(),
       cwd: z.string().max(1000).optional(),
+      output: z.string().max(16_000).optional(),
+      exitCode: z.number().int().optional(),
+      durationMs: z.number().nonnegative().max(86_400_000).optional(),
       files: z.array(z.string().max(1000)).max(200).optional(),
       diff: z.string().max(16_000).optional(),
+      additions: z.number().int().nonnegative().max(1_000_000).optional(),
+      deletions: z.number().int().nonnegative().max(1_000_000).optional(),
+      fileStats: z.array(z.object({
+        path: z.string().max(1000),
+        additions: z.number().int().nonnegative().max(1_000_000),
+        deletions: z.number().int().nonnegative().max(1_000_000),
+      }).strict()).max(200).optional(),
     })
     .strict(),
   CODEX_APPROVAL_REQUEST: z

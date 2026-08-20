@@ -12,6 +12,7 @@ import {
   type CodexAppServerOptions,
   type CodexApprovalDecision,
   type CodexApprovalPolicy,
+  type CodexApprovalsReviewer,
   type CodexModel,
   type CodexSandbox,
   type CodexThread,
@@ -37,6 +38,7 @@ export interface CodexBridgeServer {
     cwd: string;
     model?: string;
     approvalPolicy?: CodexApprovalPolicy;
+    approvalsReviewer?: CodexApprovalsReviewer;
     sandbox?: CodexSandbox;
   }): Promise<CodexThread>;
   resumeThread(threadId: string): Promise<CodexThread>;
@@ -47,6 +49,7 @@ export interface CodexBridgeServer {
     model?: string;
     effort?: string;
     approvalPolicy?: CodexApprovalPolicy;
+    approvalsReviewer?: CodexApprovalsReviewer;
     sandbox?: CodexSandbox;
   }): Promise<CodexTurn>;
   interruptTurn(threadId: string, turnId: string): Promise<unknown>;
@@ -68,16 +71,37 @@ interface ThreadRecord {
   model?: string;
   reasoningEffort?: string;
   approvalPolicy: CodexApprovalPolicy;
+  approvalsReviewer: CodexApprovalsReviewer;
   sandbox: CodexSandbox;
   primary: boolean;
   archived: boolean;
+  contextTokens?: number;
+  contextWindow?: number;
 }
 
 interface PendingTurn {
   answer: string;
-  resolve: (answer: string) => void;
+  changedFiles: Set<string>;
+  additions: number;
+  deletions: number;
+  fileStats: Map<string, { additions: number; deletions: number }>;
+  resolve: (result: CodexTurnResult) => void;
   reject: (error: Error) => void;
   timer: ReturnType<typeof setTimeout>;
+}
+
+export interface CodexChangeSummary {
+  threadId: string;
+  turnId: string;
+  files: string[];
+  additions: number;
+  deletions: number;
+  fileStats: Array<{ path: string; additions: number; deletions: number }>;
+}
+
+export interface CodexTurnResult {
+  answer: string;
+  changeSummary?: CodexChangeSummary;
 }
 
 interface PendingApproval {
@@ -92,7 +116,7 @@ export interface CodexBridgeOptions {
   command?: string;
   timeoutMs?: number;
   approvalTimeoutMs?: number;
-  allowDangerFullAccess?: boolean;
+  onActivity?: (activity: SanitizedCodexActivity) => void;
   createServer?: (handlers: CodexBridgeHandlers) => Promise<CodexBridgeServer>;
 }
 
@@ -117,17 +141,26 @@ export class CodexBridge {
     await this.ensureServer();
   }
 
-  async runMention(prompt: string): Promise<string> {
+  async runMention(prompt: string): Promise<CodexTurnResult> {
     const thread = this.primaryThreadId
       ? await this.ensureThreadLoaded(this.primaryThreadId)
       : await this.createThread({ primary: true });
     return this.runThread(thread.id, prompt, {});
   }
 
+  async publishChangeSummary(summary?: CodexChangeSummary): Promise<void> {
+    if (!summary) return;
+    await this.options.mesh.publishEvent(DevEventType.CodexActivity, {
+      agentId: this.agentId(),
+      ...summary,
+      kind: 'turnSummary',
+      status: 'completed',
+    });
+  }
+
   async handleControl(control: CodexControlRequest): Promise<void> {
     if (!this.isTarget(control.agentId) || remember(this.handledControlRequests, control.requestId)) return;
     try {
-      this.assertSandboxAllowed('sandbox' in control ? control.sandbox : undefined);
       switch (control.action) {
         case 'createThread':
           await this.createThread({
@@ -136,12 +169,16 @@ export class CodexBridge {
             model: control.model,
             reasoningEffort: control.reasoningEffort,
             approvalPolicy: control.approvalPolicy,
+            approvalsReviewer: control.approvalsReviewer,
             sandbox: control.sandbox,
           });
           return;
         case 'startTurn':
           void this.runThread(control.threadId, control.prompt, control)
-            .then((answer) => this.options.mesh.sendMessage(answer))
+            .then(async (result) => {
+              await this.options.mesh.sendMessage(result.answer);
+              await this.publishChangeSummary(result.changeSummary);
+            })
             .catch((error: Error) => this.publishFailure(control.threadId, error));
           return;
         case 'interruptTurn':
@@ -166,6 +203,7 @@ export class CodexBridge {
           if (control.model !== undefined) thread.model = control.model;
           if (control.reasoningEffort !== undefined) thread.reasoningEffort = control.reasoningEffort;
           if (control.approvalPolicy !== undefined) thread.approvalPolicy = control.approvalPolicy;
+          if (control.approvalsReviewer !== undefined) thread.approvalsReviewer = control.approvalsReviewer;
           if (control.sandbox !== undefined) thread.sandbox = control.sandbox;
           await this.persistThread(thread);
           await this.publishState(thread, 'idle');
@@ -237,15 +275,16 @@ export class CodexBridge {
     model?: string;
     reasoningEffort?: string;
     approvalPolicy?: CodexApprovalPolicy;
+    approvalsReviewer?: CodexApprovalsReviewer;
     sandbox?: CodexSandbox;
   }): Promise<ThreadRecord> {
-    this.assertSandboxAllowed(input.sandbox);
     const server = await this.ensureServer();
     const selectedModel = input.model ?? this.models.find((model) => model.isDefault)?.id ?? this.models[0]?.id;
     const remote = await server.startThread({
       cwd: this.options.workspace,
       ...(selectedModel ? { model: selectedModel } : {}),
       approvalPolicy: input.approvalPolicy ?? 'on-request',
+      approvalsReviewer: input.approvalsReviewer ?? 'user',
       sandbox: input.sandbox ?? 'workspaceWrite',
     });
     const thread: ThreadRecord = {
@@ -254,6 +293,7 @@ export class CodexBridge {
       ...(selectedModel ? { model: selectedModel } : {}),
       ...(input.reasoningEffort ? { reasoningEffort: input.reasoningEffort } : {}),
       approvalPolicy: input.approvalPolicy ?? 'on-request',
+      approvalsReviewer: input.approvalsReviewer ?? 'user',
       sandbox: input.sandbox ?? 'workspaceWrite',
       primary: input.primary,
       archived: false,
@@ -283,10 +323,10 @@ export class CodexBridge {
       model?: string;
       reasoningEffort?: string;
       approvalPolicy?: CodexApprovalPolicy;
+      approvalsReviewer?: CodexApprovalsReviewer;
       sandbox?: CodexSandbox;
     },
-  ): Promise<string> {
-    this.assertSandboxAllowed(options.sandbox);
+  ): Promise<CodexTurnResult> {
     const thread = await this.ensureThreadLoaded(threadId);
     const server = await this.ensureServer();
     const turn = await server.startTurn({
@@ -296,18 +336,21 @@ export class CodexBridge {
       model: options.model ?? thread.model,
       effort: options.reasoningEffort ?? thread.reasoningEffort,
       approvalPolicy: options.approvalPolicy ?? thread.approvalPolicy,
+      approvalsReviewer: options.approvalsReviewer ?? thread.approvalsReviewer,
       sandbox: options.sandbox ?? thread.sandbox,
     });
     await this.options.mesh.setStatus('working', `Codex thread ${thread.title}`);
     await this.publishState(thread, 'working', turn.id);
 
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<CodexTurnResult>((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pendingTurns.delete(turn.id);
         void server.interruptTurn(threadId, turn.id).catch(() => undefined);
         reject(new Error('Codex turn timed out.'));
       }, this.options.timeoutMs ?? 10 * 60_000);
-      this.pendingTurns.set(turn.id, { answer: '', resolve, reject, timer });
+      this.pendingTurns.set(turn.id, {
+        answer: '', changedFiles: new Set(), additions: 0, deletions: 0, fileStats: new Map(), resolve, reject, timer,
+      });
     });
   }
 
@@ -315,22 +358,74 @@ export class CodexBridge {
     // App Server emits token-sized deltas. Persist the authoritative completed
     // reasoning/file item instead of turning each delta into a database write.
     if (message.method === 'item/reasoning/summaryTextDelta' || message.method === 'turn/diff/updated') return;
+    if (message.method === 'thread/tokenUsage/updated') {
+      this.onTokenUsage(message.params);
+      return;
+    }
     const safe = sanitizeCodexNotification(message.method, message.params);
     if (!safe) return;
     const pending = safe.turnId ? this.pendingTurns.get(safe.turnId) : undefined;
-    if (safe.kind === 'message' && pending && safe.summary) pending.answer = safe.summary;
+    // agentMessage is the authoritative turn result. AgentRunner publishes it
+    // once as a normal chat message after turn/completed; emitting it here as
+    // CODEX_ACTIVITY would create a second, visually identical answer.
+    if (safe.kind === 'message') {
+      if (pending && safe.summary) pending.answer = safe.summary;
+      return;
+    }
+    if (pending && message.method === 'item/completed' && safe.kind === 'fileChange') {
+      for (const file of safe.files ?? []) pending.changedFiles.add(file);
+      // Count from the local App Server payload before the public event's diff
+      // is truncated. Only the numeric totals leave the user's machine.
+      const counts = countFileChangeDiff(message.params);
+      pending.additions += counts.additions;
+      pending.deletions += counts.deletions;
+      for (const stat of fileChangeStats(message.params, new Set(safe.files ?? []))) {
+        const current = pending.fileStats.get(stat.path) ?? { additions: 0, deletions: 0 };
+        pending.fileStats.set(stat.path, {
+          additions: current.additions + stat.additions,
+          deletions: current.deletions + stat.deletions,
+        });
+      }
+    }
+    this.options.onActivity?.(safe);
     void this.publishActivity(safe);
 
     if (message.method === 'turn/completed' && safe.turnId && pending) {
       clearTimeout(pending.timer);
       this.pendingTurns.delete(safe.turnId);
       const status = safe.status ?? 'completed';
-      if (status === 'completed') pending.resolve(pending.answer || 'Codex completed the turn without a text response.');
+      if (status === 'completed') pending.resolve({
+        answer: pending.answer || 'Codex completed the turn without a text response.',
+        ...(pending.changedFiles.size > 0 ? {
+          changeSummary: {
+            threadId: safe.threadId,
+            turnId: safe.turnId,
+            files: [...pending.changedFiles],
+            additions: pending.additions,
+            deletions: pending.deletions,
+            fileStats: [...pending.fileStats].map(([path, counts]) => ({ path, ...counts })),
+          },
+        } : {}),
+      });
       else pending.reject(new Error(`Codex turn ended with status ${status}.`));
       const thread = this.threads.get(safe.threadId);
       void this.publishState(thread, status === 'completed' ? 'idle' : 'failed').catch(() => undefined);
       void this.options.mesh.setStatus(status === 'completed' ? 'idle' : 'blocked').catch(() => undefined);
     }
+  }
+
+  private onTokenUsage(input: unknown): void {
+    const params = asObject(input);
+    const thread = this.threads.get(asString(params.threadId));
+    if (!thread) return;
+    const usage = asObject(params.tokenUsage);
+    const contextTokens = asNonnegativeInteger(asObject(usage.last).totalTokens);
+    const contextWindow = asPositiveInteger(usage.modelContextWindow);
+    if (contextTokens !== undefined) thread.contextTokens = contextTokens;
+    if (contextWindow !== undefined) thread.contextWindow = contextWindow;
+    const turnId = asString(params.turnId);
+    void this.publishState(thread, turnId && this.pendingTurns.has(turnId) ? 'working' : 'idle', turnId || undefined)
+      .catch(() => undefined);
   }
 
   private onServerRequest(request: RpcServerRequest): void {
@@ -407,6 +502,7 @@ export class CodexBridge {
         ...(typeof data.model === 'string' ? { model: data.model } : {}),
         ...(typeof data.reasoningEffort === 'string' ? { reasoningEffort: data.reasoningEffort } : {}),
         approvalPolicy: isApprovalPolicy(data.approvalPolicy) ? data.approvalPolicy : 'on-request',
+        approvalsReviewer: isApprovalsReviewer(data.approvalsReviewer) ? data.approvalsReviewer : 'user',
         sandbox: isSandbox(data.sandbox) ? data.sandbox : 'workspaceWrite',
         primary: data.primary === true,
         archived: data.archived === true,
@@ -429,6 +525,7 @@ export class CodexBridge {
         model: thread.model ?? '',
         reasoningEffort: thread.reasoningEffort ?? '',
         approvalPolicy: thread.approvalPolicy,
+        approvalsReviewer: thread.approvalsReviewer,
         sandbox: thread.sandbox,
         primary: thread.primary,
         archived: thread.archived,
@@ -466,8 +563,11 @@ export class CodexBridge {
         model: thread.model,
         reasoningEffort: thread.reasoningEffort,
         approvalPolicy: thread.approvalPolicy,
+        approvalsReviewer: thread.approvalsReviewer,
         sandbox: thread.sandbox,
         primary: thread.primary,
+        ...(thread.contextTokens !== undefined ? { contextTokens: thread.contextTokens } : {}),
+        ...(thread.contextWindow !== undefined ? { contextWindow: thread.contextWindow } : {}),
       } : {}),
       status,
       ...(activeTurnId ? { activeTurnId } : {}),
@@ -486,12 +586,6 @@ export class CodexBridge {
 
   private publishFailure(threadId: string | undefined, error: Error): Promise<unknown> {
     return this.publishState(threadId ? this.threads.get(threadId) : undefined, 'failed', undefined, error.message);
-  }
-
-  private assertSandboxAllowed(sandbox: CodexSandbox | undefined): void {
-    if (sandbox === 'dangerFullAccess' && !this.options.allowDangerFullAccess) {
-      throw new Error('danger-full-access is disabled by the local runner; restart it with the explicit opt-in flag.');
-    }
   }
 
   private isTarget(agentId: string): boolean {
@@ -517,8 +611,20 @@ function asString(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
 
+function asNonnegativeInteger(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : undefined;
+}
+
+function asPositiveInteger(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : undefined;
+}
+
 function isApprovalPolicy(value: unknown): value is CodexApprovalPolicy {
   return value === 'untrusted' || value === 'on-request' || value === 'never';
+}
+
+function isApprovalsReviewer(value: unknown): value is CodexApprovalsReviewer {
+  return value === 'user' || value === 'auto_review';
 }
 
 function isSandbox(value: unknown): value is CodexSandbox {
@@ -537,4 +643,37 @@ function remember(seen: Set<string>, requestId: string): boolean {
     if (oldest) seen.delete(oldest);
   }
   return false;
+}
+
+function countDiffLines(diff?: string): { additions: number; deletions: number } {
+  let additions = 0;
+  let deletions = 0;
+  for (const line of diff?.split(/\r?\n/) ?? []) {
+    if (line.startsWith('+') && !line.startsWith('+++')) additions += 1;
+    if (line.startsWith('-') && !line.startsWith('---')) deletions += 1;
+  }
+  return { additions, deletions };
+}
+
+function countFileChangeDiff(params: unknown): { additions: number; deletions: number } {
+  const changes = asObject(asObject(params).item).changes;
+  if (!Array.isArray(changes)) return { additions: 0, deletions: 0 };
+  return changes.reduce((total, change) => {
+    const current = countDiffLines(asString(asObject(change).diff));
+    return { additions: total.additions + current.additions, deletions: total.deletions + current.deletions };
+  }, { additions: 0, deletions: 0 });
+}
+
+function fileChangeStats(
+  params: unknown,
+  allowedPaths: Set<string>,
+): Array<{ path: string; additions: number; deletions: number }> {
+  const changes = asObject(asObject(params).item).changes;
+  if (!Array.isArray(changes)) return [];
+  return changes.flatMap((change) => {
+    const entry = asObject(change);
+    const path = asString(entry.path);
+    if (!path || !allowedPaths.has(path)) return [];
+    return [{ path, ...countDiffLines(asString(entry.diff)) }];
+  });
 }
