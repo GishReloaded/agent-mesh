@@ -99,8 +99,20 @@ describe('building the instruction', () => {
     );
   });
 
-  it('removes the mention wherever it appears, with trailing punctuation', () => {
-    assert.equal(stripSelfMention('hey @claude, look at @gpt', 'Claude'), 'hey look at @gpt');
+  it('keeps a self-mention that is part of the sentence, not the envelope', () => {
+    // The failure this prevents: @gpt-local reading "@claude say hello to
+    // @gpt-local" received "@claude say hello to" and reported, correctly,
+    // that the message was cut off.
+    assert.equal(
+      stripSelfMention('@claude поздоровайся с @gpt-local', 'GPT-Local'),
+      '@claude поздоровайся с @gpt-local',
+    );
+    assert.equal(stripSelfMention('hey @claude, look at this', 'Claude'), 'hey @claude, look at this');
+  });
+
+  it('removes its own handle from a leading run of mentions', () => {
+    assert.equal(stripSelfMention('@gpt @claude ship it', 'Claude'), '@gpt ship it');
+    assert.equal(stripSelfMention('@gpt @claude ship it', 'GPT'), '@claude ship it');
   });
 
   it('leaves the message alone when the agent is not named', () => {
