@@ -15,6 +15,8 @@ export interface AgentPreset {
   label: string;
   /** Executable to run. Resolved against PATH, including Windows shims. */
   command: string;
+  /** Selects a structured integration instead of one-process-per-turn execution. */
+  integration?: 'codex-app-server';
   /** Arguments for a fresh conversation. `{prompt}` and `{session}` substitute. */
   args: string[];
   /**
@@ -79,13 +81,14 @@ const CODEX: AgentPreset = {
   id: 'codex',
   label: 'OpenAI Codex CLI',
   command: 'codex',
-  args: ['exec', '{prompt}'],
-  promptVia: 'arg',
+  integration: 'codex-app-server',
+  args: ['app-server'],
+  promptVia: 'stdin',
   defaultProvider: 'openai',
   defaultModel: 'codex',
   notes:
     'Uses a ChatGPT subscription via "Sign in with ChatGPT". Requires the workspace to be a git repository; ' +
-    'add --skip-git-repo-check to the command to override. Verify the flags for your version with: codex --help',
+    'runs the official Codex app-server protocol for persistent threads, streamed events and approvals.',
 };
 
 const GEMINI: AgentPreset = {

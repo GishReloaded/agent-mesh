@@ -6,18 +6,15 @@ AgentMesh supports that case directly. This page explains how, and where the lim
 
 ---
 
-## The one thing that does not work
+## How the local tools are connected
 
-**A VS Code extension cannot be connected.** Claude Code, Codex and Antigravity extensions expose no local API, no socket and no documented IPC. Nothing outside the editor can drive them, and no amount of work on AgentMesh's side changes that.
-
-**The command-line tool of the same product can.** It ships with the same login, uses the same subscription, and has a non-interactive mode built for pipes. That is what AgentMesh drives.
+AgentMesh runs the product's local CLI with the login already present on the developer's machine. Claude Code and Gemini use their non-interactive command modes. Codex uses the official `codex app-server` stdio protocol—the same rich integration surface used by Codex clients—for persistent threads, model discovery, approvals and streamed items.
 
 So the mental model is:
 
 ```
-   VS Code extension  ──✗──  AgentMesh        (no API surface)
-
-   claude / codex / gemini CLI  ──✓──  AgentMesh
+   claude / gemini non-interactive CLI  ──✓──  AgentMesh
+   codex app-server (local stdio JSONL)  ──✓──  AgentMesh
         (same subscription, same login)
 ```
 
@@ -88,6 +85,7 @@ Everything after `--` is the command. If it contains no `{prompt}` placeholder, 
 | `--command`, `--args` | Override a preset's executable or argument list |
 | `--stream` | Publish what the tool is doing, step by step, into the session |
 | `--stream-thinking` | Also include a short excerpt of the reasoning behind each step |
+| `--allow-danger-full-access` | Allow the Web UI to select Codex `danger-full-access`; off by default |
 
 ### Showing what an agent is doing
 
@@ -106,11 +104,11 @@ agentmesh agent run "Claude" --preset claude --stream --workspace ~/code/project
 
 Steps are published as `AGENT_PROGRESS` development events, not as chat messages. Two reasons: a running commentary in the conversation would bury what people are saying, and a step that happened to contain an `@name` would wake another agent.
 
-**Only summaries leave your machine.** A step carries the tool's name and one identifying string — a path, a command, a search pattern — never what the tool read or wrote. Reasoning is withheld entirely unless you add `--stream-thinking`, and then only a truncated first sentence. The server has no business holding your workspace's contents, and this feature does not become the exception.
+For Claude streaming, only summaries leave your machine. Codex publishes the official reasoning summary, command/MCP metadata, file paths and a bounded patch preview to the session event log so the shared timeline can be replayed. It never forwards raw reasoning, environment variables, auth files, cookies or authorization headers. Session members who can read the event log can also read those published previews.
 
 Progress is throttled to one step every two seconds, forty per task. Every event is a database write and a fan-out to every subscriber — on the serverless deployment, also a billed message — so completeness is not worth the cost. Stale progress is worth nothing anyway.
 
-Only Claude Code is supported today, because its `--output-format stream-json` is the one format verified against a real installation. Other tools fall back to plain output with no loss of function.
+Claude uses `--output-format stream-json`. Codex uses App Server notifications and therefore does not need `--stream`; its activity is always live in the shared Session timeline. Other tools fall back to plain output.
 
 ## What the agent actually receives
 
@@ -192,20 +190,16 @@ A subscription is not free of consequences. Every mention spends your quota, and
 - Keep `autonomy` at `semi` (the default) so agents do not answer each other without you.
 - The chain limit is a floor, not a policy: if you want an agent to act only when you personally ask, register it with `--autonomy manual`.
 
-## Verifying the flags for your version
+## Verifying the installed version
 
-These CLIs change quickly, and AgentMesh cannot pin their interfaces. Only Claude Code's flags are verified against the version used to build this feature. For the others:
+These CLIs change quickly. The Codex adapter follows the official App Server v2 schema and performs its `initialize` handshake at startup. Check the installed commands with:
 
 ```bash
 codex --help
 gemini --help
 ```
 
-If the non-interactive invocation differs, override it — no code change needed:
-
-```bash
-agentmesh agent run "GPT" -- codex exec "{prompt}"
-```
+Using a custom Codex command through `--` selects the generic one-shot integration; use `--preset codex` for persistent context, approvals, model selection and compact Web UI controls.
 
 ## What would be better, and is not built yet
 

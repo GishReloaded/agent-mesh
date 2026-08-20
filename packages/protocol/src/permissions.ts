@@ -13,6 +13,7 @@ export const Permission = {
   WriteContext: 'context:write',
   DeleteContext: 'context:delete',
   RegisterAgent: 'agent:register',
+  ControlAgent: 'agent:control',
   DisconnectAgent: 'agent:disconnect',
   Invite: 'invite:manage',
   ManageMembers: 'member:manage',
@@ -38,6 +39,7 @@ const MATRIX: Record<SessionRole, readonly Permission[]> = {
     Permission.WriteContext,
     Permission.DeleteContext,
     Permission.RegisterAgent,
+    Permission.ControlAgent,
     Permission.DisconnectAgent,
     Permission.Invite,
     Permission.ManageMembers,
@@ -51,6 +53,7 @@ const MATRIX: Record<SessionRole, readonly Permission[]> = {
     Permission.ManageTask,
     Permission.WriteContext,
     Permission.RegisterAgent,
+    Permission.ControlAgent,
   ],
   [SessionRole.Agent]: [
     Permission.ReadSession,

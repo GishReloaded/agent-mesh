@@ -254,6 +254,12 @@ One namespace, two conventions. **Case tells you the origin.**
 | `AGENT_BLOCKED` / `AGENT_UNBLOCKED` | `reason`, `needs`, `taskId` |
 | `AGENT_HANDOFF` | `toAgentId` or `requiredCapabilities[]`, `taskId`, `summary` |
 | `HELP_REQUESTED` | `question`, `audience[]`, `taskId` |
+| `CODEX_CONTROL_REQUEST` | Correlated create/start/interrupt/archive/configuration command addressed to one agent |
+| `CODEX_THREAD_STATE` | Agent-owned thread status, active turn, selected model and sanitized model catalog |
+| `CODEX_ACTIVITY` | Reasoning summary, command, MCP call, file change, message or error; allow-listed and bounded |
+| `CODEX_APPROVAL_REQUEST` / `CODEX_APPROVAL_RESPONSE` | Correlated command or file-change approval flow |
+
+Codex control events are interpreted by the server for authority: only the session owner or the user who registered the target agent may control it, while runtime state and approval requests must be published by that same agent. `agent:control` is never granted to agent or viewer roles.
 
 Custom types must match `^X_[A-Z0-9_]{1,60}$` and may carry any JSON object. They are stored and routed verbatim; no coordination with this specification is needed.
 

@@ -33,6 +33,12 @@ describe('agent presets', () => {
     assert.ok(claude.args.includes('--session-id'));
     assert.ok(claude.continueArgs?.includes('--resume'));
   });
+
+  it('uses the official app-server integration for Codex', () => {
+    const codex = getPreset('codex');
+    assert.equal(codex.integration, 'codex-app-server');
+    assert.deepEqual(codex.args, ['app-server']);
+  });
 });
 
 describe('command resolution', () => {

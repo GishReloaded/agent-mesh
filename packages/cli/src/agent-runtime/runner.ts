@@ -1,7 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { connect, type AgentMeshSession, type Message } from '@agentmesh/sdk';
+import {
+  DevEventType,
+  connect,
+  type AgentMeshSession,
+  type CodexApprovalResponse,
+  type CodexControlRequest,
+  type Message,
+} from '@agentmesh/sdk';
 import { actorLabel, clock, info, style, success, warn } from '../output.js';
 import { diagnose } from './diagnose.js';
 import { RunLog } from './log.js';
@@ -9,6 +16,7 @@ import { buildBrief, buildTurn } from './prompt.js';
 import { getPreset, substitute, type AgentPreset } from './presets.js';
 import { runProcess } from './spawn.js';
 import { ClaudeStreamParser, type ProgressStep } from './stream.js';
+import { CodexBridge } from './codex-bridge.js';
 
 export interface RunnerOptions {
   url: string;
@@ -27,6 +35,8 @@ export interface RunnerOptions {
   stream?: boolean;
   /** Include a short excerpt of the model's reasoning with each step. */
   streamThinking?: boolean;
+  /** Local opt-in ceiling for remotely selected Codex sandbox modes. */
+  allowDangerFullAccess?: boolean;
 }
 
 interface Job {
@@ -62,6 +72,7 @@ export class AgentRunner {
   /** Pins one conversation in tools that can resume, so turns build on each other. */
   private readonly toolSessionId = randomUUID();
   private stopping = false;
+  private codex: CodexBridge | null = null;
 
   constructor(private readonly options: RunnerOptions) {}
 
@@ -87,6 +98,26 @@ export class AgentRunner {
     info(style.dim('  Waiting for mentions. Press Ctrl+C to disconnect.\n'));
 
     await mesh.setStatus('idle').catch(() => undefined);
+
+    if (this.options.preset.integration === 'codex-app-server' && !this.options.dryRun) {
+      this.codex = new CodexBridge({
+        mesh,
+        workspace: this.options.workspace,
+        command: this.options.preset.command,
+        timeoutMs: this.options.timeoutMs,
+        allowDangerFullAccess: Boolean(this.options.allowDangerFullAccess),
+      });
+    }
+
+    mesh.on('event', (event) => {
+      if (event.type === DevEventType.CodexControlRequest) {
+        void this.codex?.handleControl(event.payload as CodexControlRequest);
+      } else if (event.type === DevEventType.CodexApprovalResponse) {
+        this.codex?.handleApproval(event.payload as CodexApprovalResponse);
+      }
+    });
+
+    await this.codex?.start();
 
     mesh.on('state', (state) => {
       this.log.event(`connection ${state}`);
@@ -167,7 +198,7 @@ export class AgentRunner {
     const { preset, workspace, timeoutMs } = this.options;
     // A tool that cannot resume its own conversation gets the full brief every
     // turn; one that can gets it once and builds on it afterwards.
-    const first = !this.hasRunOnce || !preset.continueArgs;
+    const first = preset.integration === 'codex-app-server' ? !this.hasRunOnce : !this.hasRunOnce || !preset.continueArgs;
 
     // Tools that resume their own conversation only need the full brief once;
     // re-sending it every turn would waste the context window it already has.
@@ -201,6 +232,20 @@ export class AgentRunner {
         `Nothing ran and nothing was posted, so ${message.author.name ?? 'the sender'} will get no reply.`,
       );
       warn('Restart without --dry-run to actually answer.\n');
+      return;
+    }
+
+    if (preset.integration === 'codex-app-server') {
+      if (!this.codex) throw new Error('Codex app-server did not initialize.');
+      await mesh.setStatus('working', `handling a request from ${message.author.name ?? 'someone'}`);
+      this.log.event('mention received', { from: message.author.name, body: message.body.slice(0, 200) });
+      const startedAt = Date.now();
+      const answer = await this.codex.runMention(prompt);
+      this.hasRunOnce = true;
+      this.consecutiveFailures = 0;
+      info(style.dim(`[done in ${Math.round((Date.now() - startedAt) / 1000)}s, ${answer.length} chars]`));
+      await this.postAnswer(message, truncateForChat(answer));
+      await mesh.setStatus('idle');
       return;
     }
 
@@ -405,6 +450,7 @@ export class AgentRunner {
 
   async stop(): Promise<void> {
     this.stopping = true;
+    await this.codex?.stop().catch(() => undefined);
     await this.mesh?.setStatus('offline').catch(() => undefined);
     this.mesh?.close();
   }

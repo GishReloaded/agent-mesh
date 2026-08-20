@@ -131,6 +131,7 @@ export const ContextKind = {
   File: 'file',
   State: 'state',
   Note: 'note',
+  CodexThread: 'codex_thread',
 } as const;
 export type ContextKind = (typeof ContextKind)[keyof typeof ContextKind];
 export const contextKindSchema = z.enum([
@@ -141,6 +142,7 @@ export const contextKindSchema = z.enum([
   'file',
   'state',
   'note',
+  'codex_thread',
 ]);
 
 /**

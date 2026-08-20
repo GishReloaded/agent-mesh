@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   ClientFrameType,
+  ContextKind,
   DevEventType,
   LifecycleEventType,
   PROTOCOL_VERSION,
@@ -53,6 +54,56 @@ describe('event types', () => {
     assert.throws(() => parseEventPayload('NOT_A_REAL_EVENT', {}));
   });
 
+  it('validates typed Codex control and activity events', () => {
+    const control = parseEventPayload(DevEventType.CodexControlRequest, {
+      requestId: 'req_1',
+      agentId: 'agt_1',
+      action: 'startTurn',
+      threadId: 'thr_1',
+      prompt: 'Inspect the failing test',
+      model: 'gpt-5.6-terra',
+    }) as Record<string, unknown>;
+    assert.equal(control.action, 'startTurn');
+
+    const settings = parseEventPayload(DevEventType.CodexControlRequest, {
+      requestId: 'req_settings',
+      agentId: 'agt_1',
+      action: 'configureThread',
+      threadId: 'thr_1',
+      sandbox: 'readOnly',
+      approvalPolicy: 'never',
+    }) as Record<string, unknown>;
+    assert.equal(settings.action, 'configureThread');
+
+    const activity = parseEventPayload(DevEventType.CodexActivity, {
+      agentId: 'agt_1',
+      threadId: 'thr_1',
+      turnId: 'turn_1',
+      itemId: 'item_1',
+      kind: 'mcpTool',
+      tool: 'search_graph',
+      summary: 'Searching project symbols',
+    }) as Record<string, unknown>;
+    assert.equal(activity.kind, 'mcpTool');
+
+    assert.throws(() =>
+      parseEventPayload(DevEventType.CodexControlRequest, {
+        requestId: 'req_2',
+        agentId: 'agt_1',
+        action: 'startTurn',
+        threadId: 'thr_1',
+      }),
+    );
+    assert.throws(() =>
+      parseEventPayload(DevEventType.CodexActivity, {
+        agentId: 'agt_1',
+        threadId: 'thr_1',
+        kind: 'command',
+        environment: { OPENAI_API_KEY: 'secret' },
+      }),
+    );
+  });
+
   it('passes custom payloads through untouched', () => {
     const payload = parseEventPayload('X_DEPLOY_STARTED', { env: 'staging', build: 42 });
     assert.deepEqual(payload, { env: 'staging', build: 42 });
@@ -74,6 +125,17 @@ describe('permissions', () => {
     assert.equal(can(SessionRole.Agent, Permission.ManageMembers), false);
     assert.equal(can(SessionRole.Agent, Permission.DeleteSession), false);
     assert.equal(can(SessionRole.Agent, Permission.RegisterAgent), false);
+    assert.equal(can(SessionRole.Agent, Permission.ControlAgent), false);
+  });
+
+  it('reserves durable context for AgentMesh-owned Codex threads', () => {
+    assert.equal(ContextKind.CodexThread, 'codex_thread');
+  });
+
+  it('lets human members control their registered agents', () => {
+    assert.ok(can(SessionRole.Owner, Permission.ControlAgent));
+    assert.ok(can(SessionRole.Member, Permission.ControlAgent));
+    assert.equal(can(SessionRole.Viewer, Permission.ControlAgent), false);
   });
 });
 

@@ -2,6 +2,7 @@ import type { SearchResponse, Task } from '@agentmesh/sdk';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Composer, type ComposerHandle } from '../components/Composer.js';
+import { CodexAgentSettings, deriveCodexView } from '../components/CodexPanel.js';
 import { ContextPanel } from '../components/ContextPanel.js';
 import { MessageList } from '../components/Messages.js';
 import { ConnectionBadge, ParticipantList } from '../components/Presence.js';
@@ -24,6 +25,13 @@ export function SessionPage() {
 
   const view = state.view;
   const readOnly = view.session === null || view.session.archivedAt !== null;
+  const codexView = useMemo(() => deriveCodexView(view.context, view.events), [view.context, view.events]);
+
+  const canControlCodexAgent = (agentId: string) => {
+    if (readOnly || state.connection !== 'connected' || state.identity?.kind !== 'user') return false;
+    const agent = view.agents.find((candidate) => candidate.id === agentId);
+    return Boolean(agent?.online && (view.session?.ownerId === state.identity.userId || agent.ownerUserId === state.identity.userId));
+  };
 
   // Message authors carry only an id; their colour lives on the participant
   // list, which is already in memory and updates as people join.
@@ -129,6 +137,16 @@ export function SessionPage() {
         </div>
 
         <div className="panel">
+          <CodexAgentSettings
+            view={codexView}
+            agents={view.agents}
+            identity={state.identity}
+            session={view.session}
+            disabled={readOnly || state.connection !== 'connected'}
+            onControl={async (payload) => {
+              await store.realtime?.controlCodex(sessionId, payload);
+            }}
+          />
           <MessageList
             messages={view.messages}
             events={view.events}
@@ -136,6 +154,10 @@ export function SessionPage() {
             hasMore={view.hasMoreMessages}
             onLoadMore={() => void store.loadOlderMessages()}
             colorOf={colorOf}
+            canApproveCodex={canControlCodexAgent}
+            onCodexApproval={async (payload) => {
+              await store.realtime?.respondToCodexApproval(sessionId, payload);
+            }}
           />
           {state.typing.length > 0 && (
             <div style={{ padding: '0 16px 6px', color: 'var(--text-dim)', fontSize: 12 }}>

@@ -2,6 +2,7 @@ import {
   AgentMeshError,
   ClientFrameType,
   CloseCode,
+  DevEventType,
   ErrorCode,
   HEARTBEAT,
   PROTOCOL_VERSION,
@@ -9,6 +10,8 @@ import {
   ServerFrameType,
   mentionsActor,
   type AgentStatus,
+  type CodexApprovalResponse,
+  type CodexControlRequest,
   type ContextEntry,
   type Event as MeshEvent,
   type Identity,
@@ -185,6 +188,14 @@ export class RealtimeClient {
 
   publishEvent(sessionId: string, type: string, payload: unknown) {
     return this.request(ClientFrameType.EventPublish, { sessionId, type, payload });
+  }
+
+  controlCodex(sessionId: string, payload: CodexControlRequest) {
+    return this.publishEvent(sessionId, DevEventType.CodexControlRequest, payload);
+  }
+
+  respondToCodexApproval(sessionId: string, payload: CodexApprovalResponse) {
+    return this.publishEvent(sessionId, DevEventType.CodexApprovalResponse, payload);
   }
 
   setStatus(sessionId: string, status: AgentStatus, note?: string) {

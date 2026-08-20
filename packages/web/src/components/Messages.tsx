@@ -1,4 +1,10 @@
-import { mentionsActor, type Event as MeshEvent, type Identity, type Message } from '@agentmesh/sdk';
+import {
+  mentionsActor,
+  type CodexApprovalResponse,
+  type Event as MeshEvent,
+  type Identity,
+  type Message,
+} from '@agentmesh/sdk';
 import { useEffect, useRef } from 'react';
 import { participantColor } from '../lib/colors.js';
 import { renderMarkdown } from '../lib/markdown.js';
@@ -13,6 +19,19 @@ function time(iso: string): string {
  * from the session's participant list, which the client already has.
  */
 export type ColorLookup = (author: Message['author']) => string | null;
+
+/** A Session has one timeline. Codex thread ids correlate activity but never split the room. */
+export function selectTimelineEvents(events: MeshEvent[], _codexThreadId: string | null = null): MeshEvent[] {
+  return events.filter((event) => {
+    const payload = event.payload as Record<string, unknown>;
+    if (
+      event.type === 'CODEX_ACTIVITY' &&
+      (payload.kind === 'reasoningSummary' || payload.kind === 'message') &&
+      String(payload.summary ?? '').trim() === ''
+    ) return false;
+    return true;
+  });
+}
 
 function isAddressedTo(message: Message, identity: Identity | null): boolean {
   if (!identity) return false;
@@ -31,6 +50,8 @@ export function MessageList({
   hasMore,
   onLoadMore,
   colorOf,
+  onCodexApproval,
+  canApproveCodex = () => false,
 }: {
   messages: Message[];
   events: MeshEvent[];
@@ -38,18 +59,27 @@ export function MessageList({
   hasMore: boolean;
   onLoadMore: () => void;
   colorOf: ColorLookup;
+  onCodexApproval?: (payload: CodexApprovalResponse) => Promise<void>;
+  canApproveCodex?: (agentId: string) => boolean;
 }) {
   const bottom = useRef<HTMLDivElement>(null);
   const container = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
+  const inlineEvents = selectTimelineEvents(events);
+  const visibleMessages = messages;
+  const answeredApprovals = new Set(
+    events
+      .filter((event) => event.type === 'CODEX_APPROVAL_RESPONSE')
+      .map((event) => String((event.payload as Record<string, unknown>).requestId ?? '')),
+  );
 
   useEffect(() => {
     // Only auto-scroll when the reader is already at the bottom; yanking the
     // viewport away from someone reading history is worse than a missed scroll.
     if (stickToBottom.current) bottom.current?.scrollIntoView({ block: 'end' });
-  }, [messages.length, events.length]);
+  }, [visibleMessages.length, inlineEvents.length]);
 
-  const merged = [...messages.map((m) => ({ seq: m.seq, message: m }) as const), ...events.map((e) => ({ seq: e.seq, event: e }) as const)].sort(
+  const merged = [...visibleMessages.map((m) => ({ seq: m.seq, message: m }) as const), ...inlineEvents.map((e) => ({ seq: e.seq, event: e }) as const)].sort(
     (a, b) => a.seq - b.seq,
   );
 
@@ -83,7 +113,13 @@ export function MessageList({
             color={colorOf(item.message.author)}
           />
         ) : (
-          <EventRow key={item.event.id} event={item.event} />
+          <EventRow
+            key={item.event.id}
+            event={item.event}
+            approvalAnswered={answeredApprovals.has(String((item.event.payload as Record<string, unknown>).requestId ?? ''))}
+            onCodexApproval={onCodexApproval}
+            canApproveCodex={canApproveCodex}
+          />
         ),
       )}
       <div ref={bottom} />
@@ -123,9 +159,119 @@ function MessageRow({
 }
 
 /** Development events appear inline so the conversation keeps its context. */
-function EventRow({ event }: { event: MeshEvent }) {
+function EventRow({
+  event,
+  approvalAnswered,
+  onCodexApproval,
+  canApproveCodex,
+}: {
+  event: MeshEvent;
+  approvalAnswered: boolean;
+  onCodexApproval?: (payload: CodexApprovalResponse) => Promise<void>;
+  canApproveCodex: (agentId: string) => boolean;
+}) {
   const payload = event.payload as Record<string, unknown>;
   const summary = describe(event.type, payload);
+
+  if (event.type === 'CODEX_CONTROL_REQUEST' && payload.action === 'startTurn') {
+    const author = event.actor.name ?? 'user';
+    return (
+      <div className="message user codex-user-message">
+        <Avatar name={author} color="" kind="user" />
+        <div>
+          <div className="head">
+            <span className="author">{author}</span>
+            <span className="time">{time(event.createdAt)}</span>
+          </div>
+          <div className="body md">{renderMarkdown(String(payload.prompt ?? ''))}</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (event.type === 'CODEX_ACTIVITY') {
+    const kind = String(payload.kind ?? 'activity');
+    if (kind === 'reasoningSummary' || kind === 'message') {
+      const text = String(payload.summary ?? '').trim();
+      if (!text) return null;
+      const author = event.actor.name ?? 'GPT';
+      return (
+        <div className="message agent codex-agent-message">
+          <Avatar name={author} color="" kind="agent" />
+          <div>
+            <div className="head">
+              <span className="author">{author}</span>
+              <span className="badge">agent</span>
+              {kind === 'reasoningSummary' && <span className="codex-reasoning-label">summary</span>}
+              <span className="time">{time(event.createdAt)}</span>
+            </div>
+            <div className="body md">{renderMarkdown(text)}</div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <details className={`codex-technical-event kind-${kind}`}>
+        <summary>
+          <span className="time">{time(event.createdAt)}</span>
+          <span className="type">{codexKindLabel(kind)}</span>
+          {summary && <span className="codex-technical-summary">{summary}</span>}
+        </summary>
+        <div className="codex-technical-detail">
+          {Array.isArray(payload.files) && payload.files.map(String).map((file) => <div className="sub" key={file}>{file}</div>)}
+          {typeof payload.diff === 'string' && payload.diff && <pre className="codex-diff">{payload.diff}</pre>}
+        </div>
+      </details>
+    );
+  }
+
+  if (event.type === 'CODEX_APPROVAL_REQUEST') {
+    const agentId = String(payload.agentId ?? '');
+    const decisions = Array.isArray(payload.availableDecisions) ? payload.availableDecisions.map(String) : ['decline'];
+    return (
+      <div className="codex-chat-event codex-approval">
+        <div className="codex-event-head">
+          <span className="type">Approval · {String(payload.kind ?? 'operation')}</span>
+          <span className="time">{time(event.createdAt)}</span>
+        </div>
+        {summary && <div className="codex-event-detail">{summary}</div>}
+        {typeof payload.cwd === 'string' && <div className="sub">cwd: {payload.cwd}</div>}
+        {Array.isArray(payload.files) && payload.files.map(String).map((file) => <div className="sub" key={file}>{file}</div>)}
+        {approvalAnswered ? (
+          <div className="sub">Answered</div>
+        ) : (
+          <div className="row codex-approval-actions">
+            {decisions.map((decision) => (
+              <button
+                key={decision}
+                disabled={!onCodexApproval || !canApproveCodex(agentId)}
+                className={decision.startsWith('accept') ? '' : 'ghost'}
+                onClick={() => void onCodexApproval?.({
+                  requestId: String(payload.requestId ?? ''),
+                  agentId,
+                  threadId: String(payload.threadId ?? ''),
+                  decision: decision as CodexApprovalResponse['decision'],
+                })}
+              >
+                {decision}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (event.type === 'CODEX_THREAD_STATE' || event.type === 'CODEX_APPROVAL_RESPONSE' || event.type === 'CODEX_CONTROL_REQUEST') {
+    return (
+      <div className="system-event codex-system-event">
+        <span className="time">{time(event.createdAt)}</span>
+        <span className="type">Codex</span>
+        <span>{summary}</span>
+      </div>
+    );
+  }
 
   // Progress is a running commentary, not an event to announce: it gets a
   // quieter treatment so it never competes with what people are saying.
@@ -152,6 +298,21 @@ function EventRow({ event }: { event: MeshEvent }) {
 
 function describe(type: string, payload: Record<string, unknown>): string {
   switch (type) {
+    case 'CODEX_CONTROL_REQUEST':
+      if (payload.action === 'createThread') return 'New chat requested';
+      if (payload.action === 'interruptTurn') return 'Stop requested';
+      if (payload.action === 'archiveThread') return 'Chat archived';
+      if (payload.action === 'setModel') return `Model changed to ${String(payload.model ?? '')}`;
+      if (payload.action === 'configureThread') return 'Agent settings changed';
+      return String(payload.prompt ?? payload.action ?? '');
+    case 'CODEX_THREAD_STATE':
+      return String(payload.error ?? payload.status ?? '');
+    case 'CODEX_ACTIVITY':
+      return String(payload.summary ?? payload.command ?? payload.tool ?? payload.status ?? '');
+    case 'CODEX_APPROVAL_REQUEST':
+      return String(payload.reason ?? payload.command ?? 'Codex needs confirmation');
+    case 'CODEX_APPROVAL_RESPONSE':
+      return `Approval ${String(payload.decision ?? 'answered')}`;
     case 'API_CONTRACT_CREATED':
     case 'API_CONTRACT_UPDATED':
       return `${String(payload.method ?? '')} ${String(payload.endpoint ?? '')}`;
@@ -181,5 +342,15 @@ function describe(type: string, payload: Record<string, unknown>): string {
       return String(payload.question ?? '');
     default:
       return JSON.stringify(payload).slice(0, 120);
+  }
+}
+
+function codexKindLabel(kind: string): string {
+  switch (kind) {
+    case 'reasoningSummary': return 'Reasoning summary';
+    case 'mcpTool': return 'MCP tool';
+    case 'fileChange': return 'File change';
+    case 'message': return 'Codex';
+    default: return kind;
   }
 }

@@ -1,4 +1,8 @@
-import type { ContextEntry, Event as MeshEvent, Task } from '@agentmesh/sdk';
+import type {
+  ContextEntry,
+  Event as MeshEvent,
+  Task,
+} from '@agentmesh/sdk';
 import { useState } from 'react';
 
 type Tab = 'tasks' | 'context' | 'activity';
@@ -17,6 +21,7 @@ export function ContextPanel({
   onUpdateTaskStatus: (taskId: string, status: Task['status']) => Promise<void>;
 }) {
   const [tab, setTab] = useState<Tab>('tasks');
+  const sharedContext = context.filter((entry) => entry.kind !== 'codex_thread');
 
   return (
     <div className="panel panel-right">
@@ -24,7 +29,7 @@ export function ContextPanel({
         {(['tasks', 'context', 'activity'] as Tab[]).map((name) => (
           <button key={name} className={tab === name ? 'active' : ''} onClick={() => setTab(name)}>
             {name === 'tasks' ? `Tasks (${tasks.filter((t) => t.status !== 'done').length})` : null}
-            {name === 'context' ? `Context (${context.length})` : null}
+            {name === 'context' ? `Context (${sharedContext.length})` : null}
             {name === 'activity' ? 'Activity' : null}
           </button>
         ))}
@@ -32,7 +37,7 @@ export function ContextPanel({
 
       <div className="panel-scroll">
         {tab === 'tasks' && <TaskTab tasks={tasks} onCreate={onCreateTask} onUpdateStatus={onUpdateTaskStatus} />}
-        {tab === 'context' && <ContextTab entries={context} />}
+        {tab === 'context' && <ContextTab entries={sharedContext} />}
         {tab === 'activity' && <ActivityTab events={events} />}
       </div>
     </div>

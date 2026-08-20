@@ -173,9 +173,10 @@ class MeshStore {
   private async loadSession(sessionId: string): Promise<void> {
     try {
       const rest = api();
-      const [detail, messages, tasks, context] = await Promise.all([
+      const [detail, messages, eventPage, tasks, context] = await Promise.all([
         rest.getSession(sessionId),
         rest.messages(sessionId, { limit: 50 }),
+        rest.events(sessionId, { limit: 200 }),
         rest.tasks(sessionId),
         rest.context(sessionId),
       ]);
@@ -184,6 +185,7 @@ class MeshStore {
         members: detail.members,
         agents: detail.agents,
         messages: messages.items,
+        events: eventPage.items.filter((event) => event.type === event.type.toUpperCase()),
         hasMoreMessages: messages.hasMore,
         tasks,
         context,

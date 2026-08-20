@@ -114,6 +114,11 @@ export const DevEventType = {
   AgentUnblocked: 'AGENT_UNBLOCKED',
   AgentHandoff: 'AGENT_HANDOFF',
   HelpRequested: 'HELP_REQUESTED',
+  CodexControlRequest: 'CODEX_CONTROL_REQUEST',
+  CodexThreadState: 'CODEX_THREAD_STATE',
+  CodexActivity: 'CODEX_ACTIVITY',
+  CodexApprovalRequest: 'CODEX_APPROVAL_REQUEST',
+  CodexApprovalResponse: 'CODEX_APPROVAL_RESPONSE',
 } as const;
 
 export type DevEventType = (typeof DevEventType)[keyof typeof DevEventType];
@@ -157,6 +162,87 @@ const testPayload = z.object({
   git: gitRefSchema.optional(),
   output: z.string().max(8000).optional(),
 });
+
+const codexRequestIdSchema = z.string().min(1).max(120);
+const codexExternalIdSchema = z.string().min(1).max(200);
+const codexModelSchema = z.string().min(1).max(120);
+const codexApprovalPolicySchema = z.enum(['untrusted', 'on-request', 'never']);
+const codexSandboxSchema = z.enum(['readOnly', 'workspaceWrite', 'dangerFullAccess']);
+const codexModelOptionSchema = z
+  .object({
+    id: codexModelSchema,
+    displayName: z.string().min(1).max(160),
+    isDefault: z.boolean().optional(),
+    defaultReasoningEffort: z.string().max(40).optional(),
+    supportedReasoningEfforts: z.array(z.string().max(40)).max(20).optional(),
+  })
+  .strict();
+
+const codexControlCommon = {
+  requestId: codexRequestIdSchema,
+  agentId: idSchema,
+};
+
+const codexControlPayload = z.discriminatedUnion('action', [
+  z
+    .object({
+      ...codexControlCommon,
+      action: z.literal('createThread'),
+      title: z.string().max(300).optional(),
+      model: codexModelSchema.optional(),
+      reasoningEffort: z.string().max(40).optional(),
+      approvalPolicy: codexApprovalPolicySchema.optional(),
+      sandbox: codexSandboxSchema.optional(),
+    })
+    .strict(),
+  z
+    .object({
+      ...codexControlCommon,
+      action: z.literal('startTurn'),
+      threadId: codexExternalIdSchema,
+      prompt: z.string().min(1).max(100_000),
+      model: codexModelSchema.optional(),
+      reasoningEffort: z.string().max(40).optional(),
+      approvalPolicy: codexApprovalPolicySchema.optional(),
+      sandbox: codexSandboxSchema.optional(),
+    })
+    .strict(),
+  z
+    .object({
+      ...codexControlCommon,
+      action: z.literal('interruptTurn'),
+      threadId: codexExternalIdSchema,
+      turnId: codexExternalIdSchema,
+    })
+    .strict(),
+  z
+    .object({
+      ...codexControlCommon,
+      action: z.literal('archiveThread'),
+      threadId: codexExternalIdSchema,
+    })
+    .strict(),
+  z
+    .object({
+      ...codexControlCommon,
+      action: z.literal('setModel'),
+      threadId: codexExternalIdSchema,
+      model: codexModelSchema,
+      reasoningEffort: z.string().max(40).optional(),
+    })
+    .strict(),
+  z
+    .object({
+      ...codexControlCommon,
+      action: z.literal('configureThread'),
+      threadId: codexExternalIdSchema,
+      model: codexModelSchema.optional(),
+      reasoningEffort: z.string().max(40).optional(),
+      approvalPolicy: codexApprovalPolicySchema.optional(),
+      sandbox: codexSandboxSchema.optional(),
+    })
+    .strict(),
+]);
 
 export const devPayloadSchemas = {
   API_CONTRACT_CREATED: apiContractPayload,
@@ -217,7 +303,70 @@ export const devPayloadSchemas = {
     audience: z.array(z.string().max(120)).max(20).optional(),
     taskId: idSchema.optional(),
   }),
+  CODEX_CONTROL_REQUEST: codexControlPayload,
+  CODEX_THREAD_STATE: z
+    .object({
+      agentId: idSchema,
+      threadId: codexExternalIdSchema.optional(),
+      title: z.string().max(300).optional(),
+      model: codexModelSchema.optional(),
+      reasoningEffort: z.string().max(40).optional(),
+      approvalPolicy: codexApprovalPolicySchema.optional(),
+      sandbox: codexSandboxSchema.optional(),
+      status: z.enum(['offline', 'idle', 'working', 'waitingForApproval', 'failed', 'archived']),
+      activeTurnId: codexExternalIdSchema.optional(),
+      primary: z.boolean().optional(),
+      error: z.string().max(2000).optional(),
+      models: z.array(codexModelOptionSchema).max(100).optional(),
+    })
+    .strict(),
+  CODEX_ACTIVITY: z
+    .object({
+      agentId: idSchema,
+      threadId: codexExternalIdSchema,
+      turnId: codexExternalIdSchema.optional(),
+      itemId: codexExternalIdSchema.optional(),
+      kind: z.enum(['reasoningSummary', 'command', 'mcpTool', 'fileChange', 'message', 'status', 'error']),
+      status: z.string().max(40).optional(),
+      summary: z.string().max(4000).optional(),
+      tool: z.string().max(160).optional(),
+      command: z.string().max(4000).optional(),
+      cwd: z.string().max(1000).optional(),
+      files: z.array(z.string().max(1000)).max(200).optional(),
+      diff: z.string().max(16_000).optional(),
+    })
+    .strict(),
+  CODEX_APPROVAL_REQUEST: z
+    .object({
+      requestId: codexRequestIdSchema,
+      agentId: idSchema,
+      threadId: codexExternalIdSchema,
+      turnId: codexExternalIdSchema.optional(),
+      itemId: codexExternalIdSchema.optional(),
+      kind: z.enum(['command', 'fileChange', 'permissions', 'mcp']),
+      reason: z.string().max(2000).optional(),
+      command: z.string().max(4000).optional(),
+      cwd: z.string().max(1000).optional(),
+      files: z.array(z.string().max(1000)).max(200).optional(),
+      availableDecisions: z.array(z.enum(['accept', 'acceptForSession', 'decline', 'cancel'])).max(4),
+      expiresAt: timestampSchema,
+    })
+    .strict(),
+  CODEX_APPROVAL_RESPONSE: z
+    .object({
+      requestId: codexRequestIdSchema,
+      agentId: idSchema,
+      threadId: codexExternalIdSchema,
+      decision: z.enum(['accept', 'acceptForSession', 'decline', 'cancel']),
+    })
+    .strict(),
 } as const satisfies Record<DevEventType, z.ZodTypeAny>;
+
+export type CodexControlRequest = z.infer<typeof devPayloadSchemas.CODEX_CONTROL_REQUEST>;
+export type CodexThreadState = z.infer<typeof devPayloadSchemas.CODEX_THREAD_STATE>;
+export type CodexActivity = z.infer<typeof devPayloadSchemas.CODEX_ACTIVITY>;
+export type CodexApprovalRequest = z.infer<typeof devPayloadSchemas.CODEX_APPROVAL_REQUEST>;
+export type CodexApprovalResponse = z.infer<typeof devPayloadSchemas.CODEX_APPROVAL_RESPONSE>;
 
 // ---------------------------------------------------------------------------
 // Event record

@@ -150,9 +150,12 @@ pre {
 @media (max-width: 1100px) {
   .session-layout {
     grid-template-columns: 200px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(240px, 42vh);
   }
   .session-layout .panel-right {
-    display: none;
+    grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid var(--border);
   }
 }
 
@@ -605,6 +608,221 @@ pre {
 .tabs button.active {
   color: var(--text);
   border-bottom-color: var(--accent);
+}
+
+/* --- Codex in the central conversation --------------------------------- */
+
+.codex-agent-settings-list {
+  display: flex;
+  gap: 12px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.codex-agent-settings {
+  min-width: 0;
+  max-width: 720px;
+}
+
+.codex-agent-settings > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 0;
+  color: var(--text-dim);
+  cursor: pointer;
+  list-style: none;
+  font-size: 12px;
+}
+
+.codex-agent-settings > summary::-webkit-details-marker {
+  display: none;
+}
+
+.codex-agent-settings > summary::before {
+  content: '›';
+}
+
+.codex-agent-settings[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.codex-settings-label {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.codex-settings-model {
+  max-width: 180px;
+  margin-left: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.codex-status {
+  color: var(--text-dim);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.codex-status.status-working,
+.codex-status.status-waitingForApproval {
+  color: var(--accent);
+}
+
+.codex-status.status-failed,
+.codex-status.status-offline {
+  color: var(--danger);
+}
+
+.codex-settings-body {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  padding: 8px 0 10px 14px;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-input) 58%, transparent);
+}
+
+.codex-settings-empty {
+  padding: 8px 0 10px 14px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.codex-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 180px));
+  gap: 8px;
+}
+
+.codex-controls label {
+  display: grid;
+  gap: 4px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.codex-chat-event {
+  width: min(100%, 860px);
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.codex-event-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.codex-event-head .type {
+  font-weight: 600;
+}
+
+.codex-event-head .time {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.codex-event-head .time:first-of-type {
+  margin-left: auto;
+}
+
+.codex-reasoning-label {
+  color: var(--text-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.codex-technical-event {
+  margin-left: 38px;
+  color: var(--text-dim);
+  font-size: 11.5px;
+}
+
+.codex-technical-event summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 2px 0;
+  cursor: pointer;
+  list-style: none;
+}
+
+.codex-technical-event summary::-webkit-details-marker {
+  display: none;
+}
+
+.codex-technical-event summary::before {
+  content: '›';
+  color: var(--text-dim);
+}
+
+.codex-technical-event[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.codex-technical-event .type {
+  flex: 0 0 auto;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.codex-technical-event .time {
+  flex: 0 0 auto;
+}
+
+.codex-technical-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.codex-technical-detail {
+  padding: 4px 0 4px 16px;
+}
+
+.codex-approval {
+  border-color: var(--accent);
+}
+
+.codex-diff {
+  max-height: 240px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--bg-input);
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.codex-approval-actions {
+  margin-top: 10px;
+}
+
+.codex-error {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .codex-settings-body {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .codex-controls {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* --- pages ---------------------------------------------------------------- */

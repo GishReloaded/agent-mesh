@@ -157,3 +157,32 @@ describe('realtime credentials', () => {
     await assert.rejects(client.connect(), /credential/i);
   });
 });
+
+describe('Codex control', () => {
+  it('publishes typed control requests over the existing event channel', async () => {
+    FakeSocket.reset();
+    const client = makeClient();
+    const connected = client.connect();
+    await wait(10);
+    const socket = FakeSocket.instances[0];
+    assert.ok(socket);
+    socket.deliver('hello.ok', helloOk);
+    await connected;
+
+    const pending = client.controlCodex('ses_1', {
+      requestId: 'req_1',
+      agentId: 'agt_1',
+      action: 'startTurn',
+      threadId: 'thr_1',
+      prompt: 'Run the tests',
+    });
+    const frame = socket.sent.at(-1);
+    assert.equal(frame?.type, 'event.publish');
+    assert.equal(frame?.payload.type, 'CODEX_CONTROL_REQUEST');
+    assert.equal((frame?.payload.payload as { prompt: string }).prompt, 'Run the tests');
+
+    socket.deliver('ack', { ref: frame?.id });
+    await pending;
+    client.close();
+  });
+});

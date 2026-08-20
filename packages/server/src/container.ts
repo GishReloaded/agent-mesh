@@ -78,6 +78,6 @@ export function createServices(config: Config, overrides: ServiceOverrides = {})
     messages: new MessageService(db.db, log, config.agentChainLimit, config.agentChainWindowMs),
     tasks: new TaskService(db.db, log),
     context: new ContextService(db.db, log),
-    devEvents: new DevEventService(log),
+    devEvents: new DevEventService(db.db, log),
   };
 }
