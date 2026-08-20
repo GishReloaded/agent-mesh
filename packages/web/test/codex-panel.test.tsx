@@ -271,7 +271,7 @@ describe('shared chat timeline', () => {
     assert.match(html, /diff-add/);
   });
 
-  it('renders the final aggregate file summary', () => {
+  it('expands each final changed file into its colored changed lines', () => {
     const html = renderToStaticMarkup(
       <MessageList
         messages={[]}
@@ -279,8 +279,11 @@ describe('shared chat timeline', () => {
           agentId: 'agt_1', threadId: 'thr_1', turnId: 'turn_1', kind: 'turnSummary', status: 'completed',
           files: ['D:\\repo\\src\\a.ts', 'D:\\repo\\src\\b.ts'], additions: 44, deletions: 2,
           fileStats: [
-            { path: 'D:\\repo\\src\\a.ts', additions: 40, deletions: 2 },
-            { path: 'D:\\repo\\src\\b.ts', additions: 4, deletions: 0 },
+            {
+              path: 'D:\\repo\\src\\a.ts', additions: 40, deletions: 2,
+              diff: '@@ -18,3 +18,3 @@ function run()\n unchanged context\n-old value\n+new value',
+            },
+            { path: 'D:\\repo\\src\\b.ts', additions: 4, deletions: 0, diff: '@@ -0,0 +1 @@\n+export {}' },
           ],
         })]}
         identity={null}
@@ -293,11 +296,50 @@ describe('shared chat timeline', () => {
     assert.match(html, /codex-turn-summary-head/);
     assert.doesNotMatch(html, /<details[^>]*codex-turn-summary/);
     assert.match(html, /Changed 2 files/);
-    assert.match(html, /\+44/);
-    assert.match(html, /−2/);
-    assert.match(html, /vscode:\/\/file\/D:\/repo\/src\/a\.ts/);
-    assert.match(html, /codex-file-stat/);
+    assert.doesNotMatch(html, /\+44/);
+    assert.doesNotMatch(html, /vscode:\/\/file/);
+    assert.match(html, /<details class="codex-file-stat"/);
     assert.match(html, /\+40/);
+    assert.match(html, /−2/);
+    assert.match(html, /diff-hunk/);
+    assert.match(html, /diff-remove/);
+    assert.match(html, /diff-add/);
+    assert.match(html, /class="diff-remove" data-old-line="19" data-new-line=""/);
+    assert.match(html, /class="diff-add" data-old-line="" data-new-line="19"/);
+    assert.doesNotMatch(html, /unchanged context/);
+  });
+
+  it('makes a historical final summary expandable from its preceding single-file diff', () => {
+    const diff = '@@ -1 +1 @@\n-old value\n+new value';
+    const historicalEvents = [
+      event(8, 'CODEX_ACTIVITY', {
+        agentId: 'agt_1', threadId: 'thr_1', turnId: 'turn_1', itemId: 'file_1',
+        kind: 'fileChange', status: 'completed', files: ['D:\\repo\\src\\a.ts'], diff,
+      }),
+      event(9, 'CODEX_ACTIVITY', {
+        agentId: 'agt_1', threadId: 'thr_1', turnId: 'turn_1', kind: 'turnSummary', status: 'completed',
+        files: ['D:\\repo\\src\\a.ts'], additions: 1, deletions: 1,
+        fileStats: [{ path: 'D:\\repo\\src\\a.ts', additions: 1, deletions: 1 }],
+      }),
+    ];
+
+    const summary = selectTimelineEvents(historicalEvents).find((item) => (
+      (item.payload as Record<string, unknown>).kind === 'turnSummary'
+    ));
+    const summaryStats = (summary?.payload as Record<string, unknown>).fileStats as Array<Record<string, unknown>>;
+    assert.equal(summaryStats[0]?.diff, diff);
+
+    const html = renderToStaticMarkup(
+      <MessageList
+        messages={[]}
+        events={historicalEvents}
+        identity={null}
+        hasMore={false}
+        onLoadMore={() => undefined}
+        colorOf={() => null}
+      />,
+    );
+    assert.match(html, /codex-turn-summary[\s\S]*<details class="codex-file-stat"/);
   });
 
   it('renders compaction as a compact shared lifecycle event', () => {

@@ -865,10 +865,24 @@ pre {
   padding: 7px 0;
 }
 
-.codex-diff span {
-  display: block;
-  padding: 0 10px;
+.codex-diff > span {
+  display: grid;
+  grid-template-columns: 4ch 4ch minmax(max-content, 1fr);
+  padding: 0;
   white-space: pre;
+}
+
+.codex-diff-line-number {
+  padding: 0 7px;
+  border-right: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  user-select: none;
+}
+
+.codex-diff-code {
+  padding: 0 10px;
 }
 
 .codex-diff .diff-add {
@@ -881,6 +895,11 @@ pre {
   background: rgb(248 81 73 / 16%);
 }
 
+.codex-diff .diff-hunk {
+  color: var(--text-dim);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
 .codex-turn-summary {
   overflow: hidden;
   margin-top: 8px;
@@ -891,7 +910,7 @@ pre {
 
 .codex-turn-summary-head {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) auto auto;
+  grid-template-columns: 22px minmax(0, 1fr);
   align-items: center;
   gap: 7px;
   min-height: 42px;
@@ -915,13 +934,49 @@ pre {
 }
 
 .codex-file-stat {
+  width: 100%;
+}
+
+.codex-file-stat-head {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: 14px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 8px;
   box-sizing: border-box;
   width: 100%;
-  padding: 8px 12px 8px 41px;
+  min-height: 38px;
+  padding: 8px 12px 8px 27px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.codex-file-stat-head::-webkit-details-marker {
+  display: none;
+}
+
+.codex-file-stat-head::before {
+  content: '›';
+  color: var(--text-dim);
+  font-size: 17px;
+  line-height: 1;
+  transition: transform 120ms ease;
+}
+
+.codex-file-stat[open] > .codex-file-stat-head::before {
+  transform: rotate(90deg);
+}
+
+.codex-file-stat-static {
+  cursor: default;
+}
+
+.codex-file-stat-static::before {
+  content: '';
+}
+
+.codex-file-stat > .codex-diff {
+  width: calc(100% - 41px);
+  margin: 0 12px 10px 29px;
 }
 
 .codex-file-stat + .codex-file-stat {

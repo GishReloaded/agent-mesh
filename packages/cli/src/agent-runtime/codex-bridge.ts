@@ -84,7 +84,7 @@ interface PendingTurn {
   changedFiles: Set<string>;
   additions: number;
   deletions: number;
-  fileStats: Map<string, { additions: number; deletions: number }>;
+  fileStats: Map<string, { additions: number; deletions: number; diff?: string }>;
   resolve: (result: CodexTurnResult) => void;
   reject: (error: Error) => void;
   timer: ReturnType<typeof setTimeout>;
@@ -96,7 +96,7 @@ export interface CodexChangeSummary {
   files: string[];
   additions: number;
   deletions: number;
-  fileStats: Array<{ path: string; additions: number; deletions: number }>;
+  fileStats: Array<{ path: string; additions: number; deletions: number; diff?: string }>;
 }
 
 export interface CodexTurnResult {
@@ -374,16 +374,17 @@ export class CodexBridge {
     }
     if (pending && message.method === 'item/completed' && safe.kind === 'fileChange') {
       for (const file of safe.files ?? []) pending.changedFiles.add(file);
-      // Count from the local App Server payload before the public event's diff
-      // is truncated. Only the numeric totals leave the user's machine.
+      // Count from the local App Server payload before the bounded public diff
+      // is truncated, so the displayed totals remain authoritative.
       const counts = countFileChangeDiff(message.params);
       pending.additions += counts.additions;
       pending.deletions += counts.deletions;
       for (const stat of fileChangeStats(message.params, new Set(safe.files ?? []))) {
-        const current = pending.fileStats.get(stat.path) ?? { additions: 0, deletions: 0 };
+        const current = pending.fileStats.get(stat.path) ?? { additions: 0, deletions: 0, diff: '' };
         pending.fileStats.set(stat.path, {
           additions: current.additions + stat.additions,
           deletions: current.deletions + stat.deletions,
+          ...(stat.diff ? { diff: truncate([current.diff, stat.diff].filter(Boolean).join('\n'), 16_000) } : {}),
         });
       }
     }
@@ -667,13 +668,14 @@ function countFileChangeDiff(params: unknown): { additions: number; deletions: n
 function fileChangeStats(
   params: unknown,
   allowedPaths: Set<string>,
-): Array<{ path: string; additions: number; deletions: number }> {
+): Array<{ path: string; additions: number; deletions: number; diff?: string }> {
   const changes = asObject(asObject(params).item).changes;
   if (!Array.isArray(changes)) return [];
   return changes.flatMap((change) => {
     const entry = asObject(change);
     const path = asString(entry.path);
     if (!path || !allowedPaths.has(path)) return [];
-    return [{ path, ...countDiffLines(asString(entry.diff)) }];
+    const diff = asString(entry.diff);
+    return [{ path, ...countDiffLines(diff), ...(diff ? { diff: truncate(diff, 16_000) } : {}) }];
   });
 }

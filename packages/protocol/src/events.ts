@@ -350,6 +350,7 @@ export const devPayloadSchemas = {
         path: z.string().max(1000),
         additions: z.number().int().nonnegative().max(1_000_000),
         deletions: z.number().int().nonnegative().max(1_000_000),
+        diff: z.string().max(16_000).optional(),
       }).strict()).max(200).optional(),
     })
     .strict(),

@@ -183,8 +183,8 @@ describe('Codex bridge', () => {
     assert.deepEqual(result.changeSummary, {
       threadId: 'thr_1', turnId: 'turn_1', files: ['a.ts', 'b.ts'], additions: 3, deletions: 1,
       fileStats: [
-        { path: 'a.ts', additions: 2, deletions: 1 },
-        { path: 'b.ts', additions: 1, deletions: 0 },
+        { path: 'a.ts', additions: 2, deletions: 1, diff: '@@ -1 +1,2 @@\n-old\n+new\n+more' },
+        { path: 'b.ts', additions: 1, deletions: 0, diff: '@@ -0,0 +1 @@\n+added' },
       ],
     });
     assert.equal(mesh.events.some((entry) => entry.payload.kind === 'turnSummary'), false);
@@ -193,8 +193,8 @@ describe('Codex bridge', () => {
       agentId: 'agt_1', threadId: 'thr_1', turnId: 'turn_1', kind: 'turnSummary', status: 'completed',
       files: ['a.ts', 'b.ts'], additions: 3, deletions: 1,
       fileStats: [
-        { path: 'a.ts', additions: 2, deletions: 1 },
-        { path: 'b.ts', additions: 1, deletions: 0 },
+        { path: 'a.ts', additions: 2, deletions: 1, diff: '@@ -1 +1,2 @@\n-old\n+new\n+more' },
+        { path: 'b.ts', additions: 1, deletions: 0, diff: '@@ -0,0 +1 @@\n+added' },
       ],
     });
   });

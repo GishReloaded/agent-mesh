@@ -103,11 +103,15 @@ describe('event types', () => {
     const summary = parseEventPayload(DevEventType.CodexActivity, {
       agentId: 'agt_1', threadId: 'thr_1', turnId: 'turn_1', kind: 'turnSummary',
       status: 'completed', files: ['src/a.ts', 'src/b.ts'], additions: 12, deletions: 3,
-      fileStats: [{ path: 'src/a.ts', additions: 10, deletions: 1 }, { path: 'src/b.ts', additions: 2, deletions: 2 }],
+      fileStats: [
+        { path: 'src/a.ts', additions: 10, deletions: 1, diff: '@@ -1 +1 @@\n-old\n+new' },
+        { path: 'src/b.ts', additions: 2, deletions: 2 },
+      ],
     }) as Record<string, unknown>;
     assert.equal(summary.kind, 'turnSummary');
     assert.equal(summary.additions, 12);
     assert.equal((summary.fileStats as unknown[]).length, 2);
+    assert.equal(((summary.fileStats as Array<Record<string, unknown>>)[0]?.diff), '@@ -1 +1 @@\n-old\n+new');
 
     const contextState = parseEventPayload(DevEventType.CodexThreadState, {
       agentId: 'agt_1', threadId: 'thr_1', status: 'working', contextTokens: 42_000, contextWindow: 100_000,

@@ -23,13 +23,48 @@ export type ColorLookup = (author: Message['author']) => string | null;
 /** A Session has one timeline. Codex thread ids correlate activity but never split the room. */
 export function selectTimelineEvents(events: MeshEvent[], _codexThreadId: string | null = null): MeshEvent[] {
   const latestTechnicalItem = new Map<string, string>();
-  for (const event of events) {
+  const singleFileDiffs = new Map<string, string>();
+  const enrichedEvents = events.map((event) => {
     const payload = event.payload as Record<string, unknown>;
     if (event.type === 'CODEX_ACTIVITY' && payload.itemId && !['reasoningSummary', 'message'].includes(String(payload.kind))) {
       latestTechnicalItem.set(`${String(payload.threadId)}:${String(payload.turnId)}:${String(payload.itemId)}:${String(payload.kind)}`, event.id);
     }
-  }
-  return events.filter((event) => {
+
+    const files = Array.isArray(payload.files) ? payload.files.map(String) : [];
+    if (
+      event.type === 'CODEX_ACTIVITY' &&
+      payload.kind === 'fileChange' &&
+      files.length === 1 &&
+      typeof payload.diff === 'string' &&
+      payload.diff
+    ) {
+      singleFileDiffs.set(
+        [payload.agentId, payload.threadId, payload.turnId, files[0]].map(String).join('\0'),
+        payload.diff,
+      );
+    }
+
+    if (event.type !== 'CODEX_ACTIVITY' || payload.kind !== 'turnSummary') return event;
+    const stats = Array.isArray(payload.fileStats)
+      ? payload.fileStats.map(asObject)
+      : files.length === 1
+        ? [{ path: files[0], additions: Number(payload.additions ?? 0), deletions: Number(payload.deletions ?? 0) }]
+        : [];
+    let addedHistoricalDiff = false;
+    const fileStats = stats.map((stat) => {
+      if (typeof stat.diff === 'string' && stat.diff) return stat;
+      const path = String(stat.path ?? '');
+      const diff = singleFileDiffs.get(
+        [payload.agentId, payload.threadId, payload.turnId, path].map(String).join('\0'),
+      );
+      if (!diff) return stat;
+      addedHistoricalDiff = true;
+      return { ...stat, diff };
+    });
+    return addedHistoricalDiff ? { ...event, payload: { ...payload, fileStats } } : event;
+  });
+
+  return enrichedEvents.filter((event) => {
     const payload = event.payload as Record<string, unknown>;
     // Older runners published the final App Server agentMessage both as an
     // activity and as a normal chat reply. Keep historical timelines singular.
@@ -267,25 +302,38 @@ function EventRow({
       const fileStats = Array.isArray(payload.fileStats)
         ? payload.fileStats.map(asObject).flatMap((stat) => {
             const path = String(stat.path ?? '');
-            return path ? [{ path, additions: Number(stat.additions ?? 0), deletions: Number(stat.deletions ?? 0) }] : [];
+            const diff = typeof stat.diff === 'string' ? stat.diff : '';
+            return path ? [{ path, additions: Number(stat.additions ?? 0), deletions: Number(stat.deletions ?? 0), diff }] : [];
           })
-        : files.map((path) => ({ path, additions: null, deletions: null }));
-      const additions = Number(payload.additions ?? 0);
-      const deletions = Number(payload.deletions ?? 0);
+        : files.map((path) => ({
+            path,
+            additions: files.length === 1 ? Number(payload.additions ?? 0) : null,
+            deletions: files.length === 1 ? Number(payload.deletions ?? 0) : null,
+            diff: '',
+          }));
       return (
         <div className="codex-technical-event codex-turn-summary">
           <div className="codex-turn-summary-head">
             <span className="codex-tech-icon" aria-hidden="true">±</span>
             <span className="type">Changed {fileStats.length} {fileStats.length === 1 ? 'file' : 'files'}</span>
-            <span className="codex-change-additions">+{additions}</span>
-            <span className="codex-change-deletions">−{deletions}</span>
           </div>
           <div className="codex-turn-summary-files">
-            {fileStats.map((file) => (
+            {fileStats.map((file) => file.diff ? (
+              <details className="codex-file-stat" key={file.path}>
+                <summary className="codex-file-stat-head">
+                  <span className="codex-file-link">{file.path}</span>
+                  {file.additions !== null && <span className="codex-change-additions">+{file.additions}</span>}
+                  {file.deletions !== null && <span className="codex-change-deletions">−{file.deletions}</span>}
+                </summary>
+                <DiffPreview diff={file.diff} />
+              </details>
+            ) : (
               <div className="codex-file-stat" key={file.path}>
-                <LocalFileLink path={file.path} />
-                {file.additions !== null && <span className="codex-change-additions">+{file.additions}</span>}
-                {file.deletions !== null && <span className="codex-change-deletions">−{file.deletions}</span>}
+                <div className="codex-file-stat-head codex-file-stat-static">
+                  <span className="codex-file-link">{file.path}</span>
+                  {file.additions !== null && <span className="codex-change-additions">+{file.additions}</span>}
+                  {file.deletions !== null && <span className="codex-change-deletions">−{file.deletions}</span>}
+                </div>
               </div>
             ))}
           </div>
@@ -449,13 +497,46 @@ function asObject(value: unknown): Record<string, unknown> {
 }
 
 function DiffPreview({ diff }: { diff: string }) {
+  const changedLines: Array<{
+    content: string;
+    kind: 'hunk' | 'add' | 'remove';
+    oldLine?: number;
+    newLine?: number;
+  }> = [];
+  let oldLine: number | undefined;
+  let newLine: number | undefined;
+
+  for (const line of diff.split(/\r?\n/)) {
+    const hunk = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line);
+    if (hunk) {
+      oldLine = Number(hunk[1]);
+      newLine = Number(hunk[2]);
+      changedLines.push({ content: line, kind: 'hunk' });
+    } else if (line.startsWith('+') && !line.startsWith('+++')) {
+      changedLines.push({ content: line, kind: 'add', newLine });
+      if (newLine !== undefined) newLine += 1;
+    } else if (line.startsWith('-') && !line.startsWith('---')) {
+      changedLines.push({ content: line, kind: 'remove', oldLine });
+      if (oldLine !== undefined) oldLine += 1;
+    } else if (line.startsWith(' ')) {
+      if (oldLine !== undefined) oldLine += 1;
+      if (newLine !== undefined) newLine += 1;
+    }
+  }
+
   return (
     <pre className="codex-diff">
-      {diff.split('\n').map((line, index) => (
+      {changedLines.map((line, index) => (
         <span
-          className={line.startsWith('+') && !line.startsWith('+++') ? 'diff-add' : line.startsWith('-') && !line.startsWith('---') ? 'diff-remove' : 'diff-context'}
-          key={`${index}:${line}`}
-        >{line || ' '}{'\n'}</span>
+          className={`diff-${line.kind}`}
+          data-old-line={line.oldLine ?? ''}
+          data-new-line={line.newLine ?? ''}
+          key={`${index}:${line.content}`}
+        >
+          <span className="codex-diff-line-number" aria-hidden="true">{line.oldLine ?? ''}</span>
+          <span className="codex-diff-line-number" aria-hidden="true">{line.newLine ?? ''}</span>
+          <span className="codex-diff-code">{line.content || ' '}{'\n'}</span>
+        </span>
       ))}
     </pre>
   );
