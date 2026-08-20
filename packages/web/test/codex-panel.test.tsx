@@ -32,8 +32,40 @@ describe('Codex panel state', () => {
   it('lets the settings menu fill the conversation width without clipping keyboard focus', () => {
     const styles = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
 
+    assert.match(styles, /\.codex-agent-settings-list\s*{[^}]*display:\s*grid[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s);
     assert.match(styles, /\.codex-agent-settings\s*{[^}]*width:\s*100%/s);
     assert.match(styles, /\.codex-agent-settings\s*>\s*summary:focus-visible\s*{[^}]*outline-offset:\s*-2px/s);
+  });
+
+  it('does not show stale runtime settings for offline Codex registrations', () => {
+    const agents: Agent[] = [
+      {
+        id: 'agt_offline', sessionId: 'ses_1', name: 'GPT', provider: 'openai', model: 'codex', machineId: null,
+        avatarColor: '#fff', capabilities: { coding: true }, status: 'idle', autonomy: 'semi', online: false,
+        ownerUserId: 'usr_1', metadata: {}, lastSeenAt: now, createdAt: now,
+      },
+      {
+        id: 'agt_online', sessionId: 'ses_1', name: 'GPT-Local', provider: 'openai', model: 'codex', machineId: null,
+        avatarColor: '#fff', capabilities: { coding: true }, status: 'idle', autonomy: 'semi', online: true,
+        ownerUserId: 'usr_1', metadata: {}, lastSeenAt: now, createdAt: now,
+      },
+    ];
+    const html = renderToStaticMarkup(
+      <CodexAgentSettings
+        view={{ threads: [], activityByThread: new Map(), pendingApprovals: [] }}
+        agents={agents}
+        identity={{ kind: 'user', userId: 'usr_1', displayName: 'Owner' }}
+        session={{
+          id: 'ses_1', slug: 'test', name: 'Test', description: null, ownerId: 'usr_1', projectMeta: {},
+          lastSeq: 0, createdAt: now, updatedAt: now, archivedAt: null,
+        }}
+        disabled={false}
+        onControl={async () => undefined}
+      />,
+    );
+
+    assert.match(html, />GPT-Local</);
+    assert.doesNotMatch(html, />GPT</);
   });
 
   it('keeps Codex as compact agent settings instead of a second chat navigation', () => {

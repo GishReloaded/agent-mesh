@@ -170,7 +170,9 @@ export function CodexAgentSettings({
   onControl: (payload: CodexControlRequest) => Promise<void>;
 }) {
   const candidates = agents.filter(
-    (agent) => agent.provider.toLowerCase() === 'openai' || view.threads.some((thread) => thread.agentId === agent.id),
+    (agent) => agent.online && (
+      agent.provider.toLowerCase() === 'openai' || view.threads.some((thread) => thread.agentId === agent.id)
+    ),
   );
   const control = (payload: CodexControlInput) => onControl({ ...payload, requestId: requestId() } as CodexControlRequest);
 
