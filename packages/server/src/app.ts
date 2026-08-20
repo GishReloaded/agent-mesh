@@ -1,4 +1,4 @@
-import { API_PREFIX, PROTOCOL_LIMITS } from '@agentmesh/protocol';
+import { API_PREFIX, AVATAR_MIME_TYPES, PROTOCOL_LIMITS } from '@agentmesh/protocol';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
@@ -65,6 +65,14 @@ export async function buildApp(config: Config, overrides: ServiceOverrides = {})
   if (config.webDist) {
     await app.register(fastifyStatic, { root: config.webDist, wildcard: false });
   }
+  // Avatar uploads arrive as raw image bytes; Fastify parses only JSON and
+  // text unless told otherwise.
+  app.addContentTypeParser(
+    [...AVATAR_MIME_TYPES, 'application/octet-stream'],
+    { parseAs: 'buffer' },
+    (_request, body, done) => done(null, body),
+  );
+
   registerErrorHandler(app, { serveSpa: config.webDist !== null });
 
   await app.register(

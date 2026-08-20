@@ -13,6 +13,7 @@ export interface UsersTable {
   password_hash: string;
   display_name: string;
   avatar_color: Generated<string>;
+  avatar_key: string | null;
   created_at: Timestamp;
   updated_at: Timestamp;
 }

@@ -20,6 +20,12 @@ export const userSchema = z.object({
   email: z.string().email(),
   displayName: z.string().min(1).max(120),
   avatarColor: z.string().max(16),
+  /**
+   * Where to fetch this person's picture, or null when they have none and the
+   * coloured initials stand in. The path changes whenever the image does, so
+   * caches never have to be told about a replacement.
+   */
+  avatarUrl: z.string().max(500).nullable(),
   createdAt: timestampSchema,
 });
 export type User = z.infer<typeof userSchema>;
@@ -29,6 +35,7 @@ export const publicUserSchema = z.object({
   id: idSchema,
   displayName: z.string().min(1).max(120),
   avatarColor: z.string().max(16),
+  avatarUrl: z.string().max(500).nullable(),
 });
 export type PublicUser = z.infer<typeof publicUserSchema>;
 

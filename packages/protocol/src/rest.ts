@@ -14,6 +14,7 @@ import { eventSchema, eventTypeSchema } from './events.js';
 import {
   agentAutonomySchema,
   agentStatusSchema,
+  avatarColorSchema,
   capabilitiesSchema,
   contextKindSchema,
   fileRefSchema,
@@ -53,6 +54,27 @@ export const authTokensSchema = z.object({
 export type AuthTokens = z.infer<typeof authTokensSchema>;
 
 export const refreshRequestSchema = z.object({ refreshToken: z.string().min(1) });
+
+/** Fields a person may change about their own account. */
+export const updateProfileRequestSchema = z
+  .object({
+    displayName: z.string().min(1).max(120).optional(),
+    avatarColor: avatarColorSchema.optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, { message: 'Nothing to update.' });
+export type UpdateProfileRequest = z.infer<typeof updateProfileRequestSchema>;
+
+/**
+ * Image types accepted for an avatar.
+ *
+ * SVG is deliberately absent: it is a document format that can carry script,
+ * and serving one from your own origin hands whoever uploaded it the session.
+ */
+export const AVATAR_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'] as const;
+export type AvatarMimeType = (typeof AVATAR_MIME_TYPES)[number];
+
+/** Avatars are small on purpose - they are rendered at 28 pixels. */
+export const AVATAR_MAX_BYTES = 512 * 1024;
 export type RefreshRequest = z.infer<typeof refreshRequestSchema>;
 
 // --- sessions --------------------------------------------------------------

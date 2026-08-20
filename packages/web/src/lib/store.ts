@@ -295,6 +295,18 @@ class MeshStore {
         void this.refreshMembers();
         return;
       }
+      case 'participant.updated': {
+        // A profile is global but the log is per session, so this arrives in
+        // every room the person is in. Applying it locally keeps their new
+        // name or colour visible without anyone reloading.
+        const updated = payload.user as SessionMember['user'];
+        this.setView({
+          members: view.members.map((member) =>
+            member.user.id === updated.id ? { ...member, user: updated } : member,
+          ),
+        });
+        return;
+      }
       case 'participant.left': {
         const userId = payload.userId as string;
         this.setView({ members: view.members.filter((member) => member.user.id !== userId) });

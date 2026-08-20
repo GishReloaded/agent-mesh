@@ -9,6 +9,9 @@ import { ContextService } from './services/sharedContext.js';
 import { DevEventService } from './services/devEvents.js';
 import { EventLog } from './services/eventLog.js';
 import { InviteService } from './services/invites.js';
+import { ProfileService } from './services/profile.js';
+import { LocalAvatarStore, defaultAvatarDir, type AvatarStore } from './storage/avatars.js';
+import { S3AvatarStore } from './storage/s3Avatars.js';
 import { MessageService } from './services/messages.js';
 import { SessionService } from './services/sessions.js';
 import { TaskService } from './services/tasks.js';
@@ -35,6 +38,8 @@ export interface Services {
   tasks: TaskService;
   context: ContextService;
   devEvents: DevEventService;
+  profile: ProfileService;
+  avatars: AvatarStore;
 }
 
 export interface ServiceOverrides {
@@ -47,6 +52,7 @@ export interface ServiceOverrides {
    * registry that fans out through the API Gateway management API.
    */
   registry?: ConnectionRegistry & EventSink;
+  avatars?: AvatarStore;
 }
 
 export function createServices(config: Config, overrides: ServiceOverrides = {}): Services {
@@ -57,6 +63,14 @@ export function createServices(config: Config, overrides: ServiceOverrides = {})
   const accessTokens = new AccessTokenService(config.auth.jwtSecret, config.auth.accessTokenTtl);
 
   const sessions = new SessionService(db.db, log, registry);
+
+  // A bucket where one is configured, a directory otherwise: the same split
+  // the connection registry makes between the two deployments.
+  const avatars =
+    overrides.avatars ??
+    (config.avatars.bucket
+      ? new S3AvatarStore(config.avatars.bucket)
+      : new LocalAvatarStore(config.avatars.dir ?? defaultAvatarDir()));
 
   return {
     config,
@@ -79,5 +93,7 @@ export function createServices(config: Config, overrides: ServiceOverrides = {})
     tasks: new TaskService(db.db, log),
     context: new ContextService(db.db, log),
     devEvents: new DevEventService(db.db, log),
+    profile: new ProfileService(db.db, log, avatars),
+    avatars,
   };
 }

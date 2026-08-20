@@ -72,6 +72,13 @@ const envSchema = z.object({
    */
   REALTIME_URL: z.string().optional(),
 
+  /**
+   * Where uploaded avatars are kept. A bucket name uses S3; otherwise they go
+   * on disk, which is right for a server that owns one and useless on Lambda.
+   */
+  AVATAR_BUCKET: z.string().optional(),
+  AVATAR_DIR: z.string().optional(),
+
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 
   /** Set to `false` to close registration on a private deployment. */
@@ -115,6 +122,7 @@ export interface Config {
   webDist: string | null;
   /** Public WebSocket endpoint, or null when it is `/ws` on this origin. */
   realtimeUrl: string | null;
+  avatars: { bucket: string | null; dir: string | null };
   logLevel: Env['LOG_LEVEL'];
   rateLimit: { max: number; window: string; wsFramesPerSecond: number };
   agentChainLimit: number;
@@ -189,6 +197,10 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     publicUrl: env.PUBLIC_URL.replace(/\/+$/, ''),
     webDist: resolveWebDist(env.WEB_DIST),
     realtimeUrl: env.REALTIME_URL?.trim() ? env.REALTIME_URL.trim() : null,
+    avatars: {
+      bucket: env.AVATAR_BUCKET?.trim() ? env.AVATAR_BUCKET.trim() : null,
+      dir: env.AVATAR_DIR?.trim() ? env.AVATAR_DIR.trim() : null,
+    },
     logLevel: env.LOG_LEVEL,
     rateLimit: { max: env.RATE_LIMIT_MAX, window: env.RATE_LIMIT_WINDOW, wsFramesPerSecond: env.WS_RATE_LIMIT },
     agentChainLimit: env.AGENT_CHAIN_LIMIT,

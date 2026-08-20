@@ -1,4 +1,13 @@
-import { loginRequestSchema, refreshRequestSchema, registerRequestSchema } from '@agentmesh/protocol';
+import {
+  AVATAR_MAX_BYTES,
+  AVATAR_MIME_TYPES,
+  AgentMeshError,
+  ErrorCode,
+  loginRequestSchema,
+  refreshRequestSchema,
+  registerRequestSchema,
+  updateProfileRequestSchema,
+} from '@agentmesh/protocol';
 import type { FastifyInstance } from 'fastify';
 import type { Services } from '../../container.js';
 import { authenticate, requireUser } from '../auth.js';
@@ -34,5 +43,63 @@ export async function authRoutes(app: FastifyInstance, services: Services): Prom
   app.get('/auth/me', { preHandler: authenticate(services) }, async (request) => {
     const principal = requireUser(request);
     return services.users.byId(principal.userId);
+  });
+
+  app.patch('/auth/me', { preHandler: authenticate(services) }, async (request) => {
+    const principal = requireUser(request);
+    const body = parse(updateProfileRequestSchema, request.body);
+    return services.profile.update(principal.userId, body);
+  });
+
+  /**
+   * Avatar upload. The body is the image itself rather than a multipart form:
+   * one file, no fields, and every client here can send raw bytes far more
+   * easily than it can assemble a multipart envelope.
+   */
+  app.post(
+    '/auth/me/avatar',
+    {
+      preHandler: authenticate(services),
+      // Base64 through API Gateway inflates by a third; leave room for it.
+      bodyLimit: Math.ceil(AVATAR_MAX_BYTES * 1.4),
+    },
+    async (request) => {
+      const principal = requireUser(request);
+      const body = request.body;
+      if (!Buffer.isBuffer(body)) {
+        throw new AgentMeshError(
+          ErrorCode.ValidationFailed,
+          `Send the image bytes as the request body with one of: ${AVATAR_MIME_TYPES.join(', ')}.`,
+        );
+      }
+      return services.profile.setAvatar(principal.userId, body);
+    },
+  );
+
+  app.delete('/auth/me/avatar', { preHandler: authenticate(services) }, async (request) => {
+    const principal = requireUser(request);
+    return services.profile.clearAvatar(principal.userId);
+  });
+
+  /**
+   * Avatars are served through the API rather than from a public bucket: the
+   * store stays private, and there are no signed URLs to leak. Anyone who can
+   * reach the deployment can fetch one - they are shown next to every message
+   * already - so this needs no authentication, only a valid key.
+   */
+  app.get('/users/:id/avatar/:fragment', async (request, reply) => {
+    const { id, fragment } = request.params as { id: string; fragment: string };
+    const image = await services.profile.readAvatar(id, fragment);
+    if (!image) {
+      reply.code(404).send({ error: { code: ErrorCode.NotFound, message: 'No avatar.' } });
+      return;
+    }
+    // The key changes on every upload, so this can be cached forever.
+    reply
+      .header('content-type', image.contentType)
+      .header('cache-control', 'public, max-age=31536000, immutable')
+      .header('content-disposition', 'inline')
+      .header('x-content-type-options', 'nosniff')
+      .send(image.body);
   });
 }

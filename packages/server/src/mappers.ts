@@ -1,3 +1,4 @@
+import { API_PREFIX } from '@agentmesh/protocol';
 import type {
   Actor,
   Agent,
@@ -43,18 +44,34 @@ function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+/**
+ * Where a stored avatar is served from. The key is part of the path, so the
+ * URL changes whenever the image does and caches need no invalidation.
+ */
+export function avatarUrl(userId: string, key: string | null): string | null {
+  return key ? `${API_PREFIX}/users/${userId}/avatar/${key.split('/').pop() ?? ''}` : null;
+}
+
 export function toUser(row: Selectable<UsersTable>): User {
   return {
     id: row.id,
     email: row.email,
     displayName: row.display_name,
     avatarColor: row.avatar_color,
+    avatarUrl: avatarUrl(row.id, row.avatar_key),
     createdAt: iso(row.created_at),
   };
 }
 
-export function toPublicUser(row: Pick<Selectable<UsersTable>, 'id' | 'display_name' | 'avatar_color'>): PublicUser {
-  return { id: row.id, displayName: row.display_name, avatarColor: row.avatar_color };
+export function toPublicUser(
+  row: Pick<Selectable<UsersTable>, 'id' | 'display_name' | 'avatar_color' | 'avatar_key'>,
+): PublicUser {
+  return {
+    id: row.id,
+    displayName: row.display_name,
+    avatarColor: row.avatar_color,
+    avatarUrl: avatarUrl(row.id, row.avatar_key),
+  };
 }
 
 export function toSession(row: Selectable<SessionsTable>): Session {
@@ -80,12 +97,18 @@ export function toSessionMember(
     user_id: string;
     display_name: string;
     avatar_color: string;
+    avatar_key: string | null;
   },
   online: boolean,
 ): SessionMember {
   return {
     sessionId: row.session_id,
-    user: { id: row.user_id, displayName: row.display_name, avatarColor: row.avatar_color },
+    user: toPublicUser({
+      id: row.user_id,
+      display_name: row.display_name,
+      avatar_color: row.avatar_color,
+      avatar_key: row.avatar_key,
+    }),
     role: row.role as SessionMember['role'],
     joinedAt: iso(row.joined_at),
     online,

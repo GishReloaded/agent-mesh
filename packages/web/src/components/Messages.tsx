@@ -20,6 +20,9 @@ function time(iso: string): string {
  */
 export type ColorLookup = (author: Message['author']) => string | null;
 
+/** Where to find an author's uploaded picture, when they have one. */
+export type AvatarLookup = (author: Message['author']) => string | null;
+
 /** A Session has one timeline. Codex thread ids correlate activity but never split the room. */
 export function selectTimelineEvents(events: MeshEvent[], _codexThreadId: string | null = null): MeshEvent[] {
   const latestTechnicalItem = new Map<string, string>();
@@ -111,6 +114,7 @@ export function MessageList({
   hasMore,
   onLoadMore,
   colorOf,
+  avatarOf = () => null,
   onCodexApproval,
   canApproveCodex = () => false,
 }: {
@@ -120,6 +124,7 @@ export function MessageList({
   hasMore: boolean;
   onLoadMore: () => void;
   colorOf: ColorLookup;
+  avatarOf?: AvatarLookup;
   onCodexApproval?: (payload: CodexApprovalResponse) => Promise<void>;
   canApproveCodex?: (agentId: string) => boolean;
 }) {
@@ -172,6 +177,7 @@ export function MessageList({
             message={item.message}
             mentioned={isAddressedTo(item.message, identity)}
             color={colorOf(item.message.author)}
+            avatarUrl={avatarOf(item.message.author)}
           />
         ) : (
           <EventRow
@@ -192,10 +198,12 @@ function MessageRow({
   message,
   mentioned,
   color,
+  avatarUrl,
 }: {
   message: Message;
   mentioned: boolean;
   color: string | null;
+  avatarUrl?: string | null;
 }) {
   const palette = participantColor(color);
   return (
@@ -204,6 +212,7 @@ function MessageRow({
         name={message.author.name ?? '?'}
         color={color ?? ''}
         kind={message.author.type as 'user' | 'agent' | 'system'}
+        src={avatarUrl}
       />
       <div>
         <div className="head">

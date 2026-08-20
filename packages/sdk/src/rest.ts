@@ -33,6 +33,7 @@ import {
   type Task,
   type TaskListQuery,
   type UpdateAgentRequest,
+  type UpdateProfileRequest,
   type UpdateSessionRequest,
   type UpdateTaskRequest,
   type User,
@@ -189,6 +190,43 @@ export class RestClient {
 
   me(): Promise<User> {
     return this.request('GET', '/auth/me');
+  }
+
+  updateProfile(body: UpdateProfileRequest): Promise<User> {
+    return this.request('PATCH', '/auth/me', { body });
+  }
+
+  /**
+   * Upload an avatar. The image bytes are the whole body - one file and no
+   * fields, which every client can send without assembling a multipart
+   * envelope.
+   */
+  async uploadAvatar(file: Blob): Promise<User> {
+    const headers: Record<string, string> = {
+      accept: 'application/json',
+      'content-type': file.type || 'application/octet-stream',
+    };
+    if (this.token) headers.authorization = `Bearer ${this.token}`;
+
+    const response = await this.doFetch(`${this.base}${API_PREFIX}/auth/me/avatar`, {
+      method: 'POST',
+      headers,
+      body: file,
+    });
+
+    const text = await response.text();
+    const payload: unknown = text ? JSON.parse(text) : null;
+    if (!response.ok) {
+      const parsed = errorResponseSchema.safeParse(payload);
+      throw parsed.success
+        ? AgentMeshError.fromBody(parsed.data.error)
+        : new AgentMeshError(ErrorCode.Internal, `Upload failed with status ${response.status}.`);
+    }
+    return payload as User;
+  }
+
+  removeAvatar(): Promise<User> {
+    return this.request('DELETE', '/auth/me/avatar');
   }
 
   // --- sessions -----------------------------------------------------------

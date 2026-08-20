@@ -14,14 +14,24 @@ function initials(name: string): string {
  * still distinguishable now that colour identifies the individual rather than
  * the kind.
  */
-export function Avatar({ name, color, kind }: { name: string; color: string; kind: 'user' | 'agent' | 'system' }) {
+export function Avatar({
+  name,
+  color,
+  kind,
+  src,
+}: {
+  name: string;
+  color: string;
+  kind: 'user' | 'agent' | 'system';
+  src?: string | null;
+}) {
   return (
     <div
       className={`avatar avatar-${kind}`}
       style={{ background: participantColor(color).tile }}
       aria-hidden="true"
     >
-      {initials(name)}
+      {src ? <img src={src} alt="" /> : initials(name)}
     </div>
   );
 }
@@ -53,6 +63,7 @@ export function ParticipantList({
           title={`Mention ${member.user.displayName}`}
         >
           <span className={`dot${member.online ? ' online' : ''}`} />
+          {member.user.avatarUrl && <img className="participant-avatar" src={member.user.avatarUrl} alt="" />}
           <span className="name" style={{ color: participantColor(member.user.avatarColor).text }}>
             {member.user.displayName}
           </span>

@@ -71,6 +71,38 @@ Globals:
         LOG_LEVEL: info
 
 Resources:
+  # --- uploaded avatars -----------------------------------------------------
+
+  # Deliberately separate from the deployment-artifact bucket: this one holds
+  # user content, is written to at runtime, and outlives any single release.
+  AvatarBucket:
+    Type: AWS::S3::Bucket
+    # Keeps people's pictures if the stack is torn down and rebuilt.
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub '${ProjectName}-avatars-${AWS::AccountId}-${AWS::Region}'
+      # The images are served through the API, so nothing here is public and
+      # there are no CORS rules or signed URLs to get wrong.
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          # Every upload writes a new key and deletes the old one; this only
+          # sweeps anything a failed delete left behind.
+          - Id: expire-orphans
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 7
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+
   # --- REST API and web client ---------------------------------------------
 
   HttpApi:
@@ -98,6 +130,12 @@ Resources:
           # what keeps this template free of a dependency cycle.
           REALTIME_URL: !Sub 'wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'
           WEB_DIST: web
+          AVATAR_BUCKET: !Ref AvatarBucket
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
+              Resource: !Sub '${AvatarBucket.Arn}/avatars/*'
       Events:
         Root:
           Type: HttpApi
@@ -215,6 +253,10 @@ Outputs:
 
   HealthCheck:
     Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/api/v1/healthz'
+
+  AvatarBucketName:
+    Description: Private bucket holding uploaded profile pictures. Retained on stack deletion.
+    Value: !Ref AvatarBucket
 
   HttpLogs:
     Value: !Sub 'aws logs tail /aws/lambda/${ProjectName}-http --follow'

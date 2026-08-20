@@ -13,7 +13,7 @@ import {
 import { jsonb, type Db } from '../db/client.js';
 import { principalActor, systemActor, type Principal, type SessionAccess } from '../auth/principal.js';
 import { IdPrefix, newId } from '../ids.js';
-import { toAgent, toSession, toSessionMember } from '../mappers.js';
+import { toAgent, toPublicUser, toSession, toSessionMember } from '../mappers.js';
 import type { ConnectionRegistry } from '../realtime/registry.js';
 import type { EventLog } from './eventLog.js';
 
@@ -122,6 +122,7 @@ export class SessionService {
         'session_members.user_id',
         'users.display_name',
         'users.avatar_color',
+        'users.avatar_key',
       ])
       .orderBy('session_members.joined_at', 'asc')
       .execute();
@@ -303,7 +304,7 @@ export class SessionService {
 
     const user = await this.db
       .selectFrom('users')
-      .select(['id', 'display_name', 'avatar_color'])
+      .select(['id', 'display_name', 'avatar_color', 'avatar_key'])
       .where('id', '=', userId)
       .executeTakeFirstOrThrow();
 
@@ -312,7 +313,7 @@ export class SessionService {
         LifecycleEventType.ParticipantJoined,
         { type: 'user', id: user.id, name: user.display_name },
         {
-          user: { id: user.id, displayName: user.display_name, avatarColor: user.avatar_color },
+          user: toPublicUser(user),
           role,
         },
       );

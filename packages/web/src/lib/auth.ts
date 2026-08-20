@@ -37,6 +37,13 @@ export function storedUser(): User | null {
   return read()?.user ?? null;
 }
 
+/** Keep the cached account in step after the person edits their profile. */
+export function persistUser(user: User): void {
+  const stored = read();
+  if (!stored) return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stored, user }));
+}
+
 export function isAuthenticated(): boolean {
   return read() !== null;
 }

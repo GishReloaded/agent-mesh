@@ -43,6 +43,8 @@ export const LifecycleEventType = {
   ParticipantJoined: 'participant.joined',
   ParticipantLeft: 'participant.left',
   ParticipantRoleChanged: 'participant.role_changed',
+  /** Someone changed their own profile: name, colour or picture. */
+  ParticipantUpdated: 'participant.updated',
 
   AgentRegistered: 'agent.registered',
   AgentConnected: 'agent.connected',
@@ -73,6 +75,7 @@ export const lifecyclePayloadSchemas = {
   'participant.joined': z.object({ user: publicUserSchema, role: sessionRoleSchema }),
   'participant.left': z.object({ userId: idSchema, removedBy: idSchema.nullable() }),
   'participant.role_changed': z.object({ userId: idSchema, role: sessionRoleSchema }),
+  'participant.updated': z.object({ user: publicUserSchema }),
 
   'agent.registered': z.object({ agent: agentSchema }),
   'agent.connected': z.object({ agentId: idSchema, name: z.string() }),

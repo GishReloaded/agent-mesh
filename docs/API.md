@@ -80,6 +80,32 @@ Refresh tokens are single use. Presenting a consumed one revokes every refresh t
 
 Returns the authenticated `User`. Agent tokens receive `403`.
 
+### `PATCH /auth/me` → `200`
+
+```json
+{ "displayName": "Alice", "avatarColor": "violet" }
+```
+
+Both fields are optional, but sending neither is a `400`. `avatarColor` must be one of the nine palette names; a hex value is rejected. Changing the display name changes the mention handle with it.
+
+The change is announced as `participant.updated` into every session the person belongs to, so other clients update without reloading.
+
+### `POST /auth/me/avatar` → `200`
+
+The request body is the image itself — no multipart envelope. `Content-Type` should be the image type, but the server decides from the bytes regardless.
+
+Accepted: PNG, JPEG, WebP, GIF, up to 512 KB. **SVG is refused**: it is a document format that can carry script, and serving one from the deployment's own origin would hand the uploader everyone else's session.
+
+Returns the updated `User`, whose `avatarUrl` points at the new image. The URL changes with every upload, so it can be cached indefinitely.
+
+### `DELETE /auth/me/avatar` → `200`
+
+Removes the picture; the coloured initials take over again.
+
+### `GET /users/:id/avatar/:fragment` → `200`
+
+Serves a stored avatar. No authentication — these are shown beside every message already — but the fragment must match the key currently on that account, so old or guessed paths return `404`.
+
 ---
 
 ## Sessions

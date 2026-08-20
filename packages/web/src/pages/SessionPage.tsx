@@ -42,6 +42,14 @@ export function SessionPage() {
     return (author: { id: string | null }) => (author.id ? (byId.get(author.id) ?? null) : null);
   }, [view.members, view.agents]);
 
+  const avatarOf = useMemo(() => {
+    const byId = new Map<string, string>();
+    for (const member of view.members) {
+      if (member.user.avatarUrl) byId.set(member.user.id, member.user.avatarUrl);
+    }
+    return (author: { id: string | null }) => (author.id ? (byId.get(author.id) ?? null) : null);
+  }, [view.members]);
+
   const runSearch = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!search.trim()) {
@@ -154,6 +162,7 @@ export function SessionPage() {
             hasMore={view.hasMoreMessages}
             onLoadMore={() => void store.loadOlderMessages()}
             colorOf={colorOf}
+            avatarOf={avatarOf}
             canApproveCodex={canControlCodexAgent}
             onCodexApproval={async (payload) => {
               await store.realtime?.respondToCodexApproval(sessionId, payload);

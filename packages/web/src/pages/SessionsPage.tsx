@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { api, clearAuth, storedUser } from '../lib/auth.js';
 import { useMesh } from '../lib/useStore.js';
 import { ConnectionBadge } from '../components/Presence.js';
+import { ProfileDialog } from '../components/ProfileDialog.js';
 
 export function SessionsPage() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export function SessionsPage() {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
   const [inviteToken, setInviteToken] = useState('');
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const load = () => {
     api()
@@ -50,11 +52,17 @@ export function SessionsPage() {
 
   return (
     <div className="app">
+      {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
       <header className="topbar">
         <span className="brand">AgentMesh</span>
         <span className="spacer" />
         <ConnectionBadge state={connection} />
-        <span style={{ color: 'var(--text-dim)' }}>{storedUser()?.displayName}</span>
+        <button className="ghost profile-button" onClick={() => setProfileOpen(true)} title="Edit your profile">
+          {storedUser()?.avatarUrl ? (
+            <img className="participant-avatar" src={storedUser()?.avatarUrl ?? ''} alt="" />
+          ) : null}
+          {storedUser()?.displayName}
+        </button>
         <button
           className="ghost"
           onClick={() => {
