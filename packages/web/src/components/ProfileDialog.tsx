@@ -2,6 +2,7 @@ import { AVATAR_COLORS, AVATAR_MAX_BYTES, AVATAR_MIME_TYPES, type User } from '@
 import { useRef, useState } from 'react';
 import { api, persistUser, storedUser } from '../lib/auth.js';
 import { participantColor } from '../lib/colors.js';
+import { prepareAvatarImage } from '../lib/image.js';
 
 /**
  * A person's own profile: their name, their colour and their picture.
@@ -35,13 +36,23 @@ export function ProfileDialog({ onClose }: { onClose: () => void }) {
   };
 
   const upload = async (file: File) => {
-    // Checked here as well as on the server, so the answer is immediate rather
-    // than a round trip away.
-    if (file.size > AVATAR_MAX_BYTES) {
-      setError(`That image is ${Math.round(file.size / 1024)} KB. The limit is ${Math.round(AVATAR_MAX_BYTES / 1024)} KB.`);
+    setError(null);
+    let prepared: Blob;
+    try {
+      // Reduced once, here, with the canvas smoothing turned up. Leaving a
+      // 900-pixel photograph to be squeezed into a 28-pixel tile at paint time
+      // aliases badly, and it happens again on every render in every client.
+      prepared = (await prepareAvatarImage(file)).blob;
+    } catch (caught) {
+      setError((caught as Error).message);
       return;
     }
-    await apply(() => api().uploadAvatar(file));
+
+    if (prepared.size > AVATAR_MAX_BYTES) {
+      setError(`That image is still ${Math.round(prepared.size / 1024)} KB after resizing. Try a simpler picture.`);
+      return;
+    }
+    await apply(() => api().uploadAvatar(prepared));
   };
 
   const palette = participantColor(user.avatarColor);
@@ -74,7 +85,8 @@ export function ProfileDialog({ onClose }: { onClose: () => void }) {
               </button>
             )}
             <span className="sub" style={{ color: 'var(--text-dim)' }}>
-              PNG, JPEG, WebP or GIF, up to {Math.round(AVATAR_MAX_BYTES / 1024)} KB
+              PNG, JPEG, WebP or GIF. Cropped to a square and resized here, so
+              anything reasonably sized works.
             </span>
           </div>
         </div>
