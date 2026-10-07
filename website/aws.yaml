@@ -4,6 +4,10 @@ Parameters:
   DomainName:
     Type: String
     Default: tandryx.js.org
+  AdditionalDomainName:
+    Type: String
+    Default: ''
+    Description: Optional second owned domain served by the same site; must be covered by CertificateArn
   CertificateArn:
     Type: String
     Default: ''
@@ -21,6 +25,7 @@ Conditions:
   HasDomain: !Not [!Equals [!Ref CertificateArn, '']]
   NeedsOidc: !Equals [!Ref CreateGitHubOidc, 'true']
   HasWww: !And [!Condition HasDomain, !Equals [!Ref IncludeWww, 'true']]
+  HasAdditionalDomain: !And [!Condition HasDomain, !Not [!Equals [!Ref AdditionalDomainName, '']]]
 Resources:
   WebsiteBucket:
     Type: AWS::S3::Bucket
@@ -66,8 +71,16 @@ Resources:
         Aliases:
           !If [
             HasWww,
-            [!Ref DomainName, !Sub 'www.${DomainName}'],
-            !If [HasDomain, [!Ref DomainName], !Ref 'AWS::NoValue'],
+            !If [
+              HasAdditionalDomain,
+              [!Ref DomainName, !Sub 'www.${DomainName}', !Ref AdditionalDomainName],
+              [!Ref DomainName, !Sub 'www.${DomainName}'],
+            ],
+            !If [
+              HasAdditionalDomain,
+              [!Ref DomainName, !Ref AdditionalDomainName],
+              !If [HasDomain, [!Ref DomainName], !Ref 'AWS::NoValue'],
+            ],
           ]
         Origins:
           - Id: private-website

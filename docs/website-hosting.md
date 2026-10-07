@@ -96,7 +96,21 @@ The deploy script compares content digests, uploads assets before HTML and inval
 
 ## Email
 
-Mailbox selection and SPF/DKIM/DMARC steps are in [startup readiness](anthropic-startup-readiness.md#mailbox-plan). JS.ORG registration does not provide a mailbox or independent DNS administration. New NS delegation is discontinued, so custom mail is not assumed available on this free website name. No SES infrastructure or paid mailbox has been created. A separately owned domain remains an option if a branded mailbox is required.
+Mailbox selection and SPF/DKIM/DMARC steps are in [startup readiness](anthropic-startup-readiness.md#mailbox-plan). JS.ORG registration does not provide a mailbox or independent DNS administration. New NS delegation is discontinued, so custom mail is not assumed available on this free website name. No SES infrastructure or paid mailbox has been created. The owner purchased tandryx.top for a branded mailbox; Zoho Mail Free (EU) is configured.
+
+### Additional domain connected
+
+The owner registered `tandryx.top` through Spaceship on October 7, 2026 and completed payment directly. The purchase contains only one year of domain registration and free WHOIS privacy: $1.40 plus the $0.20 ICANN fee, or $1.60 total. Current renewal is $3.85 plus $0.20, or $4.05/year, with annual auto-renew enabled in the completed purchase. Future prices are not guaranteed. Website connection is complete; Zoho Mail Free (EU) is configured. See [registrar pricing](https://www.spaceship.com/domains/gtld/top/).
+
+`AdditionalDomainName` in the CloudFormation template allows a second domain to use the existing distribution and bucket. Its default is empty. A free non-exportable ACM certificate covering **both** `tandryx.js.org` and `tandryx.top` is issued in `us-east-1`: `arn:aws:acm:us-east-1:478681635233:certificate/c65e835f-a883-4ad8-a2e4-770c0835f303`. The existing JS.ORG validation record matches this certificate and must remain in place. This additional validation record was added to Spaceship DNS and verified through public and authoritative DNS:
+
+| TYPE  | NAME                                            | VALUE                                                              |
+| ----- | ----------------------------------------------- | ------------------------------------------------------------------ |
+| CNAME | `_597ba81fc80e1616be976fe9686af21c.tandryx.top` | `_749cd4cc9016d1a517730d6c841dec09.wzccmgtwzk.acm-validations.aws` |
+
+Spaceship uses `launch1.spaceship.net` and `launch2.spaceship.net`. An apex CNAME entered as `@ -> d38num53uhx947.cloudfront.net` is flattened to A records, allowing mail MX/TXT records to coexist. Both website and validation records use TTL 300 seconds. The reviewed `connect-tandryx-top` change set modified only the existing CloudFront distribution, without replacement. It attached the issued certificate and set `AdditionalDomainName=tandryx.top`, keeping `DomainName=tandryx.js.org`, `IncludeWww=false` and `CreateGitHubOidc=true`. The stack update completed and CloudFront is deployed. Public HTTPS, pages, assets, security headers, HTTP-to-HTTPS redirect and genuine 404 responses were verified on both names. No extra bucket, distribution, paid DNS or compute was created.
+
+Serve the same website directly on both names. For a company mailbox such as `founder@tandryx.top`, specify `https://tandryx.top` in the Anthropic application so the website and email domains match its [published requirement](https://claude.com/programs/startups). Configure the website through an apex ALIAS and email through MX/SPF/DKIM/DMARC records. Zoho Mail Free (EU) was selected and the admin console confirms Mail Free with no trial or renewal date. The founder mailbox is created, MX/SPF/DKIM are verified, DKIM signing is enabled and a DMARC p=none record is published. Incoming mail was tested and a reply sent; the owner confirmed receipt in the Gmail inbox, with tandryx.top shown as signed-by and TLS transport. Full recipient Authentication-Results have not yet been independently inspected. No paid mailbox or SES resource was created.
 
 ## Live resources
 
@@ -109,7 +123,8 @@ CloudFormation stack: `tandryx-website` in `us-east-1`.
 | Technical website address   | **https://d38num53uhx947.cloudfront.net**                      |
 | Public website address      | **https://tandryx.js.org**                                     |
 | GitHub OIDC deployment role | `arn:aws:iam::478681635233:role/tandryx-website-github-deploy` |
-| Domain certificate          | `ea110f9d-5aa9-4583-aa56-4cefb9dcd3af`, us-east-1, issued      |
+| Additional website address  | **https://tandryx.top**                                        |
+| Domain certificate          | `c65e835f-a883-4ad8-a2e4-770c0835f303`, us-east-1, issued      |
 
 JS.ORG has activated this website record:
 
