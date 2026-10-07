@@ -11,7 +11,3 @@ navigation?.addEventListener('click', (event) => {
     navigation.classList.remove('open');
   }
 });
-// A static client-side redirect needs no edge function or additional AWS service.
-if (location.hostname === 'www.tandryx.com') {
-  location.replace(`https://tandryx.com${location.pathname}${location.search}${location.hash}`);
-}

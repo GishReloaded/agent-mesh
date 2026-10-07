@@ -3,7 +3,7 @@ Description: Tandryx static public website - private S3, CloudFront OAC and narr
 Parameters:
   DomainName:
     Type: String
-    Default: tandryx.com
+    Default: tandryx.js.org
   CertificateArn:
     Type: String
     Default: ''
@@ -12,9 +12,15 @@ Parameters:
     Type: String
     Default: 'true'
     AllowedValues: ['true', 'false']
+  IncludeWww:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Enable only if the additional www name is owned and covered by the certificate
 Conditions:
   HasDomain: !Not [!Equals [!Ref CertificateArn, '']]
   NeedsOidc: !Equals [!Ref CreateGitHubOidc, 'true']
+  HasWww: !And [!Condition HasDomain, !Equals [!Ref IncludeWww, 'true']]
 Resources:
   WebsiteBucket:
     Type: AWS::S3::Bucket
@@ -57,7 +63,12 @@ Resources:
         HttpVersion: http2and3
         IPV6Enabled: true
         PriceClass: PriceClass_100
-        Aliases: !If [HasDomain, [!Ref DomainName, !Sub 'www.${DomainName}'], !Ref 'AWS::NoValue']
+        Aliases:
+          !If [
+            HasWww,
+            [!Ref DomainName, !Sub 'www.${DomainName}'],
+            !If [HasDomain, [!Ref DomainName], !Ref 'AWS::NoValue'],
+          ]
         Origins:
           - Id: private-website
             DomainName: !GetAtt WebsiteBucket.RegionalDomainName

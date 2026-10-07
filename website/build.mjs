@@ -58,12 +58,13 @@ export async function build() {
   }
   await add(
     'robots.txt',
-    'User-agent: *\nAllow: /\nSitemap: https://tandryx.com/sitemap.xml\n',
+    'User-agent: *\nAllow: /\nSitemap: https://tandryx.js.org/sitemap.xml\n',
     'text/plain; charset=utf-8',
   );
+  await add('CNAME', await readFile(join(root, 'src/CNAME'), 'utf8'), 'text/plain; charset=utf-8');
   await add(
     'sitemap.xml',
-    '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://tandryx.com/</loc></url><url><loc>https://tandryx.com/privacy</loc></url><url><loc>https://tandryx.com/terms</loc></url></urlset>\n',
+    '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://tandryx.js.org/</loc></url><url><loc>https://tandryx.js.org/privacy</loc></url><url><loc>https://tandryx.js.org/terms</loc></url></urlset>\n',
     'application/xml',
   );
   await writeFile(join(output, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);

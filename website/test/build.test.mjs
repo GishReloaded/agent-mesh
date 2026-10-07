@@ -17,13 +17,14 @@ test('built site resolves its local links and keeps truthful, indexable pages', 
       if (target.startsWith('/'))
         assert.ok(keys.has(target === '/' ? 'index.html' : target.slice(1)), `${key}: missing ${target}`);
     }
-    if (key !== '404.html') assert.match(html, /rel="canonical" href="https:\/\/tandryx\.com\//);
+    if (key !== '404.html') assert.match(html, /rel="canonical" href="https:\/\/tandryx\.js\.org\//);
   }
   const index = await readFile(join(root, 'dist/index.html'), 'utf8');
   assert.match(index, /scripted SDK demo/);
   assert.match(index, /Planned/);
   assert.match(index.replace(/\s+/g, ' '), /does not imply an Anthropic partnership/);
   assert.equal((index.match(/<h1>/g) || []).length, 1);
+  assert.equal(await readFile(join(root, 'dist/CNAME'), 'utf8'), 'tandryx.js.org\n');
   assert.ok(
     manifest
       .filter((item) => item.key.startsWith('assets/') && item.key !== 'assets/og.png')
