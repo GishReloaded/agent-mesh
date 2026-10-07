@@ -143,7 +143,7 @@ Resources:
             Condition:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
-                token.actions.githubusercontent.com:sub: repo:GishReloaded/tandryx:ref:refs/heads/main
+                token.actions.githubusercontent.com:sub: repo:GishReloaded@42474995/tandryx@1338785076:ref:refs/heads/main
       Policies:
         - PolicyName: PublishOnlyTandryxWebsite
           PolicyDocument:
