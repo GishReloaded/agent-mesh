@@ -5,7 +5,7 @@ Last reviewed: October 7, 2026. This records preparation; no Anthropic applicati
 ## Project
 
 - Project: **Tandryx**
-- Website: **https://tandryx.js.org** — selected free canonical address; JS.ORG approval and DNS validation are pending. The site is live at https://d38num53uhx947.cloudfront.net.
+- Website: **https://tandryx.js.org** — live over HTTPS. JS.ORG added the DNS records; [registration PR #12666](https://github.com/js-org/js.org/pull/12666) remains open for final maintainer verification. The technical CloudFront address also works.
 - Company email: **founder@tandryx.com** — planned mailbox; not yet operational.
 - GitHub: **https://github.com/GishReloaded/tandryx**
 - Maintainer: **GishReloaded**. No legal entity, customer base, funding or partnership is represented here.
@@ -47,7 +47,7 @@ The public marketing website is separate from the dynamic collaboration applicat
 
 Hosting uses one private, encrypted S3 bucket, CloudFront Origin Access Control and HTTPS. CloudFront redirects HTTP to HTTPS, compresses supported responses, honors origin cache headers and adds AWS-managed security headers. Missing paths return HTTP 404, including private S3's missing-key 403 responses. There is no SPA fallback, server compute, database, WAF or Route 53 for this website.
 
-Only `tandryx.js.org` is requested; there is no separate `www` host or redirect. The existing CloudFront distribution will receive this alias after JS.ORG maintainers add the ACM validation record and the certificate is issued. No extra redirect service is required.
+Only `tandryx.js.org` is requested; there is no separate `www` host or redirect. JS.ORG maintainers added the ACM validation record, AWS issued the free certificate, and the alias and certificate were attached to the existing CloudFront distribution. Public HTTPS, pages, assets and the custom 404 were verified. No extra redirect service is required.
 
 GitHub Actions builds on pull requests and deploys main using AWS OIDC. The AWS role trusts only `GishReloaded/tandryx` on `refs/heads/main`, can read/write website objects and invalidate only this distribution. It cannot create infrastructure, access the application's secrets or assume wider AWS permissions. Hashed assets have immutable caching; only changed stable paths are invalidated.
 
@@ -76,9 +76,9 @@ References checked October 7, 2026: [SES pricing](https://aws.amazon.com/ses/pri
 
 ## Checklist
 
-- [x] Site deployed — https://d38num53uhx947.cloudfront.net; all public pages and assets verified.
-- [x] HTTPS working — valid CloudFront HTTPS; HTTP redirects with 301.
-- [ ] tandryx.js.org working — JS.ORG approval, ACM validation and CloudFront alias pending.
+- [x] Site deployed — https://tandryx.js.org; all public pages and assets verified.
+- [x] HTTPS working — valid ACM certificate on the selected domain; HTTP redirects with 301.
+- [x] tandryx.js.org working — DNS, ACM validation and CloudFront alias complete; final registration PR merge is pending maintainer verification.
 - [x] www decision recorded — no additional www host requested for the free JS.ORG name.
 - [x] Mobile checked — 390 px and 320 px layouts, no horizontal overflow; menu toggles and closes on navigation.
 - [x] GitHub link working — points to the actual public repository.
@@ -96,4 +96,4 @@ References checked October 7, 2026: [SES pricing](https://aws.amazon.com/ses/pri
 
 ## Before application
 
-Follow the JS.ORG registration and DNS steps in [the hosting runbook](website-hosting.md). After DNS validation, attach the free ACM certificate to the existing CloudFront distribution and verify `tandryx.js.org` over HTTPS. Resolve the mailbox separately, re-check website/GitHub content, then perform the separate Anthropic program review. No domain purchase or Anthropic application has been made.
+The free website domain and HTTPS are operational; keep the JS.ORG registration PR open until maintainers finish their verification and merge it. Resolve the mailbox separately, re-check website/GitHub content, then perform the separate Anthropic program review. No domain purchase or Anthropic application has been made.
