@@ -34,10 +34,10 @@ evaluation, small self-hosted teams and integration feedback.
 
 ### Distribution
 
-The GitHub release includes protocol, SDK and CLI tarballs with SHA-256 checksums.
-`@gish_reloaded/tandryx-protocol`, `@gish_reloaded/tandryx-sdk` and
-`@gish_reloaded/tandryx-cli` version 0.1.0 are available on npm. The server and
-web client are distributed as source and through the documented Docker build.
+The original GitHub release is retained as a historical archive. Current npm
+package names and installation instructions are in the 0.2.0 release notes.
+The server and web client are distributed as source and through the documented
+Docker build.
 
 ### Current limits
 
