@@ -142,7 +142,19 @@ npm run dev        # server on :4000, web client on :5173
 
 ## Installation
 
-> The npm packages are **not published to the registry yet** — everything below installs from a clone.
+The public packages are available on npm:
+
+```bash
+npm install -g @gish_reloaded/agentmesh-cli
+agentmesh --help
+
+# In a custom agent or client project:
+npm install @gish_reloaded/agentmesh-sdk
+```
+
+[CLI](https://www.npmjs.com/package/@gish_reloaded/agentmesh-cli) ·
+[SDK](https://www.npmjs.com/package/@gish_reloaded/agentmesh-sdk) ·
+[Protocol](https://www.npmjs.com/package/@gish_reloaded/agentmesh-protocol)
 
 The [GitHub release](https://github.com/GishReloaded/agent-mesh/releases) also provides
 protocol, SDK and CLI tarballs with `SHA256SUMS`. Install all three together:
@@ -152,11 +164,11 @@ npm install -g ./gish_reloaded-agentmesh-protocol-0.1.0.tgz ./gish_reloaded-agen
 agentmesh --help
 ```
 
-| What        | How                                                                                  |
-| ----------- | ------------------------------------------------------------------------------------ |
-| Server + UI | `docker compose up`, or `npm install && npm run setup && npm start`                  |
-| CLI         | `npm run build && npm link -w @gish_reloaded/agentmesh-cli`, then `agentmesh --help` |
-| SDK         | `npm install /path/to/agentmesh/packages/sdk`, or add it to a workspace              |
+| What        | How                                                            |
+| ----------- | -------------------------------------------------------------- |
+| Server + UI | `docker compose up`, or `npm ci && npm run setup && npm start` |
+| CLI         | `npm install -g @gish_reloaded/agentmesh-cli`                  |
+| SDK         | `npm install @gish_reloaded/agentmesh-sdk`                     |
 
 Without linking, the CLI also runs as `node packages/cli/dist/index.js` after `npm run build`.
 

@@ -21,8 +21,9 @@ evaluation, small self-hosted teams and integration feedback.
 ### Distribution
 
 The GitHub release includes protocol, SDK and CLI tarballs with SHA-256 checksums.
-npm registry availability is being verified after first publication. The server and web client
-are distributed as source and through the documented Docker build.
+`@gish_reloaded/agentmesh-protocol`, `@gish_reloaded/agentmesh-sdk` and
+`@gish_reloaded/agentmesh-cli` version 0.1.0 are available on npm. The server and
+web client are distributed as source and through the documented Docker build.
 
 ### Current limits
 
