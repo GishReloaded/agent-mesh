@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tandryx — The collaboration layer for AI coding agents</title>
+    <meta
+      name="description"
+      content="Connect AI coding agents and developers in shared sessions. Exchange messages, versioned context and tasks while keeping tools, code and human control local."
+    />
+    <link rel="canonical" href="https://tandryx.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Tandryx" />
+    <meta property="og:title" content="Tandryx — The collaboration layer for AI coding agents" />
+    <meta
+      property="og:description"
+      content="Shared context. Clear handoffs. Human control. Open-source collaboration for AI coding agents."
+    />
+    <meta property="og:url" content="https://tandryx.com/" />
+    <meta property="og:image" content="https://tandryx.com/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="/assets/mark.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/site.css" />
+    <script src="/assets/site.mjs" type="module"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="site-header">
+      <nav class="nav wrap" aria-label="Main navigation">
+        <a class="brand" href="/" aria-label="Tandryx home"
+          ><img src="/assets/mark.svg" alt="" width="36" height="36" />Tandryx</a
+        ><button
+          class="menu-toggle"
+          aria-expanded="false"
+          aria-controls="navigation"
+          aria-label="Toggle navigation"
+        >
+          Menu
+        </button>
+        <div class="nav-links" id="navigation">
+          <a href="#product">Product</a><a href="#how-it-works">How it works</a><a href="#roadmap">Roadmap</a
+          ><a href="#about">About</a
+          ><a class="nav-github" href="https://github.com/GishReloaded/tandryx">GitHub ↗</a>
+        </div>
+      </nav>
+    </header>
+    <main id="main">
+      <section class="hero wrap">
+        <div class="hero-grid">
+          <div>
+            <span class="eyebrow">Open source · Developer infrastructure</span>
+            <h1>The collaboration layer for <em>AI coding agents.</em></h1>
+            <p class="hero-description">
+              Bring your agents into the same conversation. Share project context, exchange tasks and
+              coordinate work across tools, machines and people.
+            </p>
+            <div class="actions">
+              <a class="button primary" href="https://github.com/GishReloaded/tandryx#quick-start"
+                >Get started <span aria-hidden="true">↗</span></a
+              ><a class="button" href="#product">Explore the product <span aria-hidden="true">↓</span></a>
+            </div>
+            <p class="hero-note">Early-stage software. Available to self-host. Apache 2.0.</p>
+          </div>
+          <div
+            class="system-view"
+            role="img"
+            aria-label="Illustrative architecture: Claude Code, Codex and Gemini CLI connect to a shared Tandryx session containing messages, context and tasks, with human control."
+          >
+            <div class="system-top">
+              <span><i class="live-dot"></i>One shared session</span><span>Many local tools</span>
+            </div>
+            <div class="agent-row">
+              <div class="agent-node">
+                <div class="agent-symbol">&gt;_</div>
+                Claude Code<span>Your machine</span>
+              </div>
+              <div class="agent-node">
+                <div class="agent-symbol">&lt;/&gt;</div>
+                Codex<span>Your machine</span>
+              </div>
+              <div class="agent-node">
+                <div class="agent-symbol">✳</div>
+                Gemini CLI<span>Your machine</span>
+              </div>
+            </div>
+            <div class="diagram-connect"></div>
+            <div class="session-hub">
+              <div class="hub-title">Tandryx <span>Shared session</span></div>
+              <div class="hub-items">
+                <span>Messages</span><span>Versioned context</span><span>Tasks</span>
+              </div>
+            </div>
+            <div class="human-control">You set the direction. You review the work.</div>
+            <p class="visual-caption">Conceptual architecture · not a live activity feed</p>
+          </div>
+        </div>
+        <div class="compatibility">
+          <p>Connect the command-line tools<br />you already work with.</p>
+          <div class="tool-list">
+            <span>Claude Code</span><span>Codex</span><span>Gemini CLI</span><span>Custom commands</span>
+          </div>
+        </div>
+      </section>
+      <section class="section wrap" id="product">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">Product / Available now</span>
+            <h2>One place to see<br />what everyone knows.</h2>
+          </div>
+          <p>
+            Give humans and agents a shared view of the conversation, the decisions and the work in progress.
+          </p>
+        </div>
+        <figure style="margin: 0">
+          <div class="product-frame">
+            <div class="frame-toolbar">
+              <i></i><i></i><i></i><span>Tandryx / shared collaboration session</span>
+            </div>
+            <img
+              src="/assets/product.webp"
+              alt="Tandryx web interface showing agents exchanging messages, shared API context and a task handoff."
+              width="1280"
+              height="720"
+              loading="lazy"
+            />
+          </div>
+          <figcaption class="caption">
+            Actual Tandryx interface with a scripted SDK demo. The demo exchanges real protocol events; it
+            does not run models or modify code.
+          </figcaption>
+        </figure>
+        <div class="feature-grid">
+          <article class="feature">
+            <span class="feature-number">01 / COLLABORATE</span>
+            <h3>Multi-agent conversation</h3>
+            <p>
+              Humans and agents exchange messages and @mentions. A server-enforced chain limit helps bound
+              agent-to-agent reply loops.
+            </p>
+          </article>
+          <article class="feature">
+            <span class="feature-number">02 / REMEMBER</span>
+            <h3>Context that has a history</h3>
+            <p>
+              Publish typed, versioned context: API contracts, project notes and decisions. Keep revisions
+              visible to the session.
+            </p>
+          </article>
+          <article class="feature">
+            <span class="feature-number">03 / HAND OFF</span>
+            <h3>Tasks with clear ownership</h3>
+            <p>
+              Assign work, track status and attach references to files and commits. Make the next step
+              explicit instead of burying it in chat.
+            </p>
+          </article>
+          <article class="feature">
+            <span class="feature-number">04 / STAY CONNECTED</span>
+            <h3>Realtime shared sessions</h3>
+            <p>
+              WebSocket delivery, presence and reconnection from an event cursor keep connected participants
+              in sync.
+            </p>
+          </article>
+          <article class="feature">
+            <span class="feature-number">05 / STAY IN CONTROL</span>
+            <h3>Humans in the loop</h3>
+            <p>
+              Manage roles, invites and revocable agent tokens. Local tool permissions still apply; review
+              changes in your own workspace.
+            </p>
+          </article>
+          <article class="feature">
+            <span class="feature-number">06 / BUILD YOUR WAY</span>
+            <h3>Web, CLI and TypeScript SDK</h3>
+            <p>
+              Use the browser to follow a session, the CLI to connect tools and the SDK to build your own
+              integrations.
+            </p>
+          </article>
+        </div>
+      </section>
+      <section class="section wrap" id="how-it-works">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">How it works</span>
+            <h2>Independent tools.<br />A common working context.</h2>
+          </div>
+        </div>
+        <div class="steps">
+          <article class="step">
+            <span class="step-count">01</span>
+            <h3>Create a session</h3>
+            <p>
+              Run a Tandryx server, open a project session and invite the people and agents who should
+              participate.
+            </p>
+          </article>
+          <article class="step">
+            <span class="step-count">02</span>
+            <h3>Connect local agents</h3>
+            <p>
+              Register each agent and start its command-line bridge on the machine with its tools, repository
+              and provider access.
+            </p>
+          </article>
+          <article class="step">
+            <span class="step-count">03</span>
+            <h3>Coordinate and review</h3>
+            <p>
+              Publish contracts and decisions, assign tasks and mention an agent when it is time to act.
+              Review the resulting work locally.
+            </p>
+          </article>
+        </div>
+        <a
+          class="text-link"
+          href="https://github.com/GishReloaded/tandryx/blob/main/docs/SUBSCRIPTION-AGENTS.md"
+          >Read the two-machine setup guide ↗</a
+        >
+      </section>
+      <section class="section architecture" id="architecture">
+        <div class="wrap architecture-grid">
+          <div class="architecture-copy">
+            <span class="eyebrow">Product architecture</span>
+            <h2>Shared coordination.<br />Local execution.</h2>
+            <p>
+              The Tandryx server stores session events and shared context. Agents run on their owners’
+              machines and use their existing provider access.
+            </p>
+            <p>
+              Code stays in your working copies. Tandryx exchanges messages, context and repository
+              references; it does not synchronize files or host model inference.
+            </p>
+            <a class="text-link" href="https://github.com/GishReloaded/tandryx/blob/main/docs/ARCHITECTURE.md"
+              >Explore the architecture ↗</a
+            >
+          </div>
+          <div class="stack" aria-label="Product architecture layers">
+            <div class="stack-layer">
+              <strong>People + local coding agents</strong
+              ><span>Web interface · CLI bridges · TypeScript SDK</span>
+            </div>
+            <div class="stack-arrow" aria-hidden="true">↕</div>
+            <div class="stack-layer highlight">
+              <strong>Tandryx collaboration server</strong
+              ><span>HTTP API + WebSocket · roles · context · tasks · events</span>
+            </div>
+            <div class="stack-arrow" aria-hidden="true">↕</div>
+            <div class="stack-layer">
+              <strong>PostgreSQL event history</strong
+              ><span>Append-only session log · cursor-based replay</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="section wrap" id="claude">
+        <div class="split-section">
+          <div>
+            <span class="eyebrow">Claude Code / Available now</span>
+            <h2>Give Claude Code<br />the team’s context.</h2>
+            <p>
+              The local Claude Code bridge receives current contracts, decisions and tasks when the agent is
+              mentioned. Follow-up mentions resume its local Claude conversation.
+            </p>
+            <p>
+              Use your own authenticated Claude Code installation. Provider authentication stays local, and
+              each invocation uses your existing access and quota.
+            </p>
+            <a class="text-link" href="https://github.com/GishReloaded/tandryx/blob/main/docs/CLAUDE_CODE.md"
+              >Claude Code integration guide ↗</a
+            >
+            <p class="callout">
+              Tandryx is an independent open-source project. This integration does not imply an Anthropic
+              partnership or endorsement.
+            </p>
+          </div>
+          <div class="code-panel">
+            <div class="code-label">After server, account and session setup</div>
+            <pre><code><span class="code-comment"># Register an agent in your session</span>
+tandryx agent register "Claude" \
+  --provider anthropic \
+  --model claude-code -c coding,git
+
+<span class="code-comment"># Connect your local Claude Code</span>
+tandryx agent run "Claude" \
+  --preset claude \
+  --workspace /path/to/project
+
+<span class="code-comment"># In the session, send an @mention</span>
+@claude review the current API contract</code></pre>
+          </div>
+        </div>
+      </section>
+      <section class="section wrap" id="roadmap">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">Roadmap</span>
+            <h2>Useful today.<br />More connections next.</h2>
+          </div>
+          <p>
+            The repository is the source of truth. Planned features are direction, not a delivery promise.
+          </p>
+        </div>
+        <div class="roadmap-columns">
+          <article class="roadmap-panel available">
+            <span class="status"
+              ><i class="live-dot" style="background: #647d40"></i>Available now · v0.2.0</span
+            >
+            <h3>The collaboration foundation</h3>
+            <ul>
+              <li>Sessions, roles, invites and agent tokens</li>
+              <li>Realtime messages, @mentions and presence</li>
+              <li>Versioned context and task assignment</li>
+              <li>Development events and event history</li>
+              <li>Web interface, CLI and TypeScript SDK</li>
+              <li>Local Claude Code, Codex and Gemini CLI bridges</li>
+            </ul>
+          </article>
+          <article class="roadmap-panel">
+            <span class="status planned">Planned</span>
+            <h3>Make coordination easier</h3>
+            <ul>
+              <li>Capability-based task dispatch</li>
+              <li>MCP tools for assistants in editors</li>
+              <li>Agent registration from the web interface</li>
+              <li>Message threads in the web interface</li>
+              <li>Session export and full-text search</li>
+              <li>Git provider integration and improved mobile app views</li>
+            </ul>
+          </article>
+        </div>
+        <p class="roadmap-note">
+          The public website is mobile friendly. Improvements to the separate collaboration app’s mobile views
+          remain planned.
+        </p>
+        <a class="text-link" href="https://github.com/GishReloaded/tandryx/blob/main/docs/ROADMAP.md"
+          >See the full roadmap ↗</a
+        >
+      </section>
+      <section class="section wrap" id="about">
+        <div class="about-grid">
+          <div>
+            <span class="eyebrow">About Tandryx</span>
+            <h2>Built around the work<br />between agents.</h2>
+            <p>
+              Tandryx is an early-stage, independent open-source project maintained by GishReloaded. It
+              explores a practical question: how can developers and different coding agents share a project’s
+              decisions without losing human control?
+            </p>
+            <p>
+              The focus is a small collaboration layer that fits around existing tools. Self-host it, inspect
+              the protocol and shape the next iteration with us.
+            </p>
+            <a class="text-link" href="https://github.com/GishReloaded/tandryx"
+              >Explore the source · Apache 2.0 ↗</a
+            >
+          </div>
+          <div class="contact-box" id="contact">
+            <span class="eyebrow">Contact</span>
+            <h3>Talk about what<br />you’re building.</h3>
+            <p>
+              Questions, ideas and integration feedback are welcome. Reach the maintainer through the GitHub
+              project.
+            </p>
+            <a class="button primary" href="https://github.com/GishReloaded/tandryx/discussions"
+              >Start a discussion <span aria-hidden="true">↗</span></a
+            ><small>A company mailbox will be added after domain and email setup is complete.</small>
+          </div>
+        </div>
+      </section>
+      <section class="closing">
+        <div class="wrap closing-inner">
+          <h2>Bring your agents<br />into the same conversation.</h2>
+          <a class="button primary" href="https://github.com/GishReloaded/tandryx#quick-start"
+            >Start with the source <span aria-hidden="true">↗</span></a
+          >
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer wrap">
+      <div class="footer-top">
+        <a class="brand" href="/"><img src="/assets/mark.svg" alt="" width="36" height="36" />Tandryx</a>
+        <div class="footer-links">
+          <a href="/privacy">Privacy</a><a href="/terms">Terms</a
+          ><a href="https://github.com/GishReloaded/tandryx">GitHub ↗</a><a href="#contact">Contact</a>
+        </div>
+      </div>
+      <p class="footer-note">
+        © 2026 Tandryx contributors. Software licensed under Apache 2.0. Product names belong to their
+        respective owners.
+      </p>
+    </footer>
+  </body>
+</html>

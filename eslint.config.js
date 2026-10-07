@@ -52,6 +52,10 @@ export default tseslint.config(
     },
   },
   {
+    files: ['website/src/assets/*.mjs'],
+    languageOptions: { globals: { document: 'readonly', location: 'readonly' } },
+  },
+  {
     files: ['**/test/**/*.ts'],
     rules: {
       // Tests reach into wire payloads that are untyped by definition.

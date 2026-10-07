@@ -34,7 +34,10 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "npm run build:libs && npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run build:libs && npm run typecheck --workspaces --if-present",
+    "website:build": "node website/build.mjs",
+    "website:test": "node --test website/test/*.test.mjs",
+    "website:preview": "node website/preview.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
