@@ -77,6 +77,8 @@ The prepared `www` redirect runs in the browser, preserves path/query/fragment a
 
 These are public resource identifiers, not secrets. No AWS keys are stored in GitHub. Only the deployment job receives a short-lived OIDC session; the IAM trust requires the exact repository and main branch. Permissions are limited to GetObject/PutObject in the website bucket and CreateInvalidation on its distribution. There is no infrastructure management, application secret access or object deletion permission.
 
+This renamed repository uses GitHub's **immutable OIDC subject**, verified through the repository's OIDC settings API. Its exact trusted subject is `repo:GishReloaded@42474995/tandryx@1338785076:ref:refs/heads/main`, with audience `sts.amazonaws.com`. Both owner and repository IDs are included. Do not replace it with a name-only subject or wildcard. On future renames/transfers, read the current `sub_claim_prefix` from `GET /repos/GishReloaded/tandryx/actions/oidc/customization/sub` and update the trust explicitly. See [GitHub's immutable subject reference](https://docs.github.com/en/actions/reference/security/oidc#immutable-subject-claims).
+
 Deploy manually with authenticated AWS CLI credentials:
 
 ```sh
