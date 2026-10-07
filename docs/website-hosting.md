@@ -98,6 +98,20 @@ The deploy script compares content digests, uploads assets before HTML and inval
 
 Mailbox selection and SPF/DKIM/DMARC steps are in [startup readiness](anthropic-startup-readiness.md#mailbox-plan). JS.ORG registration does not provide a mailbox or independent DNS administration. New NS delegation is discontinued, so custom mail is not assumed available on this free website name. No SES infrastructure or paid mailbox has been created. A separately owned domain remains an option if a branded mailbox is required.
 
+### Additional domain selected — registration pending
+
+The owner selected `tandryx.top` through Spaceship on October 7, 2026. The reviewed cart contains only one year of domain registration and free WHOIS privacy: $1.40 plus the $0.20 ICANN fee, or $1.60 before any applicable taxes. Current renewal is $3.85 plus $0.20, or $4.05/year. Availability and future prices are not guaranteed. Registration and payment are still pending; this is not yet a live website or mailbox address. See [registrar pricing](https://www.spaceship.com/domains/gtld/top/).
+
+`AdditionalDomainName` in the CloudFormation template allows a second domain to use the existing distribution and bucket. Its default is empty, so the current deployment is unchanged. A free non-exportable ACM certificate covering **both** `tandryx.js.org` and `tandryx.top` has been requested in `us-east-1`: `arn:aws:acm:us-east-1:478681635233:certificate/c65e835f-a883-4ad8-a2e4-770c0835f303`. It is pending DNS validation and is not attached to CloudFront. The existing JS.ORG validation record matches this certificate and must remain in place. After ownership is confirmed, add this new validation record through the owner's DNS:
+
+| TYPE  | NAME                                            | VALUE                                                              |
+| ----- | ----------------------------------------------- | ------------------------------------------------------------------ |
+| CNAME | `_597ba81fc80e1616be976fe9686af21c.tandryx.top` | `_749cd4cc9016d1a517730d6c841dec09.wzccmgtwzk.acm-validations.aws` |
+
+Attach only an issued certificate, set `AdditionalDomainName=tandryx.top`, and keep `DomainName=tandryx.js.org`, `IncludeWww=false` and `CreateGitHubOidc=true`. Review a change set before applying it; no extra bucket, distribution, paid DNS or compute is required.
+
+Serve the same website directly on both names. For a company mailbox such as `founder@tandryx.top`, specify `https://tandryx.top` in the Anthropic application so the website and email domains match its [published requirement](https://claude.com/programs/startups). Configure the website through an apex ALIAS and email through MX/SPF/DKIM/DMARC records. Zoho Mail Free is the first mailbox candidate, but its regional availability must be confirmed during signup before treating the mailbox as free or operational. No trial or paid mailbox has been selected.
+
 ## Live resources
 
 CloudFormation stack: `tandryx-website` in `us-east-1`.
