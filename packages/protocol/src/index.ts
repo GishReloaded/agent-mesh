@@ -1,5 +1,5 @@
 /**
- * `@agentmesh/protocol` — the wire contract for AgentMesh.
+ * `@gish_reloaded/agentmesh-protocol` — the wire contract for AgentMesh.
  *
  * This package contains no transport, no storage and no provider-specific
  * code. It is the single definition of what an AgentMesh session looks like,

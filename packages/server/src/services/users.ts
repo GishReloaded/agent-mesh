@@ -6,7 +6,7 @@ import {
   type LoginRequest,
   type RegisterRequest,
   type User,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 import type { Db } from '../db/client.js';
 import { hashPassword, passwordProblems, verifyPassword } from '../auth/passwords.js';
 import { type AccessTokenService, TokenPrefix, createOpaqueToken, hashToken } from '../auth/tokens.js';

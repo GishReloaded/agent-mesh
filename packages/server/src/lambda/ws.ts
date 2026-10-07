@@ -9,7 +9,7 @@ import {
   ErrorCode,
   PROTOCOL_VERSION,
   ServerFrameType,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 import type { Principal } from '../auth/principal.js';
 import {
   announcePresenceLeft,

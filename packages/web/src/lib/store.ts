@@ -2,6 +2,7 @@ import {
   RealtimeClient,
   type Agent,
   type ConnectionState,
+  type RealtimeEvents,
   type ContextEntry,
   type Event as MeshEvent,
   type Identity,
@@ -9,7 +10,7 @@ import {
   type Session,
   type SessionMember,
   type Task,
-} from '@agentmesh/sdk';
+} from '@gish_reloaded/agentmesh-sdk';
 import { api, ensureAccessToken, refreshAccessToken } from './auth.js';
 
 export interface SessionView {
@@ -68,6 +69,7 @@ class MeshStore {
   private listeners = new Set<() => void>();
   private client: RealtimeClient | null = null;
   private connecting: Promise<void> | null = null;
+  private generation = 0;
   private typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   subscribe = (listener: () => void): (() => void) => {
@@ -99,20 +101,23 @@ class MeshStore {
   async connect(): Promise<void> {
     if (this.client) return;
     if (this.connecting) return this.connecting;
-    this.connecting = this.openConnection().finally(() => {
-      this.connecting = null;
+    const pending = this.openConnection(this.generation).finally(() => {
+      if (this.connecting === pending) this.connecting = null;
     });
-    return this.connecting;
+    this.connecting = pending;
+    return pending;
   }
 
-  private async openConnection(): Promise<void> {
+  private async openConnection(generation: number): Promise<void> {
     const token = await ensureAccessToken();
     if (!token) return;
+    const url = await api().resolveRealtimeUrl();
+    if (generation !== this.generation) return;
 
     // The realtime endpoint is not always this origin - on the serverless
     // deployment it is a separate gateway - so ask rather than assume.
     const client = new RealtimeClient({
-      url: await api().resolveRealtimeUrl(),
+      url,
       // Resolved per attempt: a socket that drops after the access token has
       // expired must reconnect with a new one, not the one it started with.
       token: ({ refresh }) => (refresh ? refreshAccessToken() : ensureAccessToken()),
@@ -120,11 +125,18 @@ class MeshStore {
     });
     this.client = client;
 
-    client.on('state', (connection) => this.set({ connection }));
-    client.on('hello', (identity) => this.set({ identity }));
-    client.on('error', (error) => this.set({ error: error.message }));
-    client.on('event', (event) => this.applyEvent(event));
-    client.on('presence', ({ sessionId, actorId, actorType, online }) => {
+    // A retired account's socket may still deliver its final close/error.
+    const on = <K extends keyof RealtimeEvents>(event: K, handler: (payload: RealtimeEvents[K]) => void) => {
+      client.on(event, (payload) => {
+        if (this.client === client) handler(payload);
+      });
+    };
+
+    on('state', (connection) => this.set({ connection }));
+    on('hello', (identity) => this.set({ identity }));
+    on('error', (error) => this.set({ error: error.message }));
+    on('event', (event) => this.applyEvent(event));
+    on('presence', ({ sessionId, actorId, actorType, online }) => {
       if (sessionId !== this.state.activeSessionId || !actorId) return;
       this.setView({
         members: this.state.view.members.map((member) =>
@@ -137,14 +149,14 @@ class MeshStore {
         ),
       });
     });
-    client.on('typing', ({ sessionId, actorId, active }) => {
+    on('typing', ({ sessionId, actorId, active }) => {
       if (sessionId !== this.state.activeSessionId || !actorId) return;
       this.trackTyping(actorId, active);
     });
-    client.on('resync', ({ sessionId }) => {
+    on('resync', ({ sessionId }) => {
       if (sessionId === this.state.activeSessionId) void this.loadSession(sessionId);
     });
-    client.on('subscribed', ({ sessionId, snapshot }) => {
+    on('subscribed', ({ sessionId, snapshot }) => {
       if (sessionId !== this.state.activeSessionId) return;
       this.setView({
         session: snapshot.session,
@@ -153,13 +165,28 @@ class MeshStore {
       });
     });
 
-    await client.connect().catch((error: Error) => this.set({ error: error.message }));
+    await client.connect().catch((error: Error) => {
+      if (this.client === client) this.set({ error: error.message });
+    });
   }
 
   disconnect(): void {
-    this.client?.close();
+    this.generation += 1;
+    const client = this.client;
     this.client = null;
-    this.state = { ...this.state, connection: 'closed', identity: null };
+    this.connecting = null;
+    client?.close();
+    for (const timer of this.typingTimers.values()) clearTimeout(timer);
+    this.typingTimers.clear();
+    this.set({
+      connection: 'closed',
+      identity: null,
+      activeSessionId: null,
+      view: EMPTY_VIEW,
+      unread: {},
+      typing: [],
+      error: null,
+    });
   }
 
   get realtime(): RealtimeClient | null {
@@ -168,6 +195,7 @@ class MeshStore {
 
   /** Open a session: subscribe for live updates and load its current state. */
   async openSession(sessionId: string): Promise<void> {
+    const generation = this.generation;
     if (this.state.activeSessionId === sessionId) return;
     const previous = this.state.activeSessionId;
     if (previous && this.client) this.client.unsubscribe(previous);
@@ -176,9 +204,11 @@ class MeshStore {
       activeSessionId: sessionId,
       view: { ...EMPTY_VIEW, loading: true },
       unread: { ...this.state.unread, [sessionId]: 0 },
+      error: null,
     });
 
     await this.connect();
+    if (generation !== this.generation || this.state.activeSessionId !== sessionId) return;
     this.client?.subscribe(sessionId);
     await this.loadSession(sessionId);
   }
@@ -190,6 +220,7 @@ class MeshStore {
   }
 
   private async loadSession(sessionId: string): Promise<void> {
+    const generation = this.generation;
     try {
       const rest = api();
       const [detail, messages, eventPage, tasks, context] = await Promise.all([
@@ -199,6 +230,7 @@ class MeshStore {
         rest.tasks(sessionId),
         rest.context(sessionId),
       ]);
+      if (generation !== this.generation || this.state.activeSessionId !== sessionId) return;
       this.setView({
         session: detail.session,
         members: detail.members,
@@ -211,6 +243,7 @@ class MeshStore {
         loading: false,
       });
     } catch (error) {
+      if (generation !== this.generation || this.state.activeSessionId !== sessionId) return;
       this.set({ error: (error as Error).message });
       this.setView({ loading: false });
     }
@@ -265,7 +298,9 @@ class MeshStore {
         const entry = payload.entry as ContextEntry;
         const exists = view.context.some((item) => item.id === entry.id);
         this.setView({
-          context: exists ? view.context.map((item) => (item.id === entry.id ? entry : item)) : [entry, ...view.context],
+          context: exists
+            ? view.context.map((item) => (item.id === entry.id ? entry : item))
+            : [entry, ...view.context],
         });
         return;
       }

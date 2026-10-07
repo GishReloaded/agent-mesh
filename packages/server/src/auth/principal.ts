@@ -1,4 +1,4 @@
-import type { Actor, SessionRole } from '@agentmesh/protocol';
+import type { Actor, SessionRole } from '@gish_reloaded/agentmesh-protocol';
 
 /**
  * Who is making a request.

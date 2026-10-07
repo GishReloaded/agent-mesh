@@ -1,4 +1,4 @@
-import { ServerFrameType, type Actor, type Event } from '@agentmesh/protocol';
+import { ServerFrameType, type Actor, type Event } from '@gish_reloaded/agentmesh-protocol';
 import type { Principal } from '../auth/principal.js';
 import type { Db } from '../db/client.js';
 import type { ConnectionHandle, ConnectionRecord, ConnectionRegistry, EventSink } from './registry.js';

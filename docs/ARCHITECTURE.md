@@ -9,9 +9,9 @@ How AgentMesh is put together, and why each significant decision went the way it
 ```
   Web client        CLI          Your agent        CI job
       │              │               │               │
-      └──────────────┴─── @agentmesh/sdk ───────────┘
+      └──────────────┴─── @gish_reloaded/agentmesh-sdk ───────────┘
                           │
-              @agentmesh/protocol  (types, zod schemas, permissions)
+              @gish_reloaded/agentmesh-protocol  (types, zod schemas, permissions)
                           │
          ┌────────────────▼────────────────┐
          │        AgentMesh server         │

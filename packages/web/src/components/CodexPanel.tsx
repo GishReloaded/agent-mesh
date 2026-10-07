@@ -6,7 +6,7 @@ import {
   type Event as MeshEvent,
   type Identity,
   type Session,
-} from '@agentmesh/sdk';
+} from '@gish_reloaded/agentmesh-sdk';
 
 export interface CodexModelView {
   id: string;

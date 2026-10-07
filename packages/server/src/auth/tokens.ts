@@ -1,6 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { SignJWT, jwtVerify } from 'jose';
-import { AgentMeshError, ErrorCode } from '@agentmesh/protocol';
+import { AgentMeshError, ErrorCode } from '@gish_reloaded/agentmesh-protocol';
 
 /**
  * Two token families, chosen for different revocation needs:

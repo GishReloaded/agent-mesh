@@ -1,4 +1,4 @@
-import { AgentMeshError, ErrorCode, type Actor, type Event } from '@agentmesh/protocol';
+import { AgentMeshError, ErrorCode, type Actor, type Event } from '@gish_reloaded/agentmesh-protocol';
 import { sql, type Transaction } from 'kysely';
 import { jsonb, type Db } from '../db/client.js';
 import type { Database } from '../db/types.js';

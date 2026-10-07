@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { mentionsActor, parseMentions } from '@agentmesh/protocol';
+import { mentionsActor, parseMentions } from '@gish_reloaded/agentmesh-protocol';
 
 const participants = [
   { type: 'agent' as const, id: 'agt_gpt', handle: 'gpt', displayName: 'GPT' },

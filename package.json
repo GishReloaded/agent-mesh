@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "engines": {
-    "node": ">=20.11"
+    "node": ">=22.4"
   },
   "workspaces": [
     "packages/protocol",
@@ -18,14 +18,19 @@
   ],
   "scripts": {
     "setup": "node scripts/setup.mjs",
-    "build:libs": "npm run build -w @agentmesh/protocol && npm run build -w @agentmesh/sdk",
-    "build": "npm run build:libs && npm run build -w @agentmesh/server && npm run build -w @agentmesh/cli && npm run build -w @agentmesh/web",
+    "demo": "npm run build:libs && node scripts/demo.mjs",
+    "metrics": "node scripts/metrics.mjs",
+    "release:check": "npm run build && node scripts/check-packages.mjs",
+    "release:pack": "npm run build && node scripts/check-packages.mjs --output tmp/release",
+    "build:libs": "npm run build -w @gish_reloaded/agentmesh-protocol && npm run build -w @gish_reloaded/agentmesh-sdk",
+    "build": "npm run build:libs && npm run build -w @agentmesh/server && npm run build -w @gish_reloaded/agentmesh-cli && npm run build -w @agentmesh/web",
     "dev": "npm run build:libs && concurrently -n server,web -c blue,magenta \"npm run dev -w @agentmesh/server\" \"npm run dev -w @agentmesh/web\"",
     "start": "npm run build && npm run start -w @agentmesh/server",
     "start:server": "npm run start -w @agentmesh/server",
     "db:migrate": "npm run migrate -w @agentmesh/server",
     "db:reset": "npm run migrate:reset -w @agentmesh/server",
-    "test": "npm run build:libs && npm run test -w @agentmesh/protocol && npm run test -w @agentmesh/sdk && npm run test -w @agentmesh/cli && npm run test -w @agentmesh/web && npm run test -w @agentmesh/server",
+    "test": "npm run build:libs && npm run test:setup && npm run test -w @gish_reloaded/agentmesh-protocol && npm run test -w @gish_reloaded/agentmesh-sdk && npm run test -w @gish_reloaded/agentmesh-cli && npm run test -w @agentmesh/web && npm run test -w @agentmesh/server",
+    "test:setup": "node --test scripts/test/setup.test.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -41,6 +46,11 @@
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.1"
+  },
+  "overrides": {
+    "concurrently": {
+      "shell-quote": "^1.12.0"
+    }
   },
   "repository": {
     "type": "git",

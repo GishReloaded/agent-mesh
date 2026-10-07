@@ -1,4 +1,4 @@
-import type { Agent, SessionMember } from '@agentmesh/sdk';
+import type { Agent, SessionMember } from '@gish_reloaded/agentmesh-sdk';
 import { participantColor } from '../lib/colors.js';
 
 function initials(name: string): string {

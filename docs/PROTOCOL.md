@@ -1,6 +1,6 @@
 # AgentMesh Protocol — `agentmesh/v1`
 
-This document specifies the AgentMesh wire protocol. It is complete enough to implement a client or a server in any language; `@agentmesh/sdk` is a convenience built on top of it, not a requirement.
+This document specifies the AgentMesh wire protocol. It is complete enough to implement a client or a server in any language; `@gish_reloaded/agentmesh-sdk` is a convenience built on top of it, not a requirement.
 
 The normative schemas live in [`packages/protocol`](../packages/protocol/src) and are the source of truth. Where this document and the schemas disagree, the schemas win.
 

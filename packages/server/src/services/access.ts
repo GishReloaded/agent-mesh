@@ -5,7 +5,7 @@ import {
   SessionRole,
   can,
   type Session,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 import type { Db } from '../db/client.js';
 import { principalActor, type Principal, type SessionAccess } from '../auth/principal.js';
 import { toSession } from '../mappers.js';

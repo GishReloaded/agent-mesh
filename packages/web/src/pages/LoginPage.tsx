@@ -1,7 +1,8 @@
-import { RestClient } from '@agentmesh/sdk';
+import { RestClient } from '@gish_reloaded/agentmesh-sdk';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { persist, serverUrl } from '../lib/auth.js';
+import { store } from '../lib/store.js';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -23,8 +24,12 @@ export function LoginPage() {
         mode === 'register'
           ? await rest.register({ email, password, displayName })
           : await rest.login({ email, password });
+      store.disconnect();
       persist(tokens, url);
-      navigate('/');
+      void store.connect();
+      const invite = sessionStorage.getItem('agentmesh.pendingInvite');
+      sessionStorage.removeItem('agentmesh.pendingInvite');
+      navigate(invite ? `/invite/${encodeURIComponent(invite)}` : '/');
     } catch (caught) {
       setError((caught as Error).message);
     } finally {

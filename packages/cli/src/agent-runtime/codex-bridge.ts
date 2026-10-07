@@ -5,7 +5,7 @@ import {
   type CodexApprovalResponse,
   type CodexControlRequest,
   type ContextEntry,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 import {
   CodexAppServer,
   sanitizeCodexNotification,

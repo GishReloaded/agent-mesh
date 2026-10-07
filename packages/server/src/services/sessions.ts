@@ -9,7 +9,7 @@ import {
   type SessionMember,
   type SessionSummary,
   type UpdateSessionRequest,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 import { jsonb, type Db } from '../db/client.js';
 import { principalActor, systemActor, type Principal, type SessionAccess } from '../auth/principal.js';
 import { IdPrefix, newId } from '../ids.js';

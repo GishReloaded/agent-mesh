@@ -1,4 +1,4 @@
-import { AgentMeshError, ErrorCode, RestClient } from '@agentmesh/sdk';
+import { AgentMeshError, ErrorCode, RestClient } from '@gish_reloaded/agentmesh-sdk';
 import { currentProfile, loadConfig, updateProfile, type CliProfile } from './config.js';
 
 export interface CliContext {

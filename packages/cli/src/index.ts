@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { AgentMeshError } from '@agentmesh/sdk';
+import { AgentMeshError } from '@gish_reloaded/agentmesh-sdk';
 import { Command } from 'commander';
 import { registerAgentCommands } from './commands/agent.js';
 import { registerAuthCommands } from './commands/auth.js';

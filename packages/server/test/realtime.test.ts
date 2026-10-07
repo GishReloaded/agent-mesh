@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { PROTOCOL_VERSION } from '@agentmesh/protocol';
+import { PROTOCOL_VERSION } from '@gish_reloaded/agentmesh-protocol';
 import { authed, createUser, databaseAvailable, skipMessage, startTestServer, type TestServer, type TestUser } from './helpers.js';
 
 interface Frame {

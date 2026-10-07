@@ -1,4 +1,4 @@
-import type { Actor, Event } from '@agentmesh/protocol';
+import type { Actor, Event } from '@gish_reloaded/agentmesh-protocol';
 import type { Principal } from '../auth/principal.js';
 
 /**

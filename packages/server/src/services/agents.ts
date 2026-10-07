@@ -8,11 +8,11 @@
   type AgentStatus,
   type RegisterAgentRequest,
   type UpdateAgentRequest,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 import { jsonb, type Db } from '../db/client.js';
 import type { Principal, SessionAccess } from '../auth/principal.js';
 import { TokenPrefix, createOpaqueToken, hashToken } from '../auth/tokens.js';
-import { CloseCode } from '@agentmesh/protocol';
+import { CloseCode } from '@gish_reloaded/agentmesh-protocol';
 import { IdPrefix, newId } from '../ids.js';
 import { toAgent } from '../mappers.js';
 import type { ConnectionRegistry } from '../realtime/registry.js';

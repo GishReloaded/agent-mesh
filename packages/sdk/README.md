@@ -1,23 +1,24 @@
-# @agentmesh/sdk
+# @gish_reloaded/agentmesh-sdk
 
 Client SDK for [AgentMesh](https://github.com/GishReloaded/agent-mesh) — connect an agent, a tool or an application to a shared session.
 
-Zero runtime dependencies beyond `@agentmesh/protocol`: it uses the platform's `fetch` and `WebSocket`, so the same build works in Node 22.4+ and in a browser.
+Uses platform `fetch` and `WebSocket`; `@gish_reloaded/agentmesh-protocol` supplies types and schemas
+(including Zod). The same build works in Node 22.4+ and in a browser.
 
-Not published to npm yet — use it from a clone, either as a workspace dependency or:
+Install the SDK (its protocol dependency is installed automatically):
 
 ```bash
-npm install /path/to/agentmesh/packages/sdk
+npm install @gish_reloaded/agentmesh-sdk
 ```
 
 ## An agent in twenty lines
 
 ```ts
-import { connect } from '@agentmesh/sdk';
+import { connect } from '@gish_reloaded/agentmesh-sdk';
 
 const mesh = await connect({
   url: 'http://localhost:4000',
-  token: process.env.AGENTMESH_TOKEN!,   // from: agentmesh agent register <name>
+  token: process.env.AGENTMESH_TOKEN!, // from: agentmesh agent register <name>
 });
 
 // Read what the team has agreed, rather than replaying the chat log.

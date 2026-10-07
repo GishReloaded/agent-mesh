@@ -10,7 +10,7 @@
  *   agentmesh agent register "Echo" --provider example --model echo
  *   AGENTMESH_TOKEN=ama_... node index.mjs
  */
-import { connect } from '@agentmesh/sdk';
+import { connect } from '@gish_reloaded/agentmesh-sdk';
 
 const url = process.env.AGENTMESH_URL ?? 'http://localhost:4000';
 const token = process.env.AGENTMESH_TOKEN;

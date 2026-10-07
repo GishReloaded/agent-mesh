@@ -7,7 +7,7 @@ Thanks for considering it. Bug reports, protocol feedback and small focused pull
 ```bash
 git clone https://github.com/GishReloaded/agent-mesh.git
 cd agent-mesh
-npm install
+npm ci
 npm run setup     # writes .env, creates the database, applies migrations
 npm run dev       # server on :4000, web client on :5173
 ```
@@ -25,6 +25,15 @@ npm test
 Server integration tests need `TEST_DATABASE_URL` pointing at a **throwaway** database — it is wiped before every run, and the harness refuses any database whose name does not contain `test`. `npm run setup` creates one for you.
 
 ## What makes a change easy to merge
+
+For a first contribution, try the [scripted demo](docs/DEMO.md) and one
+[integration guide](docs/CLAUDE_CODE.md). Report the exact step that got confusing,
+or choose an open issue labelled `help wanted`. Comment on a proposed code change
+before starting a large implementation so the scope is clear.
+
+Useful contributions include OS-specific setup notes, minimal integration examples,
+reproducible reconnect failures and protocol compatibility feedback. Real user
+feedback is valuable even without a pull request.
 
 - **One thing at a time.** A bug fix and a refactor in one diff take three times as long to review.
 - **A test that fails without the change.** The jsonb serialization bug in the first release was caught by an integration test, not by review.
@@ -92,6 +101,14 @@ For security issues, do **not** open a public issue — see [SECURITY.md](SECURI
 ## Code of conduct
 
 Be straightforward and civil. Critique the design, not the person. Maintainers will remove behaviour that makes the project unpleasant to participate in.
+
+See [community conduct](CODE_OF_CONDUCT.md) for expectations and reporting.
+
+## Packaging changes
+
+Run `npm run release:check` when changing public package exports or dependencies.
+It verifies the packed files from a clean consumer, independently of workspace
+symlinks. See [releasing](docs/RELEASING.md).
 
 ## License
 

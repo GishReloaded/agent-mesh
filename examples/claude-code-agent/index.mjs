@@ -17,7 +17,7 @@
  */
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { connect } from '@agentmesh/sdk';
+import { connect } from '@gish_reloaded/agentmesh-sdk';
 
 const run = promisify(execFile);
 

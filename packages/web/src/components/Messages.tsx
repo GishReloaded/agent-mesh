@@ -4,7 +4,7 @@ import {
   type Event as MeshEvent,
   type Identity,
   type Message,
-} from '@agentmesh/sdk';
+} from '@gish_reloaded/agentmesh-sdk';
 import { useEffect, useRef } from 'react';
 import { participantColor } from '../lib/colors.js';
 import { localFileHref, renderMarkdown } from '../lib/markdown.js';

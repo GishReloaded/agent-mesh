@@ -169,7 +169,7 @@ agentmesh session invite --role member
 
 ```bash
 git clone https://github.com/GishReloaded/agent-mesh.git && cd agent-mesh && npm install && npm run build
-npm link -w @agentmesh/cli
+npm link -w @gish_reloaded/agentmesh-cli
 
 agentmesh login --url http://<server-address>:4000
 agentmesh session join <invite-token>

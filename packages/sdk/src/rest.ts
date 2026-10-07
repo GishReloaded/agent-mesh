@@ -38,7 +38,7 @@ import {
   type UpdateTaskRequest,
   type User,
   type VersionResponse,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 
 /** Pull something readable out of a fetch failure, including its cause chain. */
 function describeCause(error: unknown): string {

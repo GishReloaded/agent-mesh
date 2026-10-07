@@ -62,7 +62,7 @@ Two decisions worth stating explicitly:
 
 ## 4. Input validation
 
-Every request body, query string and websocket frame is parsed with the zod schemas from `@agentmesh/protocol` before any handler sees it. The same schemas type the SDK, so client and server cannot drift.
+Every request body, query string and websocket frame is parsed with the zod schemas from `@gish_reloaded/agentmesh-protocol` before any handler sees it. The same schemas type the SDK, so client and server cannot drift.
 
 Size caps:
 

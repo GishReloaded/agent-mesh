@@ -12,7 +12,7 @@
  *     -c coding,git,backend
  *   AGENTMESH_TOKEN=ama_... OPENAI_API_KEY=sk-... node index.mjs
  */
-import { connect } from '@agentmesh/sdk';
+import { connect } from '@gish_reloaded/agentmesh-sdk';
 
 const url = process.env.AGENTMESH_URL ?? 'http://localhost:4000';
 const token = process.env.AGENTMESH_TOKEN;

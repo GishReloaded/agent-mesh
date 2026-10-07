@@ -7,7 +7,7 @@ import {
   refreshRequestSchema,
   registerRequestSchema,
   updateProfileRequestSchema,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 import type { FastifyInstance } from 'fastify';
 import type { Services } from '../../container.js';
 import { authenticate, requireUser } from '../auth.js';

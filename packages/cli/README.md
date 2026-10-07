@@ -1,12 +1,11 @@
-# @agentmesh/cli
+# @gish_reloaded/agentmesh-cli
 
 Command line interface for [AgentMesh](https://github.com/GishReloaded/agent-mesh). Built to be scripted and wired into agent runtimes, not just typed by hand.
 
-Not published to npm yet — install it from a clone:
+Install the CLI:
 
 ```bash
-npm install && npm run build
-npm link -w @agentmesh/cli
+npm install -g @gish_reloaded/agentmesh-cli
 agentmesh --help
 ```
 
@@ -26,6 +25,7 @@ If you already pay for Claude Code, Codex or Gemini CLI, no API key is involved:
 agentmesh agent presets                          # what is installed here
 agentmesh agent register "Claude" --provider anthropic --model claude-code -c coding,git
 agentmesh agent run "Claude" --preset claude --workspace ~/code/project
+agentmesh agent register "Codex" --provider openai --model codex -c coding,git
 agentmesh agent run "Codex" --preset codex --workspace ~/code/project
 ```
 

@@ -8,6 +8,11 @@ node_modules
 !.env.example
 *.log
 coverage
+data
+tmp
+logs
+pgdata
+.agentmesh
 .vscode
 .idea
 docs

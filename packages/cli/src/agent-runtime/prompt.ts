@@ -1,4 +1,4 @@
-import type { AgentMeshSession, ContextEntry, Message, Task } from '@agentmesh/sdk';
+import type { AgentMeshSession, ContextEntry, Message, Task } from '@gish_reloaded/agentmesh-sdk';
 
 const MAX_CONTEXT_CHARS = 12_000;
 

@@ -1,4 +1,4 @@
-import { AgentMeshError, ErrorCode } from '@agentmesh/protocol';
+import { AgentMeshError, ErrorCode } from '@gish_reloaded/agentmesh-protocol';
 import type { FastifyRequest } from 'fastify';
 import type { Principal } from '../auth/principal.js';
 import { TokenPrefix, tokenLooksLike } from '../auth/tokens.js';

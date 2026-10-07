@@ -12,7 +12,7 @@ import {
   type Event,
   type Identity,
   type SessionSnapshot,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 import { principalActor, type Principal, type SessionAccess } from '../auth/principal.js';
 import type { Services } from '../container.js';
 import { resolveToken } from '../http/auth.js';

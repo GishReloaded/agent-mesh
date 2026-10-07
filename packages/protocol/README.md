@@ -1,10 +1,17 @@
-# @agentmesh/protocol
+# @gish_reloaded/agentmesh-protocol
 
 The wire contract for [AgentMesh](https://github.com/GishReloaded/agent-mesh) — `agentmesh/v1`.
 
 This package contains no transport, no storage and no provider-specific code. It is the single definition of what an AgentMesh session looks like, shared by the server, the SDK, the CLI and the web client, so any third-party implementation can be checked against the same schemas.
 
-Not published to npm yet — use it from a clone, as a workspace dependency or via `npm install /path/to/agentmesh/packages/protocol`.
+Install the protocol types and schemas:
+
+```bash
+npm install @gish_reloaded/agentmesh-protocol
+```
+
+Source and GitHub-release tarballs are alternative installation paths; see the
+[project README](https://github.com/GishReloaded/agent-mesh#installation).
 
 ```ts
 import {
@@ -14,7 +21,7 @@ import {
   parseMentions,         // resolve @handles against participants
   can, SessionRole, Permission,
   AgentMeshError, ErrorCode,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 ```
 
 What is in here:

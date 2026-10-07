@@ -1,4 +1,4 @@
-import { ServerFrameType, type Actor, type Event } from '@agentmesh/protocol';
+import { ServerFrameType, type Actor, type Event } from '@gish_reloaded/agentmesh-protocol';
 import type { ConnectionHandle, ConnectionRecord, ConnectionRegistry, EventSink } from './registry.js';
 
 /**

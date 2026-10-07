@@ -1,4 +1,4 @@
-import { API_PREFIX, AVATAR_MIME_TYPES, PROTOCOL_LIMITS } from '@agentmesh/protocol';
+import { API_PREFIX, AVATAR_MIME_TYPES, PROTOCOL_LIMITS } from '@gish_reloaded/agentmesh-protocol';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';

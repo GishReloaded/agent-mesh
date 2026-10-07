@@ -1,8 +1,8 @@
-import type { SessionSummary } from '@agentmesh/sdk';
+import type { SessionSummary } from '@gish_reloaded/agentmesh-sdk';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, clearAuth, storedUser } from '../lib/auth.js';
-import { useMesh } from '../lib/useStore.js';
+import { store, useMesh } from '../lib/useStore.js';
 import { ConnectionBadge } from '../components/Presence.js';
 import { ProfileDialog } from '../components/ProfileDialog.js';
 
@@ -66,6 +66,7 @@ export function SessionsPage() {
         <button
           className="ghost"
           onClick={() => {
+            store.disconnect();
             clearAuth();
             navigate('/login');
           }}

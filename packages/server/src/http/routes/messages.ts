@@ -6,7 +6,7 @@ import {
   publishEventRequestSchema,
   searchQuerySchema,
   type EventPage,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 import type { FastifyInstance } from 'fastify';
 import type { Services } from '../../container.js';
 import { authenticate } from '../auth.js';
