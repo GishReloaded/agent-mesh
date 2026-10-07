@@ -1,4 +1,4 @@
-import { PROTOCOL_LIMITS, PROTOCOL_VERSION } from '@agentmesh/protocol';
+import { PROTOCOL_LIMITS, PROTOCOL_VERSION } from '@gish_reloaded/agentmesh-protocol';
 import type { FastifyInstance } from 'fastify';
 import type { Services } from '../../container.js';
 import { pingDb } from '../../db/client.js';

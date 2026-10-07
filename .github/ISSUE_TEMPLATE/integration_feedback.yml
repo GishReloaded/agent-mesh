@@ -1,0 +1,37 @@
+name: Integration / first-run feedback
+description: Tell us where setup or a coding-agent integration got stuck
+labels: [integration, feedback]
+body:
+  - type: markdown
+    attributes:
+      value: 'Please omit tokens, passwords, private prompts and full runtime logs. Share only the relevant sanitized excerpt.'
+  - type: input
+    id: environment
+    attributes:
+      label: Versions and environment
+      description: OS, Node, AgentMesh version/commit and coding CLI version
+    validations:
+      required: true
+  - type: dropdown
+    id: integration
+    attributes:
+      label: What were you trying?
+      options: [Docker setup, Node setup, Scripted demo, Claude Code, Codex, Gemini CLI, Custom SDK agent]
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps and expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result and sanitized error
+    validations:
+      required: true
+  - type: textarea
+    id: improvement
+    attributes:
+      label: What would have made this easier?

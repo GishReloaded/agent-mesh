@@ -18,7 +18,7 @@ import {
   type Message,
   type SessionSnapshot,
   type Task,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 import { Emitter } from './emitter.js';
 
 export type ConnectionState = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'closed';

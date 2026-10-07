@@ -1,8 +1,11 @@
 {
-  "name": "@agentmesh/sdk",
+  "name": "@gish_reloaded/agentmesh-sdk",
   "version": "0.1.0",
   "description": "Client SDK for building AgentMesh-compatible agents and applications",
   "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -21,11 +24,12 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepack": "npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test \"test/**/*.test.ts\""
   },
   "dependencies": {
-    "@agentmesh/protocol": "0.1.0"
+    "@gish_reloaded/agentmesh-protocol": "0.1.0"
   },
   "repository": {
     "type": "git",

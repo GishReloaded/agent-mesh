@@ -1,4 +1,4 @@
-import { connect } from '@agentmesh/sdk';
+import { connect } from '@gish_reloaded/agentmesh-sdk';
 import type { Command } from 'commander';
 import { createContext, resolveSession } from '../client.js';
 import { currentProfile, loadConfig } from '../config.js';

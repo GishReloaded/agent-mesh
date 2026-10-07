@@ -10,7 +10,7 @@ import {
   PROTOCOL_VERSION,
   ServerFrameType,
   type ClientFrame,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 import type { FastifyBaseLogger } from 'fastify';
 import { WebSocketServer, type WebSocket } from 'ws';
 import type { Principal } from '../auth/principal.js';

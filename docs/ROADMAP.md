@@ -6,28 +6,28 @@ What exists today, what is deliberately absent, and what each missing piece woul
 
 ## Shipped — v0.1
 
-| Area | State |
-|---|---|
-| Sessions, roles, invites | Owner / member / agent / viewer, invite tokens with expiry and use limits |
-| Realtime | WebSocket, heartbeat, presence, reconnect with resume-from-cursor |
-| Messaging | human↔human, human↔agent, agent↔agent, `@mentions`, threads via `parentId` |
-| Loop guard | Server-enforced agent-to-agent chain limit |
-| Shared context | Typed, keyed, versioned, with full revision history |
-| Development events | 13 core types plus the `X_*` extension namespace |
-| Tasks | Five statuses, assignee, related files and commits |
-| Git context | Self-reported branch, commit, changed paths |
-| Persistence | PostgreSQL, append-only event log, cursor pagination |
-| Web UI | Session list, three-panel session view, mentions autocomplete, unread counts, search |
-| CLI | Auth, sessions, agents, messaging, tasks, context, events, search, live watch |
-| SDK | Zero-dependency TypeScript client for Node and the browser |
-| Security | scrypt passwords, rotating refresh tokens, opaque revocable agent tokens, role matrix, rate limits |
-| Subscription agents | `agentmesh agent run` drives Claude Code, Codex, Gemini CLI or any command, on the user's own subscription |
+| Area                     | State                                                                                                      |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Sessions, roles, invites | Owner / member / agent / viewer, invite tokens with expiry and use limits                                  |
+| Realtime                 | WebSocket, heartbeat, presence, reconnect with resume-from-cursor                                          |
+| Messaging                | human↔human, human↔agent, agent↔agent, `@mentions`, threads via `parentId`                                 |
+| Loop guard               | Server-enforced agent-to-agent chain limit                                                                 |
+| Shared context           | Typed, keyed, versioned, with full revision history                                                        |
+| Development events       | 13 core types plus the `X_*` extension namespace                                                           |
+| Tasks                    | Five statuses, assignee, related files and commits                                                         |
+| Git context              | Self-reported branch, commit, changed paths                                                                |
+| Persistence              | PostgreSQL, append-only event log, cursor pagination                                                       |
+| Web UI                   | Session list, three-panel session view, mentions autocomplete, unread counts, search                       |
+| CLI                      | Auth, sessions, agents, messaging, tasks, context, events, search, live watch                              |
+| SDK                      | TypeScript client using platform transports, with protocol types and schemas                               |
+| Security                 | scrypt passwords, rotating refresh tokens, opaque revocable agent tokens, role matrix, rate limits         |
+| Subscription agents      | `agentmesh agent run` drives Claude Code, Codex, Gemini CLI or any command, on the user's own subscription |
 
 ## Next — v0.2
 
 **Capability-based routing.** `capabilities` and `AGENT_HANDOFF` already exist as data; nothing acts on them. The next step is `POST /sessions/:id/tasks/:id/dispatch`, which selects an online agent matching a capability filter and assigns the task. Deliberately a single explicit call rather than an autonomous scheduler — the moment a system starts assigning work to models on its own, the interesting failures are the ones nobody watched happen.
 
-**AgentMesh as an MCP server.** Today a local agent is *pushed*: `agentmesh agent run` wakes the tool up on a mention. The complement is a *pull* model — exposing the session to the assistant already running in someone's editor, as MCP tools (`getContext`, `publishContext`, `sendMessage`, `listTasks`). That suits subscription users best, because it needs no headless mode and keeps the human in the loop by construction. Probably the single highest-value item on this list.
+**AgentMesh as an MCP server.** Today a local agent is _pushed_: `agentmesh agent run` wakes the tool up on a mention. The complement is a _pull_ model — exposing the session to the assistant already running in someone's editor, as MCP tools (`getContext`, `publishContext`, `sendMessage`, `listTasks`). That suits subscription users best, because it needs no headless mode and keeps the human in the loop by construction. Probably the single highest-value item on this list.
 
 **Registering agents from the web UI.** Agents can only be created through the CLI or the API today, which is an obvious gap for anyone who starts in the browser.
 

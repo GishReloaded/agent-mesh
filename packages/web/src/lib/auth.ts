@@ -1,4 +1,4 @@
-import { RestClient, type AuthTokens, type User } from '@agentmesh/sdk';
+import { RestClient, type AuthTokens, type User } from '@gish_reloaded/agentmesh-sdk';
 
 /**
  * Token handling for the browser client.
@@ -18,6 +18,7 @@ interface StoredAuth {
 }
 
 let accessToken: string | undefined;
+let generation = 0;
 
 export function serverUrl(): string {
   const stored = read();
@@ -49,14 +50,21 @@ export function isAuthenticated(): boolean {
 }
 
 export function persist(tokens: AuthTokens, url = serverUrl()): void {
+  generation += 1;
   accessToken = tokens.accessToken;
   localStorage.setItem(
     STORAGE_KEY,
-    JSON.stringify({ serverUrl: url, refreshToken: tokens.refreshToken, user: tokens.user } satisfies StoredAuth),
+    JSON.stringify({
+      serverUrl: url,
+      refreshToken: tokens.refreshToken,
+      user: tokens.user,
+    } satisfies StoredAuth),
   );
 }
 
 export function clearAuth(): void {
+  generation += 1;
+  refreshInFlight = null;
   accessToken = undefined;
   localStorage.removeItem(STORAGE_KEY);
 }
@@ -80,22 +88,26 @@ let refreshInFlight: Promise<string | null> | null = null;
 export function refreshAccessToken(): Promise<string | null> {
   if (refreshInFlight) return refreshInFlight;
 
-  refreshInFlight = (async () => {
+  const started = generation;
+  const pending = (async () => {
     const stored = read();
     if (!stored) return null;
     try {
       const tokens = await new RestClient({ url: stored.serverUrl }).refresh(stored.refreshToken);
+      if (started !== generation) return null;
       persist(tokens, stored.serverUrl);
       return tokens.accessToken;
     } catch {
+      if (started !== generation) return null;
       clearAuth();
       return null;
     }
   })().finally(() => {
-    refreshInFlight = null;
+    if (refreshInFlight === pending) refreshInFlight = null;
   });
 
-  return refreshInFlight;
+  refreshInFlight = pending;
+  return pending;
 }
 
 /** A REST client that refreshes and retries once on 401. */

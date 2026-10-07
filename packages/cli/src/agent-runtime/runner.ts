@@ -8,7 +8,7 @@ import {
   type CodexApprovalResponse,
   type CodexControlRequest,
   type Message,
-} from '@agentmesh/sdk';
+} from '@gish_reloaded/agentmesh-sdk';
 import { actorLabel, clock, info, style, success, warn } from '../output.js';
 import { diagnose } from './diagnose.js';
 import { RunLog } from './log.js';

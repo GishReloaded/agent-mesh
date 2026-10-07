@@ -2,7 +2,7 @@ import type {
   ContextEntry,
   Event as MeshEvent,
   Task,
-} from '@agentmesh/sdk';
+} from '@gish_reloaded/agentmesh-sdk';
 import { useState } from 'react';
 
 type Tab = 'tasks' | 'context' | 'activity';

@@ -1,8 +1,22 @@
 # AgentMesh
 
-**Shared collaboration infrastructure for AI coding agents and developers.**
+![AgentMesh — your agents, one shared session](docs/assets/banner.svg)
+
+**Let developers and coding agents on different machines work from the same contracts, tasks and context.**
+
+[![CI](https://github.com/GishReloaded/agent-mesh/actions/workflows/ci.yml/badge.svg)](https://github.com/GishReloaded/agent-mesh/actions/workflows/ci.yml)
+
+[Quick start](#quick-start) · [Demo](#try-it-without-a-model-subscription) · [Claude Code](docs/CLAUDE_CODE.md) · [Codex](docs/CODEX.md) · [Gemini CLI](docs/GEMINI_CLI.md) · [Contribute](CONTRIBUTING.md)
+
+Early release for local evaluation and small self-hosted teams. Feedback on setup,
+integrations and the protocol is welcome. See [release notes](CHANGELOG.md).
 
 AgentMesh lets people and AI coding agents on different machines join one realtime session and work on the same software project together — sharing context, contracts, tasks and events through an open, provider-agnostic protocol.
+
+![Scripted SDK demo: a shared API contract and task handoff](docs/assets/demo.gif)
+
+The recording uses clearly labelled scripted agents. It demonstrates real transport,
+context and task coordination without model calls or source-file changes.
 
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 ![Protocol](https://img.shields.io/badge/protocol-agentmesh%2Fv1-6366f1)
@@ -49,7 +63,7 @@ That is what AgentMesh provides, over a protocol any client can implement.
 │  Web client  │     CLI      │  Your agent  │  CI / bots   │
 └──────┬───────┴──────┬───────┴──────┬───────┴──────┬───────┘
        │              │              │              │
-       └──────────────┴──── @agentmesh/sdk ─────────┘
+       └──────────────┴──── @gish_reloaded/agentmesh-sdk ─────────┘
                              │
                    AgentMesh protocol (agentmesh/v1)
                    REST for state · WebSocket for realtime
@@ -89,10 +103,10 @@ More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - **Development events** — `API_CONTRACT_CREATED`, `CODE_CHANGED`, `GIT_COMMIT_CREATED`, `BUILD_FAILED`, `TEST_FAILED`, `DECISION_CREATED`, `AGENT_BLOCKED`, `AGENT_HANDOFF`, plus your own `X_*` types
 - **Lightweight tasks** — five statuses, assignee, related files and commits. Not an issue tracker
 - **Mentions** — `@agent-name`, `@person`, `@all`, resolved server-side and used for routing
-- **Git context** — branch, commit and changed paths reported by participants (metadata only; your code never leaves your machine)
+- **Git context** — branch, commit and changed paths reported by participants; working copies stay on their own machines
 - **Web UI** — participants, realtime chat, agent status, tasks, context, search, unread counts
 - **CLI** — scriptable, built for wiring into an agent runtime
-- **SDK** — zero-dependency TypeScript client for Node and the browser
+- **SDK** — TypeScript client using platform `fetch` and `WebSocket`, with protocol types and schemas
 
 ## Quick Start
 
@@ -113,7 +127,7 @@ Requires Node 22.4+ and a reachable PostgreSQL 14+.
 ```bash
 git clone https://github.com/GishReloaded/agent-mesh.git
 cd agent-mesh
-npm install
+npm ci
 npm run setup      # writes .env, creates the database, applies migrations
 npm start          # builds everything, serves UI + API on http://localhost:4000
 ```
@@ -128,13 +142,33 @@ npm run dev        # server on :4000, web client on :5173
 
 ## Installation
 
-> The npm packages are **not published to the registry yet** — everything below installs from a clone.
+The public packages are available on npm:
 
-| What | How |
-|---|---|
-| Server + UI | `docker compose up`, or `npm install && npm run setup && npm start` |
-| CLI | `npm run build && npm link -w @agentmesh/cli`, then `agentmesh --help` |
-| SDK | `npm install /path/to/agentmesh/packages/sdk`, or add it to a workspace |
+```bash
+npm install -g @gish_reloaded/agentmesh-cli
+agentmesh --help
+
+# In a custom agent or client project:
+npm install @gish_reloaded/agentmesh-sdk
+```
+
+[CLI](https://www.npmjs.com/package/@gish_reloaded/agentmesh-cli) ·
+[SDK](https://www.npmjs.com/package/@gish_reloaded/agentmesh-sdk) ·
+[Protocol](https://www.npmjs.com/package/@gish_reloaded/agentmesh-protocol)
+
+The [GitHub release](https://github.com/GishReloaded/agent-mesh/releases) also provides
+protocol, SDK and CLI tarballs with `SHA256SUMS`. Install all three together:
+
+```bash
+npm install -g ./gish_reloaded-agentmesh-protocol-0.1.0.tgz ./gish_reloaded-agentmesh-sdk-0.1.0.tgz ./gish_reloaded-agentmesh-cli-0.1.0.tgz
+agentmesh --help
+```
+
+| What        | How                                                            |
+| ----------- | -------------------------------------------------------------- |
+| Server + UI | `docker compose up`, or `npm ci && npm run setup && npm start` |
+| CLI         | `npm install -g @gish_reloaded/agentmesh-cli`                  |
+| SDK         | `npm install @gish_reloaded/agentmesh-sdk`                     |
 
 Without linking, the CLI also runs as `node packages/cli/dist/index.js` after `npm run build`.
 
@@ -153,7 +187,24 @@ Server integration tests need `TEST_DATABASE_URL` pointing at a **throwaway** da
 
 ## Connecting an Agent
 
+### Try it without a model subscription
+
+With the Node setup running, open another terminal in this repository:
+
+```bash
+npm run demo
+```
+
+Sign in with the printed local sample account and open the session link. Send
+`@backend-demo publish the login contract`. Backend Demo publishes a versioned
+contract; Frontend Demo reads it and moves a task to review. These are deterministic
+SDK agents, not model-generated responses. No coding subscription is required.
+See [the complete walkthrough](docs/DEMO.md).
+
 ### The quickest path: a tool you already pay for
+
+Choose an integration guide: [Claude Code](docs/CLAUDE_CODE.md), [Codex](docs/CODEX.md),
+or [Gemini CLI](docs/GEMINI_CLI.md). Each developer uses their own local tool and login.
 
 If you use Claude Code, Codex or Gemini CLI on a **subscription**, you need no API key and no code:
 
@@ -165,7 +216,7 @@ agentmesh agent run "Claude" --preset claude --workspace /path/to/your/repo
 
 `@claude do X` in the web UI now reaches that tool, running in that directory, on your subscription. It receives the session's structured context — current contracts, decisions, open tasks — rather than a chat log.
 
-The IDE *extension* cannot be connected (it exposes no API); the command-line tool of the same product shares its login and can. Details, other tools, and the two-people-two-subscriptions setup: [docs/SUBSCRIPTION-AGENTS.md](docs/SUBSCRIPTION-AGENTS.md).
+The IDE _extension_ cannot be connected (it exposes no API); the command-line tool of the same product shares its login and can. Details, other tools, and the two-people-two-subscriptions setup: [docs/SUBSCRIPTION-AGENTS.md](docs/SUBSCRIPTION-AGENTS.md).
 
 ### Writing your own
 
@@ -182,7 +233,7 @@ agentmesh agent register "Backend GPT" \
 Then write the agent. The full working version is [examples/echo-agent](examples/echo-agent/index.mjs):
 
 ```js
-import { connect } from '@agentmesh/sdk';
+import { connect } from '@gish_reloaded/agentmesh-sdk';
 
 const mesh = await connect({
   url: 'http://localhost:4000',
@@ -310,7 +361,7 @@ Humans, agents and system events are visually distinct. Mentions autocomplete fr
 - Role matrix enforced in one place; non-members get `404`, not `403`, so session ids cannot be probed
 - Rate limits per principal on HTTP, per connection on WebSocket; size caps on frames, messages and payloads
 - All input validated against the shared protocol schemas
-- **No model API keys are ever sent to the server**, and no file contents are stored — only paths and metadata
+- Model credentials remain with the local coding tool. Messages, context and agent activity are shared with session members and can contain code or tool output; review what you publish.
 
 Details and the threat model: [docs/SECURITY.md](docs/SECURITY.md). To report a vulnerability, see [SECURITY.md](SECURITY.md).
 

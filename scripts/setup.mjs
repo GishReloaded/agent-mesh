@@ -18,7 +18,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const envPath = join(root, '.env');
 const examplePath = join(root, '.env.example');
 
-const DEFAULT_DATABASE_URL = 'postgres://postgres:postgres@localhost:5432/agentmesh';
+const DEFAULT_DATABASE_URL = 'postgres://agentmesh:agentmesh@localhost:5432/agentmesh';
 
 const say = (message) => process.stdout.write(`${message}\n`);
 const step = (message) => say(`\n== ${message}`);
@@ -55,7 +55,6 @@ async function ensureDatabase(url) {
   const direct = new pg.Client({ connectionString: url });
   try {
     await direct.connect();
-    await direct.end();
     say(`  database "${databaseName}" is reachable`);
     return true;
   } catch (error) {
@@ -63,6 +62,8 @@ async function ensureDatabase(url) {
       say(`  cannot connect: ${error.message}`);
       return false;
     }
+  } finally {
+    await direct.end().catch(() => undefined);
   }
 
   // 3D000 means the server is up but the database does not exist yet.
@@ -90,6 +91,7 @@ async function main() {
   const databaseUrl = process.env.DATABASE_URL ?? existing.DATABASE_URL ?? DEFAULT_DATABASE_URL;
 
   const values = {
+    ...existing,
     NODE_ENV: existing.NODE_ENV ?? 'development',
     PORT: existing.PORT ?? '4000',
     DATABASE_URL: databaseUrl,

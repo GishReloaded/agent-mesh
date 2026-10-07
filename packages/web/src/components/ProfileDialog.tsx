@@ -1,4 +1,4 @@
-import { AVATAR_COLORS, AVATAR_MAX_BYTES, AVATAR_MIME_TYPES, type User } from '@agentmesh/sdk';
+import { AVATAR_COLORS, AVATAR_MAX_BYTES, AVATAR_MIME_TYPES, type User } from '@gish_reloaded/agentmesh-sdk';
 import { useRef, useState } from 'react';
 import { api, persistUser, storedUser } from '../lib/auth.js';
 import { participantColor } from '../lib/colors.js';

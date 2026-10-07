@@ -10,7 +10,7 @@ import {
   isPublishableEventType,
   parseEventPayload,
   type Event,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 import { z } from 'zod';
 import type { SessionAccess } from '../auth/principal.js';
 import type { Db } from '../db/client.js';

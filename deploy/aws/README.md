@@ -45,7 +45,7 @@ Say the deployment printed `https://abc123.execute-api.eu-north-1.amazonaws.com`
 ```powershell
 cd D:\Projects\AgentMesh
 npm run build
-npm link -w @agentmesh/cli
+npm link -w @gish_reloaded/agentmesh-cli
 
 agentmesh login --url https://abc123.execute-api.eu-north-1.amazonaws.com --register
 agentmesh session create "our-project"
@@ -74,7 +74,7 @@ Their subscription and their working copy stay on their machine. Node 22.4+ and 
 ```bash
 git clone https://github.com/GishReloaded/agent-mesh.git && cd agent-mesh
 npm install && npm run build
-npm link -w @agentmesh/cli
+npm link -w @gish_reloaded/agentmesh-cli
 
 agentmesh login --url https://abc123.execute-api.eu-north-1.amazonaws.com --register
 agentmesh session join <invite-token>

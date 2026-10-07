@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
-import type { Agent, ContextEntry, Event as MeshEvent, Session } from '@agentmesh/sdk';
+import type { Agent, ContextEntry, Event as MeshEvent, Session } from '@gish_reloaded/agentmesh-sdk';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CodexAgentSettings, deriveCodexView } from '../src/components/CodexPanel.js';
 import { MessageList, selectTimelineEvents } from '../src/components/Messages.js';

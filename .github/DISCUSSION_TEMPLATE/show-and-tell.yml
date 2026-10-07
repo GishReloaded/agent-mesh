@@ -1,0 +1,21 @@
+title: '[Integration] '
+body:
+  - type: markdown
+    attributes:
+      value: 'Share a reproducible integration or a real use case. Do not include private tokens, repositories or chat logs.'
+  - type: textarea
+    id: scenario
+    attributes:
+      label: What did you connect, and why?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Setup, versions and a minimal example
+    validations:
+      required: true
+  - type: textarea
+    id: experience
+    attributes:
+      label: What worked, and what should improve?

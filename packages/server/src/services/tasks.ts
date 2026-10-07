@@ -7,7 +7,7 @@ import {
   type Task,
   type TaskListQuery,
   type UpdateTaskRequest,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 import { jsonb, type Db } from '../db/client.js';
 import type { SessionAccess } from '../auth/principal.js';
 import { IdPrefix, newId } from '../ids.js';

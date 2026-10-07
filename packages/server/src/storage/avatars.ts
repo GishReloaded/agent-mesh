@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
-import { AVATAR_MAX_BYTES, AgentMeshError, ErrorCode, type AvatarMimeType } from '@agentmesh/protocol';
+import { AVATAR_MAX_BYTES, AgentMeshError, ErrorCode, type AvatarMimeType } from '@gish_reloaded/agentmesh-protocol';
 
 /**
  * Where uploaded avatars live.

@@ -4,7 +4,7 @@ import {
   LifecycleEventType,
   type UpdateProfileRequest,
   type User,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 import type { Db } from '../db/client.js';
 import { toPublicUser, toUser } from '../mappers.js';
 import { prepareAvatar, type AvatarStore } from '../storage/avatars.js';

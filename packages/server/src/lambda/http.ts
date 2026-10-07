@@ -1,4 +1,4 @@
-import { AVATAR_MIME_TYPES } from '@agentmesh/protocol';
+import { AVATAR_MIME_TYPES } from '@gish_reloaded/agentmesh-protocol';
 import awsLambdaFastify from '@fastify/aws-lambda';
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2, Context } from 'aws-lambda';
 import { app } from './runtime.js';

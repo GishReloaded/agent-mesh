@@ -4,7 +4,7 @@ import {
   type CreateInviteRequest,
   type CreateInviteResponse,
   type Invite,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 import type { Db } from '../db/client.js';
 import type { SessionAccess } from '../auth/principal.js';
 import { TokenPrefix, createOpaqueToken, hashToken } from '../auth/tokens.js';

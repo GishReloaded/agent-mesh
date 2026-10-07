@@ -1,0 +1,55 @@
+name: Publish npm packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tested release tag (for example v0.1.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: npm-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: agentmesh
+          POSTGRES_PASSWORD: agentmesh
+          POSTGRES_DB: agentmesh_publish_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U agentmesh -d agentmesh_publish_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://agentmesh:agentmesh@localhost:5432/agentmesh_publish_test
+      TEST_DATABASE_URL: postgres://agentmesh:agentmesh@localhost:5432/agentmesh_publish_test
+      JWT_SECRET: publish-test-secret-at-least-thirty-two-characters
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install -g npm@11.21.0
+      - name: Check release version
+        run: node -e "const p=require('./package.json');if(process.env.RELEASE_TAG!=='v'+p.version)throw Error('Tag/version mismatch')"
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run release:check
+      - run: npm publish -w @gish_reloaded/agentmesh-protocol --access public
+      - run: npm publish -w @gish_reloaded/agentmesh-sdk --access public
+      - run: npm publish -w @gish_reloaded/agentmesh-cli --access public

@@ -1,4 +1,4 @@
-import { API_PREFIX, AgentMeshError, ErrorCode, type ErrorResponse } from '@agentmesh/protocol';
+import { API_PREFIX, AgentMeshError, ErrorCode, type ErrorResponse } from '@gish_reloaded/agentmesh-protocol';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 

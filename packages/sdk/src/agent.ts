@@ -12,7 +12,7 @@ import {
   type SessionSnapshot,
   type Task,
   type TaskStatus,
-} from '@agentmesh/protocol';
+} from '@gish_reloaded/agentmesh-protocol';
 import { RealtimeClient, type RealtimeEvents } from './realtime.js';
 import { RestClient } from './rest.js';
 
