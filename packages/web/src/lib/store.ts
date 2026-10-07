@@ -10,7 +10,7 @@ import {
   type Session,
   type SessionMember,
   type Task,
-} from '@gish_reloaded/agentmesh-sdk';
+} from '@gish_reloaded/tandryx-sdk';
 import { api, ensureAccessToken, refreshAccessToken } from './auth.js';
 
 export interface SessionView {
@@ -121,7 +121,7 @@ class MeshStore {
       // Resolved per attempt: a socket that drops after the access token has
       // expired must reconnect with a new one, not the one it started with.
       token: ({ refresh }) => (refresh ? refreshAccessToken() : ensureAccessToken()),
-      clientName: 'agentmesh-web',
+      clientName: 'tandryx-web',
     });
     this.client = client;
 

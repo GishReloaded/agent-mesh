@@ -18,7 +18,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const envPath = join(root, '.env');
 const examplePath = join(root, '.env.example');
 
-const DEFAULT_DATABASE_URL = 'postgres://agentmesh:agentmesh@localhost:5432/agentmesh';
+const DEFAULT_DATABASE_URL = 'postgres://tandryx:tandryx@localhost:5432/tandryx';
 
 const say = (message) => process.stdout.write(`${message}\n`);
 const step = (message) => say(`\n== ${message}`);
@@ -84,7 +84,7 @@ async function ensureDatabase(url) {
 }
 
 async function main() {
-  say('AgentMesh setup');
+  say('Tandryx setup');
 
   step('1/3 Configuration');
   const existing = existsSync(envPath) ? parseEnv(readFileSync(envPath, 'utf8')) : {};
@@ -116,7 +116,7 @@ async function main() {
     say('Options:');
     say('  - start one with Docker:  docker compose up -d postgres');
     say('  - or set DATABASE_URL and run this again:');
-    say('      DATABASE_URL=postgres://user:pass@host:5432/agentmesh npm run setup');
+    say('      DATABASE_URL=postgres://user:pass@host:5432/tandryx npm run setup');
     process.exit(1);
   }
   await ensureDatabase(values.TEST_DATABASE_URL);

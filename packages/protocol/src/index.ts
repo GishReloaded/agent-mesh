@@ -1,8 +1,8 @@
 /**
- * `@gish_reloaded/agentmesh-protocol` — the wire contract for AgentMesh.
+ * `@gish_reloaded/tandryx-protocol` — the wire contract for Tandryx.
  *
  * This package contains no transport, no storage and no provider-specific
- * code. It is the single definition of what an AgentMesh session looks like,
+ * code. It is the single definition of what an Tandryx session looks like,
  * shared by the server, the SDK, the CLI and the web client, so that any
  * third-party implementation can be checked against the same schemas.
  */

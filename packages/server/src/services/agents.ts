@@ -1,5 +1,5 @@
 ﻿import {
-  AgentMeshError,
+  TandryxError,
   ErrorCode,
   LifecycleEventType,
   canDisconnectAgent,
@@ -8,11 +8,11 @@
   type AgentStatus,
   type RegisterAgentRequest,
   type UpdateAgentRequest,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import { jsonb, type Db } from '../db/client.js';
 import type { Principal, SessionAccess } from '../auth/principal.js';
 import { TokenPrefix, createOpaqueToken, hashToken } from '../auth/tokens.js';
-import { CloseCode } from '@gish_reloaded/agentmesh-protocol';
+import { CloseCode } from '@gish_reloaded/tandryx-protocol';
 import { IdPrefix, newId } from '../ids.js';
 import { toAgent } from '../mappers.js';
 import type { ConnectionRegistry } from '../realtime/registry.js';
@@ -30,7 +30,7 @@ export class AgentService {
     input: RegisterAgentRequest,
   ): Promise<{ agent: Agent; token: string }> {
     if (access.principal.kind !== 'user') {
-      throw new AgentMeshError(ErrorCode.Forbidden, 'Agents cannot register other agents.');
+      throw new TandryxError(ErrorCode.Forbidden, 'Agents cannot register other agents.');
     }
 
     const clash = await this.db
@@ -41,7 +41,7 @@ export class AgentService {
       .where('revoked_at', 'is', null)
       .executeTakeFirst();
     if (clash) {
-      throw new AgentMeshError(
+      throw new TandryxError(
         ErrorCode.Conflict,
         `An agent named "${input.name}" is already registered in this session.`,
       );
@@ -96,7 +96,7 @@ export class AgentService {
       .where('session_id', '=', sessionId)
       .where('revoked_at', 'is', null)
       .executeTakeFirst();
-    if (!row) throw new AgentMeshError(ErrorCode.NotFound, 'Agent not found.');
+    if (!row) throw new TandryxError(ErrorCode.NotFound, 'Agent not found.');
     return toAgent(row, (await this.registry.onlineAgentIds(sessionId)).has(agentId));
   }
 
@@ -126,12 +126,12 @@ export class AgentService {
       .where('session_id', '=', access.sessionId)
       .where('revoked_at', 'is', null)
       .executeTakeFirst();
-    if (!existing) throw new AgentMeshError(ErrorCode.NotFound, 'Agent not found.');
+    if (!existing) throw new TandryxError(ErrorCode.NotFound, 'Agent not found.');
 
     const isSelf = access.principal.kind === 'agent' && access.principal.agentId === agentId;
     const isOwner = access.principal.kind === 'user' && existing.owner_user_id === access.principal.userId;
     if (!isSelf && !isOwner && !canDisconnectAgent(access.role, false)) {
-      throw new AgentMeshError(ErrorCode.Forbidden, 'Only the agent itself or its owner may update it.');
+      throw new TandryxError(ErrorCode.Forbidden, 'Only the agent itself or its owner may update it.');
     }
 
     const patch: Record<string, unknown> = {};
@@ -188,11 +188,11 @@ export class AgentService {
       .where('session_id', '=', access.sessionId)
       .where('revoked_at', 'is', null)
       .executeTakeFirst();
-    if (!existing) throw new AgentMeshError(ErrorCode.NotFound, 'Agent not found.');
+    if (!existing) throw new TandryxError(ErrorCode.NotFound, 'Agent not found.');
 
     const isOwner = access.principal.kind === 'user' && existing.owner_user_id === access.principal.userId;
     if (!canDisconnectAgent(access.role, isOwner)) {
-      throw new AgentMeshError(
+      throw new TandryxError(
         ErrorCode.Forbidden,
         'Only the session owner or the agent owner may disconnect this agent.',
       );

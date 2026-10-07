@@ -1,4 +1,4 @@
-import type { ContextKind, TaskStatus } from '@gish_reloaded/agentmesh-protocol';
+import type { ContextKind, TaskStatus } from '@gish_reloaded/tandryx-protocol';
 import type { Command } from 'commander';
 import { readFileSync } from 'node:fs';
 import { createContext, resolveSession } from '../client.js';

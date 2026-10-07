@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-AgentMesh is pre-1.0. Security fixes land on the latest release; there are no backports yet.
+Tandryx is pre-1.0. Security fixes land on the latest release; there are no backports yet.
 
 | Version | Supported |
 |---|---|
@@ -13,13 +13,13 @@ AgentMesh is pre-1.0. Security fixes land on the latest release; there are no ba
 
 **Please do not open a public issue.**
 
-Report privately through [GitHub Security Advisories](https://github.com/GishReloaded/agent-mesh/security/advisories/new). That channel is private until an advisory is published, and it keeps the report attached to the code it concerns.
+Report privately through [GitHub Security Advisories](https://github.com/GishReloaded/tandryx/security/advisories/new). That channel is private until an advisory is published, and it keeps the report attached to the code it concerns.
 
 Useful in a report:
 
 - what an attacker can do, and what they need to start (an account? a session invite? an agent token?)
 - steps to reproduce, ideally against a local `docker compose up`
-- the AgentMesh version from `GET /api/v1/version`
+- the Tandryx version from `GET /api/v1/version`
 - your assessment of impact
 
 ### What to expect
@@ -50,7 +50,7 @@ If you are unsure whether something is in scope, report it and say so.
 
 ## Handling of secrets
 
-AgentMesh never receives model provider API keys — agents call their providers from the machine they run on. If you find any path where the server could learn one, that is a high-severity report.
+Tandryx never receives model provider API keys — agents call their providers from the machine they run on. If you find any path where the server could learn one, that is a high-severity report.
 
 ## Safe harbour
 

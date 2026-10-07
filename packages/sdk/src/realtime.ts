@@ -1,5 +1,5 @@
 import {
-  AgentMeshError,
+  TandryxError,
   ClientFrameType,
   CloseCode,
   DevEventType,
@@ -18,7 +18,7 @@ import {
   type Message,
   type SessionSnapshot,
   type Task,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import { Emitter } from './emitter.js';
 
 export type ConnectionState = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'closed';
@@ -38,7 +38,7 @@ export interface RealtimeEvents {
   typing: { sessionId: string; actorId: string | null; active: boolean };
   /** The client fell too far behind; refetch state for this session. */
   resync: { sessionId: string; lastSeq: number };
-  error: AgentMeshError;
+  error: TandryxError;
   close: { code: number; reason: string };
 }
 
@@ -72,7 +72,7 @@ export interface RealtimeOptions {
 
 interface Pending {
   resolve: (value: { seq?: number; resourceId?: string }) => void;
-  reject: (error: AgentMeshError) => void;
+  reject: (error: TandryxError) => void;
   timer: ReturnType<typeof setTimeout>;
 }
 
@@ -213,7 +213,7 @@ export class RealtimeClient {
     if (!Impl) {
       this.events.emit(
         'error',
-        new AgentMeshError(ErrorCode.Internal, 'No WebSocket implementation available in this runtime.'),
+        new TandryxError(ErrorCode.Internal, 'No WebSocket implementation available in this runtime.'),
       );
       return;
     }
@@ -231,7 +231,7 @@ export class RealtimeClient {
     }
     if (!token) {
       this.setState('closed');
-      this.events.emit('error', new AgentMeshError(ErrorCode.Unauthorized, 'No credential available to connect.'));
+      this.events.emit('error', new TandryxError(ErrorCode.Unauthorized, 'No credential available to connect.'));
       return;
     }
     if (this.closedByUser) return;
@@ -246,8 +246,8 @@ export class RealtimeClient {
       this.send(ClientFrameType.Hello, {
         token,
         client: {
-          name: this.options.clientName ?? 'agentmesh-sdk',
-          version: this.options.clientVersion ?? '0.1.0',
+          name: this.options.clientName ?? 'tandryx-sdk',
+          version: this.options.clientVersion ?? '0.2.0',
         },
       });
     };
@@ -265,7 +265,7 @@ export class RealtimeClient {
       this.stopHeartbeat();
       for (const [, pending] of this.pending) {
         clearTimeout(pending.timer);
-        pending.reject(new AgentMeshError(ErrorCode.Internal, 'Connection closed before acknowledgement.'));
+        pending.reject(new TandryxError(ErrorCode.Internal, 'Connection closed before acknowledgement.'));
       }
       this.pending.clear();
       this.events.emit('close', { code: event.code, reason: event.reason });
@@ -287,7 +287,7 @@ export class RealtimeClient {
         this.setState('closed');
         this.events.emit(
           'error',
-          new AgentMeshError(ErrorCode.Unauthorized, event.reason || 'Connection rejected by server.'),
+          new TandryxError(ErrorCode.Unauthorized, event.reason || 'Connection rejected by server.'),
         );
         return;
       }
@@ -319,8 +319,8 @@ export class RealtimeClient {
         this.send(ClientFrameType.Hello, {
           token,
           client: {
-            name: this.options.clientName ?? 'agentmesh-sdk',
-            version: this.options.clientVersion ?? '0.1.0',
+            name: this.options.clientName ?? 'tandryx-sdk',
+            version: this.options.clientVersion ?? '0.2.0',
           },
         });
       } catch {
@@ -423,7 +423,7 @@ export class RealtimeClient {
           return;
         }
 
-        const error = AgentMeshError.fromBody({
+        const error = TandryxError.fromBody({
           code: String(payload.code ?? ErrorCode.Internal),
           message: String(payload.message ?? 'Unknown error.'),
           details: payload.details,
@@ -527,7 +527,7 @@ export class RealtimeClient {
   private send(type: string, payload: unknown, id = this.nextFrameId()): string {
     const socket = this.socket;
     if (!socket || socket.readyState !== socket.OPEN) {
-      throw new AgentMeshError(ErrorCode.Internal, 'Not connected.');
+      throw new TandryxError(ErrorCode.Internal, 'Not connected.');
     }
     socket.send(JSON.stringify({ v: PROTOCOL_VERSION, id, type, ts: new Date().toISOString(), payload }));
     return id;
@@ -539,7 +539,7 @@ export class RealtimeClient {
       const id = this.nextFrameId();
       const timer = setTimeout(() => {
         this.pending.delete(id);
-        reject(new AgentMeshError(ErrorCode.Internal, `Timed out waiting for acknowledgement of ${type}.`));
+        reject(new TandryxError(ErrorCode.Internal, `Timed out waiting for acknowledgement of ${type}.`));
       }, ACK_TIMEOUT_MS);
 
       this.pending.set(id, { resolve, reject, timer });
@@ -548,7 +548,7 @@ export class RealtimeClient {
       } catch (error) {
         clearTimeout(timer);
         this.pending.delete(id);
-        reject(error as AgentMeshError);
+        reject(error as TandryxError);
       }
     });
   }

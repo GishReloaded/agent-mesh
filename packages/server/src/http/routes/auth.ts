@@ -1,13 +1,13 @@
 import {
   AVATAR_MAX_BYTES,
   AVATAR_MIME_TYPES,
-  AgentMeshError,
+  TandryxError,
   ErrorCode,
   loginRequestSchema,
   refreshRequestSchema,
   registerRequestSchema,
   updateProfileRequestSchema,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import type { FastifyInstance } from 'fastify';
 import type { Services } from '../../container.js';
 import { authenticate, requireUser } from '../auth.js';
@@ -67,7 +67,7 @@ export async function authRoutes(app: FastifyInstance, services: Services): Prom
       const principal = requireUser(request);
       const body = request.body;
       if (!Buffer.isBuffer(body)) {
-        throw new AgentMeshError(
+        throw new TandryxError(
           ErrorCode.ValidationFailed,
           `Send the image bytes as the request body with one of: ${AVATAR_MIME_TYPES.join(', ')}.`,
         );

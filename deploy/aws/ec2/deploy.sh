@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Deploy AgentMesh to AWS. See deploy/aws/README.md.
+# Deploy Tandryx to AWS. See deploy/aws/README.md.
 #
 #   ./deploy/aws/deploy.sh
 #   SSH_CIDR=203.0.113.4/32 KEY_NAME=mykey ./deploy/aws/deploy.sh
 #   DESTROY=1 ./deploy/aws/deploy.sh
 set -euo pipefail
 
-STACK_NAME="${STACK_NAME:-agentmesh}"
+STACK_NAME="${STACK_NAME:-tandryx}"
 REGION="${REGION:-$(aws configure get region)}"
 INSTANCE_TYPE="${INSTANCE_TYPE:-t4g.small}"
 KEY_NAME="${KEY_NAME:-}"
@@ -45,11 +45,11 @@ cd "$repo_root"
 if [ -n "$(git status --porcelain)" ]; then
   note 'note: uncommitted changes are NOT included - the archive is built from HEAD'
 fi
-archive="$(mktemp -d)/agentmesh-src.tar.gz"
+archive="$(mktemp -d)/tandryx-src.tar.gz"
 git archive --format=tar.gz -o "$archive" HEAD
 note "$archive (from $(git rev-parse --short HEAD))"
 
-bucket="agentmesh-deploy-${account}-${REGION}"
+bucket="tandryx-deploy-${account}-${REGION}"
 step "Uploading to s3://$bucket"
 if ! aws s3api head-bucket --bucket "$bucket" --region "$REGION" >/dev/null 2>&1; then
   note 'creating bucket'
@@ -64,7 +64,7 @@ if ! aws s3api head-bucket --bucket "$bucket" --region "$REGION" >/dev/null 2>&1
   aws s3api put-bucket-encryption --bucket "$bucket" \
     --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}' >/dev/null
 fi
-aws s3 cp "$archive" "s3://$bucket/agentmesh-src.tar.gz" --region "$REGION" >/dev/null
+aws s3 cp "$archive" "s3://$bucket/tandryx-src.tar.gz" --region "$REGION" >/dev/null
 note 'uploaded'
 
 step 'Resolving Amazon Linux 2023 AMI'
@@ -82,7 +82,7 @@ step 'Deploying CloudFormation stack'
 note 'first run takes 10-20 minutes: CloudFront provisioning and the initial build'
 params=(
   "SourceBucket=$bucket"
-  'SourceKey=agentmesh-src.tar.gz'
+  'SourceKey=tandryx-src.tar.gz'
   "AmiId=$ami_id"
   "InstanceType=$INSTANCE_TYPE"
   "AllowRegistration=$ALLOW_REGISTRATION"
@@ -96,7 +96,7 @@ aws cloudformation deploy \
   --template-file "$here/cloudformation.yml" \
   --capabilities CAPABILITY_IAM \
   --parameter-overrides "${params[@]}" \
-  --tags project=agentmesh
+  --tags project=tandryx
 
 step 'Done'
 aws cloudformation describe-stacks --region "$REGION" --stack-name "$STACK_NAME" \

@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  AgentMesh on AWS: one EC2 instance running the server and PostgreSQL in
+  Tandryx on AWS: one EC2 instance running the server and PostgreSQL in
   containers, fronted by CloudFront for HTTPS and WebSocket termination.
 
   CloudFront is what makes this work without owning a domain: it supplies a
@@ -11,7 +11,7 @@ Description: >
 Parameters:
   ProjectName:
     Type: String
-    Default: agentmesh
+    Default: tandryx
     Description: Prefix for resource names and tags.
 
   InstanceType:
@@ -35,7 +35,7 @@ Parameters:
 
   SourceKey:
     Type: String
-    Default: agentmesh-src.tar.gz
+    Default: tandryx-src.tar.gz
     Description: Key of the source archive inside the bucket.
 
   KeyName:
@@ -156,7 +156,7 @@ Resources:
         Origins:
           # Built from the Elastic IP so this resource does not depend on the
           # instance, which in turn needs this distribution's domain name.
-          - Id: agentmesh-origin
+          - Id: tandryx-origin
             DomainName: !Sub
               - 'ec2-${DashedIp}.${AWS::Region}.compute.amazonaws.com'
               - DashedIp: !Join ['-', !Split ['.', !Ref ElasticIP]]
@@ -166,7 +166,7 @@ Resources:
               OriginReadTimeout: 60
               OriginKeepaliveTimeout: 60
         DefaultCacheBehavior:
-          TargetOriginId: agentmesh-origin
+          TargetOriginId: tandryx-origin
           ViewerProtocolPolicy: redirect-to-https
           AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
           CachedMethods: [GET, HEAD]
@@ -200,7 +200,7 @@ Resources:
         Fn::Base64: !Sub |
           #!/bin/bash
           set -euxo pipefail
-          exec > >(tee /var/log/agentmesh-bootstrap.log) 2>&1
+          exec > >(tee /var/log/tandryx-bootstrap.log) 2>&1
 
           dnf -y update
           dnf -y install docker git tar gzip
@@ -224,55 +224,55 @@ Resources:
             echo '/swapfile none swap sw 0 0' >> /etc/fstab
           fi
 
-          mkdir -p /opt/agentmesh
-          cd /opt/agentmesh
+          mkdir -p /opt/tandryx
+          cd /opt/tandryx
           aws s3 cp "s3://${SourceBucket}/${SourceKey}" ./src.tar.gz
           tar -xzf src.tar.gz
           rm -f src.tar.gz
 
           # Secrets are generated here, never passed through CloudFormation
           # parameters, so they do not appear in the stack or in CloudTrail.
-          if [ ! -f /opt/agentmesh/.env ]; then
+          if [ ! -f /opt/tandryx/.env ]; then
             DB_PASSWORD=$(openssl rand -hex 24)
             JWT_SECRET=$(openssl rand -hex 32)
-            cat > /opt/agentmesh/.env <<ENVFILE
+            cat > /opt/tandryx/.env <<ENVFILE
           NODE_ENV=production
           HOST=0.0.0.0
           PORT=4000
           POSTGRES_PASSWORD=${!DB_PASSWORD}
-          DATABASE_URL=postgres://agentmesh:${!DB_PASSWORD}@postgres:5432/agentmesh
+          DATABASE_URL=postgres://tandryx:${!DB_PASSWORD}@postgres:5432/tandryx
           JWT_SECRET=${!JWT_SECRET}
           PUBLIC_URL=https://${Distribution.DomainName}
           CORS_ORIGINS=https://${Distribution.DomainName}
           ALLOW_REGISTRATION=${AllowRegistration}
           LOG_LEVEL=info
           ENVFILE
-            chmod 600 /opt/agentmesh/.env
+            chmod 600 /opt/tandryx/.env
           fi
 
           # Migrations run on server boot, so this is the only step needed.
           docker compose -f deploy/aws/ec2/docker-compose.prod.yml --env-file .env up -d --build
 
           # Bring the stack back up after a reboot.
-          cat > /etc/systemd/system/agentmesh.service <<'UNIT'
+          cat > /etc/systemd/system/tandryx.service <<'UNIT'
           [Unit]
-          Description=AgentMesh
+          Description=Tandryx
           Requires=docker.service
           After=docker.service network-online.target
 
           [Service]
           Type=oneshot
           RemainAfterExit=yes
-          WorkingDirectory=/opt/agentmesh
+          WorkingDirectory=/opt/tandryx
           ExecStart=/usr/bin/docker compose -f deploy/aws/ec2/docker-compose.prod.yml --env-file .env up -d
           ExecStop=/usr/bin/docker compose -f deploy/aws/ec2/docker-compose.prod.yml --env-file .env down
 
           [Install]
           WantedBy=multi-user.target
           UNIT
-          systemctl enable agentmesh.service
+          systemctl enable tandryx.service
 
-          echo "AgentMesh bootstrap finished at $(date -Is)"
+          echo "Tandryx bootstrap finished at $(date -Is)"
 
   ElasticIPAssociation:
     Type: AWS::EC2::EIPAssociation
@@ -302,4 +302,4 @@ Outputs:
 
   BootstrapLog:
     Description: Where to look if the site does not come up.
-    Value: /var/log/agentmesh-bootstrap.log
+    Value: /var/log/tandryx-bootstrap.log

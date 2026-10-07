@@ -10,7 +10,7 @@ export function InvitePage() {
 
   useEffect(() => {
     if (!isAuthenticated()) {
-      sessionStorage.setItem('agentmesh.pendingInvite', token);
+      sessionStorage.setItem('tandryx.pendingInvite', token);
       navigate('/login');
       return;
     }

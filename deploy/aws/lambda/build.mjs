@@ -68,7 +68,7 @@ try {
   await stat(webDist);
   await cp(webDist, join(outDir, 'web'), { recursive: true });
 } catch {
-  console.warn('  web client not built - run "npm run build -w @agentmesh/web" first');
+  console.warn('  web client not built - run "npm run build -w @tandryx/web" first');
 }
 
 const files = await readdir(outDir);

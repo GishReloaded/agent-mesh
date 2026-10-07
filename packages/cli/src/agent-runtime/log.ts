@@ -42,7 +42,7 @@ export class RunLog {
   }
 
   private static defaultPath(sessionId: string, agentName: string): string {
-    const home = process.env.AGENTMESH_HOME ?? join(homedir(), '.agentmesh');
+    const home = process.env.TANDRYX_HOME ?? join(homedir(), '.tandryx');
     const day = new Date().toISOString().slice(0, 10);
     const safeAgent = agentName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'agent';
     return join(home, 'logs', `${safeAgent}-${sessionId.slice(-8)}-${day}.log`);

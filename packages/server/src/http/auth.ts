@@ -1,4 +1,4 @@
-import { AgentMeshError, ErrorCode } from '@gish_reloaded/agentmesh-protocol';
+import { TandryxError, ErrorCode } from '@gish_reloaded/tandryx-protocol';
 import type { FastifyRequest } from 'fastify';
 import type { Principal } from '../auth/principal.js';
 import { TokenPrefix, tokenLooksLike } from '../auth/tokens.js';
@@ -19,11 +19,11 @@ declare module 'fastify' {
  */
 export async function resolvePrincipal(services: Services, header: string | undefined): Promise<Principal> {
   if (!header) {
-    throw new AgentMeshError(ErrorCode.Unauthorized, 'Authorization header is missing.');
+    throw new TandryxError(ErrorCode.Unauthorized, 'Authorization header is missing.');
   }
   const [scheme, token] = header.split(' ');
   if (scheme?.toLowerCase() !== 'bearer' || !token) {
-    throw new AgentMeshError(ErrorCode.Unauthorized, 'Expected an "Authorization: Bearer <token>" header.');
+    throw new TandryxError(ErrorCode.Unauthorized, 'Expected an "Authorization: Bearer <token>" header.');
   }
   return resolveToken(services, token);
 }
@@ -32,7 +32,7 @@ export async function resolveToken(services: Services, token: string): Promise<P
   if (tokenLooksLike(token, TokenPrefix.Agent)) {
     const principal = await services.agents.findByToken(token);
     if (!principal) {
-      throw new AgentMeshError(ErrorCode.InvalidToken, 'Agent token is not valid or has been revoked.');
+      throw new TandryxError(ErrorCode.InvalidToken, 'Agent token is not valid or has been revoked.');
     }
     return principal;
   }
@@ -51,7 +51,7 @@ export function authenticate(services: Services) {
 
 export function requirePrincipal(request: FastifyRequest): Principal {
   if (!request.principal) {
-    throw new AgentMeshError(ErrorCode.Unauthorized, 'Authentication required.');
+    throw new TandryxError(ErrorCode.Unauthorized, 'Authentication required.');
   }
   return request.principal;
 }
@@ -60,7 +60,7 @@ export function requirePrincipal(request: FastifyRequest): Principal {
 export function requireUser(request: FastifyRequest): Extract<Principal, { kind: 'user' }> {
   const principal = requirePrincipal(request);
   if (principal.kind !== 'user') {
-    throw new AgentMeshError(ErrorCode.Forbidden, 'This endpoint is available to user accounts only.');
+    throw new TandryxError(ErrorCode.Forbidden, 'This endpoint is available to user accounts only.');
   }
   return principal;
 }

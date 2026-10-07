@@ -1,12 +1,12 @@
 import {
-  AgentMeshError,
+  TandryxError,
   ErrorCode,
   LifecycleEventType,
   type ContextEntry,
   type ContextListQuery,
   type ContextRevision,
   type PublishContextRequest,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import { jsonb, type Db } from '../db/client.js';
 import type { SessionAccess } from '../auth/principal.js';
 import { IdPrefix, newId } from '../ids.js';
@@ -15,7 +15,7 @@ import { escapeLike } from './messages.js';
 import type { EventLog } from './eventLog.js';
 
 /**
- * Shared context is the part of AgentMesh that is not a chat.
+ * Shared context is the part of Tandryx that is not a chat.
  *
  * Entries are typed and keyed: publishing `api_contract:auth.login` twice
  * produces version 2 of one entry, not two competing descriptions. That is what
@@ -43,7 +43,7 @@ export class ContextService {
       .where('id', '=', entryId)
       .where('session_id', '=', sessionId)
       .executeTakeFirst();
-    if (!row) throw new AgentMeshError(ErrorCode.NotFound, 'Context entry not found.');
+    if (!row) throw new TandryxError(ErrorCode.NotFound, 'Context entry not found.');
     return toContextEntry(row);
   }
 
@@ -75,7 +75,7 @@ export class ContextService {
     if (input.expectedVersion !== undefined) {
       const current = existing?.version ?? 0;
       if (current !== input.expectedVersion) {
-        throw new AgentMeshError(
+        throw new TandryxError(
           ErrorCode.Conflict,
           `Context entry ${input.kind}:${input.key} is at version ${current}, not ${input.expectedVersion}.`,
           { details: { currentVersion: current } },

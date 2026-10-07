@@ -7,7 +7,7 @@ import { ask } from '../prompt.js';
 export function registerAuthCommands(program: Command): void {
   program
     .command('login')
-    .description('Sign in to an AgentMesh server')
+    .description('Sign in to an Tandryx server')
     .option('-u, --url <url>', 'server URL')
     .option('-e, --email <email>', 'account email')
     .option('--register', 'create a new account instead of signing in')
@@ -47,7 +47,7 @@ export function registerAuthCommands(program: Command): void {
             `Switched from ${previous.url}. Its session and agent tokens were cleared - they do not exist here.`,
           ),
         );
-        info(style.dim('Create or join one:  agentmesh session create "<name>"  |  agentmesh session join <token>'));
+        info(style.dim('Create or join one:  tandryx session create "<name>"  |  tandryx session join <token>'));
       }
     });
 

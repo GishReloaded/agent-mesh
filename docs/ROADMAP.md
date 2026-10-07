@@ -21,13 +21,13 @@ What exists today, what is deliberately absent, and what each missing piece woul
 | CLI                      | Auth, sessions, agents, messaging, tasks, context, events, search, live watch                              |
 | SDK                      | TypeScript client using platform transports, with protocol types and schemas                               |
 | Security                 | scrypt passwords, rotating refresh tokens, opaque revocable agent tokens, role matrix, rate limits         |
-| Subscription agents      | `agentmesh agent run` drives Claude Code, Codex, Gemini CLI or any command, on the user's own subscription |
+| Subscription agents      | `tandryx agent run` drives Claude Code, Codex, Gemini CLI or any command, on the user's own subscription |
 
 ## Next — v0.2
 
 **Capability-based routing.** `capabilities` and `AGENT_HANDOFF` already exist as data; nothing acts on them. The next step is `POST /sessions/:id/tasks/:id/dispatch`, which selects an online agent matching a capability filter and assigns the task. Deliberately a single explicit call rather than an autonomous scheduler — the moment a system starts assigning work to models on its own, the interesting failures are the ones nobody watched happen.
 
-**AgentMesh as an MCP server.** Today a local agent is _pushed_: `agentmesh agent run` wakes the tool up on a mention. The complement is a _pull_ model — exposing the session to the assistant already running in someone's editor, as MCP tools (`getContext`, `publishContext`, `sendMessage`, `listTasks`). That suits subscription users best, because it needs no headless mode and keeps the human in the loop by construction. Probably the single highest-value item on this list.
+**Tandryx as an MCP server.** Today a local agent is _pushed_: `tandryx agent run` wakes the tool up on a mention. The complement is a _pull_ model — exposing the session to the assistant already running in someone's editor, as MCP tools (`getContext`, `publishContext`, `sendMessage`, `listTasks`). That suits subscription users best, because it needs no headless mode and keeps the human in the loop by construction. Probably the single highest-value item on this list.
 
 **Registering agents from the web UI.** Agents can only be created through the CLI or the API today, which is an obvious gap for anyone who starts in the browser.
 
@@ -49,11 +49,11 @@ What exists today, what is deliberately absent, and what each missing piece woul
 
 ## Considered and rejected for now
 
-**End-to-end encryption.** Incompatible with server-side mention resolution, search and shared-context versioning — the features that make AgentMesh more than a chat. Doing both well means client-side indexing and a key distribution story for agents on machines their owner does not administer. Worth doing properly one day, not worth faking.
+**End-to-end encryption.** Incompatible with server-side mention resolution, search and shared-context versioning — the features that make Tandryx more than a chat. Doing both well means client-side indexing and a key distribution story for agents on machines their owner does not administer. Worth doing properly one day, not worth faking.
 
 **Federation between servers.** Cross-server identity, trust and event ordering are each a project. One server per organization is the right unit until the single-server experience is unarguable.
 
-**Built-in model calls.** AgentMesh would then hold provider keys and take on rate limits, billing and provider outages. Agents call their providers directly from the machine they run on; the server never sees a key. This is the single most important thing the project must not do.
+**Built-in model calls.** Tandryx would then hold provider keys and take on rate limits, billing and provider outages. Agents call their providers directly from the machine they run on; the server never sees a key. This is the single most important thing the project must not do.
 
 **Storing file contents.** Turning a collaboration server into a second, worse Git. Paths and commit hashes reference the repository that already exists.
 

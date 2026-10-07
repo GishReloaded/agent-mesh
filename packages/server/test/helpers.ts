@@ -23,7 +23,7 @@ export function databaseAvailable(): boolean {
 
 export const skipMessage =
   'TEST_DATABASE_URL is not set - skipping server integration tests. ' +
-  'Set it to a throwaway database, e.g. postgres://user:pass@localhost:5432/agentmesh_test';
+  'Set it to a throwaway database, e.g. postgres://user:pass@localhost:5432/tandryx_test';
 
 function assertThrowaway(url: string): void {
   const name = new URL(url).pathname.replace(/^\//, '');

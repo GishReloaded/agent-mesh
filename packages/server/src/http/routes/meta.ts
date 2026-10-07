@@ -1,4 +1,4 @@
-import { PROTOCOL_LIMITS, PROTOCOL_VERSION } from '@gish_reloaded/agentmesh-protocol';
+import { PROTOCOL_LIMITS, PROTOCOL_VERSION } from '@gish_reloaded/tandryx-protocol';
 import type { FastifyInstance } from 'fastify';
 import type { Services } from '../../container.js';
 import { pingDb } from '../../db/client.js';
@@ -17,7 +17,7 @@ export async function metaRoutes(app: FastifyInstance, services: Services): Prom
   });
 
   app.get('/version', async () => ({
-    name: 'agentmesh',
+    name: 'tandryx',
     version: SERVER_VERSION,
     protocol: PROTOCOL_VERSION,
     limits: { ...PROTOCOL_LIMITS, agentChainLimit: services.config.agentChainLimit },

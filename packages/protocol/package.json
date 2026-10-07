@@ -1,7 +1,7 @@
 {
-  "name": "@gish_reloaded/agentmesh-protocol",
-  "version": "0.1.0",
-  "description": "AgentMesh protocol: provider-agnostic types, schemas and constants for agentmesh/v1",
+  "name": "@gish_reloaded/tandryx-protocol",
+  "version": "0.2.0",
+  "description": "Tandryx protocol: provider-agnostic types, schemas and constants for tandryx/v1",
   "license": "Apache-2.0",
   "publishConfig": {
     "access": "public"
@@ -33,15 +33,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GishReloaded/agent-mesh.git",
+    "url": "git+https://github.com/GishReloaded/tandryx.git",
     "directory": "packages/protocol"
   },
   "bugs": {
-    "url": "https://github.com/GishReloaded/agent-mesh/issues"
+    "url": "https://github.com/GishReloaded/tandryx/issues"
   },
-  "homepage": "https://github.com/GishReloaded/agent-mesh/tree/main/packages/protocol#readme",
+  "homepage": "https://github.com/GishReloaded/tandryx/tree/main/packages/protocol#readme",
   "keywords": [
-    "agentmesh",
+    "tandryx",
     "ai-agents",
     "collaboration",
     "realtime",

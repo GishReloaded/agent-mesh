@@ -1,7 +1,7 @@
-# AgentMesh - single image serving the API, the realtime gateway and the web UI.
+# Tandryx - single image serving the API, the realtime gateway and the web UI.
 #
-# Build:  docker build -t agentmesh .
-# Run:    docker run -p 4000:4000 -e DATABASE_URL=... -e JWT_SECRET=... agentmesh
+# Build:  docker build -t tandryx .
+# Run:    docker run -p 4000:4000 -e DATABASE_URL=... -e JWT_SECRET=... tandryx
 
 FROM node:22-alpine AS build
 WORKDIR /app
@@ -26,7 +26,7 @@ FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
-RUN addgroup -S agentmesh && adduser -S agentmesh -G agentmesh
+RUN addgroup -S tandryx && adduser -S tandryx -G tandryx
 
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./package.json
@@ -41,7 +41,7 @@ COPY --from=build /app/packages/server/dist ./packages/server/dist
 COPY --from=build /app/packages/server/src/db/migrations ./packages/server/dist/db/migrations
 COPY --from=build /app/packages/web/dist ./packages/web/dist
 
-USER agentmesh
+USER tandryx
 EXPOSE 4000
 ENV HOST=0.0.0.0 PORT=4000
 

@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
-import { AVATAR_MAX_BYTES, AgentMeshError, ErrorCode, type AvatarMimeType } from '@gish_reloaded/agentmesh-protocol';
+import { AVATAR_MAX_BYTES, TandryxError, ErrorCode, type AvatarMimeType } from '@gish_reloaded/tandryx-protocol';
 
 /**
  * Where uploaded avatars live.
@@ -41,10 +41,10 @@ export function sniffImageType(body: Buffer): AvatarMimeType | null {
 /** Validate an upload and produce the key it should be stored under. */
 export function prepareAvatar(userId: string, body: Buffer): { key: string; contentType: AvatarMimeType } {
   if (body.length === 0) {
-    throw new AgentMeshError(ErrorCode.ValidationFailed, 'The uploaded file is empty.');
+    throw new TandryxError(ErrorCode.ValidationFailed, 'The uploaded file is empty.');
   }
   if (body.length > AVATAR_MAX_BYTES) {
-    throw new AgentMeshError(
+    throw new TandryxError(
       ErrorCode.PayloadTooLarge,
       `Avatars must be ${Math.round(AVATAR_MAX_BYTES / 1024)} KB or smaller.`,
     );
@@ -52,7 +52,7 @@ export function prepareAvatar(userId: string, body: Buffer): { key: string; cont
 
   const contentType = sniffImageType(body);
   if (!contentType) {
-    throw new AgentMeshError(
+    throw new TandryxError(
       ErrorCode.ValidationFailed,
       'That file is not a PNG, JPEG, WebP or GIF image. SVG is not accepted.',
     );
@@ -74,7 +74,7 @@ export class LocalAvatarStore implements AvatarStore {
     // checking costs nothing and closes the door on that ever changing.
     const full = resolve(this.root, key);
     if (!full.startsWith(resolve(this.root))) {
-      throw new AgentMeshError(ErrorCode.ValidationFailed, 'Invalid avatar key.');
+      throw new TandryxError(ErrorCode.ValidationFailed, 'Invalid avatar key.');
     }
     return full;
   }

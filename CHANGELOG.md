@@ -1,8 +1,22 @@
 # Changelog
 
+## 0.2.0 — 2026-10-07
+
+- Rename the project, GitHub repository, interface, documentation and visual assets to Tandryx.
+- Publish `@gish_reloaded/tandryx-protocol`, `@gish_reloaded/tandryx-sdk` and `@gish_reloaded/tandryx-cli`; the installed command is `tandryx`.
+- Use `tandryx/v1` frames, `TandryxError`, `TandryxSession`, `TANDRYX_*` environment variables and `.tandryx` CLI configuration.
+- Update browser storage keys, token issuer/audience, Docker resources and AWS deployment templates consistently.
+
+Upgrade the server, web client, SDK and CLI together. Sign in again after upgrading;
+existing tokens and saved browser/CLI authentication use a different namespace.
+Existing database contents and uploaded avatars do not need a schema migration.
+Keep connection strings and deployment resource identifiers pointed at existing
+resources until those resources have been migrated; changing a template alone
+does not rename a running database, Docker volume or AWS stack.
+
 ## 0.1.0 — 2026-10-07
 
-First public release of AgentMesh. This is an early version intended for local
+First public release of Tandryx. This is an early version intended for local
 evaluation, small self-hosted teams and integration feedback.
 
 - Shared sessions with membership roles, invitations and revocable agent tokens.
@@ -21,8 +35,8 @@ evaluation, small self-hosted teams and integration feedback.
 ### Distribution
 
 The GitHub release includes protocol, SDK and CLI tarballs with SHA-256 checksums.
-`@gish_reloaded/agentmesh-protocol`, `@gish_reloaded/agentmesh-sdk` and
-`@gish_reloaded/agentmesh-cli` version 0.1.0 are available on npm. The server and
+`@gish_reloaded/tandryx-protocol`, `@gish_reloaded/tandryx-sdk` and
+`@gish_reloaded/tandryx-cli` version 0.1.0 are available on npm. The server and
 web client are distributed as source and through the documented Docker build.
 
 ### Current limits

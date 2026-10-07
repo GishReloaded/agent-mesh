@@ -4,7 +4,7 @@ import {
   type Event as MeshEvent,
   type Identity,
   type Message,
-} from '@gish_reloaded/agentmesh-sdk';
+} from '@gish_reloaded/tandryx-sdk';
 import { useEffect, useRef } from 'react';
 import { participantColor } from '../lib/colors.js';
 import { localFileHref, renderMarkdown } from '../lib/markdown.js';

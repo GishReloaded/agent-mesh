@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { PROTOCOL_VERSION } from '@gish_reloaded/agentmesh-protocol';
+import { PROTOCOL_VERSION } from '@gish_reloaded/tandryx-protocol';
 import { RealtimeClient } from '../src/realtime.js';
 
 interface Frame {

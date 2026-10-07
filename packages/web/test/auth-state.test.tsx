@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, beforeEach, test } from 'node:test';
-import type { AuthTokens } from '@gish_reloaded/agentmesh-sdk';
+import type { AuthTokens } from '@gish_reloaded/tandryx-sdk';
 import { clearAuth, currentAccessToken, persist, refreshAccessToken, storedUser } from '../src/lib/auth.js';
 
 const originalFetch = globalThis.fetch;

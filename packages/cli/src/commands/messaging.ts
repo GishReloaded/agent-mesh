@@ -1,4 +1,4 @@
-import { connect } from '@gish_reloaded/agentmesh-sdk';
+import { connect } from '@gish_reloaded/tandryx-sdk';
 import type { Command } from 'commander';
 import { createContext, resolveSession } from '../client.js';
 import { currentProfile, loadConfig } from '../config.js';
@@ -44,11 +44,11 @@ export function registerMessagingCommands(program: Command): void {
     .option('--events', 'show every event, not just messages')
     .action(async (options: { session?: string; events?: boolean }) => {
       const profile = currentProfile(loadConfig());
-      const token = process.env.AGENTMESH_TOKEN ?? profile.accessToken;
-      if (!token) throw new Error('Not logged in. Run: agentmesh login');
+      const token = process.env.TANDRYX_TOKEN ?? profile.accessToken;
+      if (!token) throw new Error('Not logged in. Run: tandryx login');
 
       const sessionId = resolveSession(options.session);
-      const mesh = await connect({ url: profile.url, token, sessionId, clientName: 'agentmesh-cli' });
+      const mesh = await connect({ url: profile.url, token, sessionId, clientName: 'tandryx-cli' });
       info(style.dim(`Watching ${sessionId}. Press Ctrl+C to stop.\n`));
 
       mesh.on('event', (event) => {

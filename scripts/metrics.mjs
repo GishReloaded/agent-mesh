@@ -7,7 +7,7 @@ const fetchJson = async (url) => {
   if (!response.ok) throw new Error(`Public metrics request failed: ${response.status} ${url}`);
   return response.json();
 };
-const repository = 'GishReloaded/agent-mesh';
+const repository = 'GishReloaded/tandryx';
 const repo = await fetchJson(`https://api.github.com/repos/${repository}`);
 const releases = await fetchJson(`https://api.github.com/repos/${repository}/releases?per_page=100`);
 const packages = [];

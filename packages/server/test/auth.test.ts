@@ -155,7 +155,7 @@ describe('authentication', { skip: databaseAvailable() ? false : skipMessage }, 
   it('reports protocol version and health', async () => {
     const version = await server.app.inject({ method: 'GET', url: '/api/v1/version' });
     assert.equal(version.statusCode, 200);
-    assert.equal((version.json() as { protocol: string }).protocol, 'agentmesh/v1');
+    assert.equal((version.json() as { protocol: string }).protocol, 'tandryx/v1');
 
     const health = await server.app.inject({ method: 'GET', url: '/api/v1/healthz' });
     assert.equal(health.statusCode, 200);

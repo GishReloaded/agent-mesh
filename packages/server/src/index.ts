@@ -18,7 +18,7 @@ async function main(): Promise<void> {
 
   built.app.log.info(
     { port: config.port, ws: `ws://${config.host}:${config.port}/ws` },
-    'AgentMesh server ready',
+    'Tandryx server ready',
   );
 
   const shutdown = (signal: string) => {

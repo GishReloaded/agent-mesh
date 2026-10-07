@@ -193,6 +193,6 @@ export interface Database {
   context_revisions: ContextRevisionsTable;
   ws_connections: WsConnectionsTable;
   ws_subscriptions: WsSubscriptionsTable;
-  _agentmesh_migrations: MigrationsTable;
+  _tandryx_migrations: MigrationsTable;
 }
 

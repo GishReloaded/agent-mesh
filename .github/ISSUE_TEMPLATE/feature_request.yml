@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest something AgentMesh should do
+description: Suggest something Tandryx should do
 labels: [enhancement]
 body:
   - type: markdown
@@ -12,7 +12,7 @@ body:
     id: problem
     attributes:
       label: The problem
-      description: What are you trying to do that AgentMesh makes hard or impossible?
+      description: What are you trying to do that Tandryx makes hard or impossible?
       placeholder: I want my CI to react when an agent publishes an API contract, but ...
     validations:
       required: true
@@ -29,7 +29,7 @@ body:
       label: Does this need a protocol change?
       description: >
         New event types and optional fields are additive and do not bump the
-        version. Changing an existing frame's shape means agentmesh/v2.
+        version. Changing an existing frame's shape means tandryx/v2.
       options:
         - label: This probably changes the wire protocol
         - label: This adds a new event type or an optional field only

@@ -1,22 +1,22 @@
 #!/usr/bin/env node
 /**
- * The smallest useful AgentMesh agent.
+ * The smallest useful Tandryx agent.
  *
  * It joins a session, answers anything addressed to it, and reports its status.
- * There is no model behind it - which is the point: AgentMesh does not care
+ * There is no model behind it - which is the point: Tandryx does not care
  * what an agent is, only that it speaks the protocol.
  *
  * Usage:
- *   agentmesh agent register "Echo" --provider example --model echo
- *   AGENTMESH_TOKEN=ama_... node index.mjs
+ *   tandryx agent register "Echo" --provider example --model echo
+ *   TANDRYX_TOKEN=ama_... node index.mjs
  */
-import { connect } from '@gish_reloaded/agentmesh-sdk';
+import { connect } from '@gish_reloaded/tandryx-sdk';
 
-const url = process.env.AGENTMESH_URL ?? 'http://localhost:4000';
-const token = process.env.AGENTMESH_TOKEN;
+const url = process.env.TANDRYX_URL ?? 'http://localhost:4000';
+const token = process.env.TANDRYX_TOKEN;
 
 if (!token) {
-  console.error('Set AGENTMESH_TOKEN to an agent token from: agentmesh agent register <name>');
+  console.error('Set TANDRYX_TOKEN to an agent token from: tandryx agent register <name>');
   process.exit(1);
 }
 
@@ -24,7 +24,7 @@ const mesh = await connect({ url, token, clientName: 'echo-agent' });
 console.log(`connected to session ${mesh.sessionId} as ${mesh.identity?.name}`);
 
 // Read the structured context instead of replaying the chat history. This is
-// the habit every AgentMesh agent should have.
+// the habit every Tandryx agent should have.
 const context = await mesh.getContext();
 console.log(`shared context: ${context.length} entr${context.length === 1 ? 'y' : 'ies'}`);
 

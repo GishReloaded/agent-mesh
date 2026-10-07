@@ -1,6 +1,6 @@
 # Security Model
 
-What AgentMesh protects, how, and what it explicitly does not protect. To report a vulnerability, see [SECURITY.md](../SECURITY.md) in the repository root.
+What Tandryx protects, how, and what it explicitly does not protect. To report a vulnerability, see [SECURITY.md](../SECURITY.md) in the repository root.
 
 ---
 
@@ -8,7 +8,7 @@ What AgentMesh protects, how, and what it explicitly does not protect. To report
 
 **The server sees everything in a session.** Messages, contracts, decisions, task titles, file paths and commit hashes are stored in plaintext in PostgreSQL. There is no end-to-end encryption.
 
-The practical consequence: run AgentMesh where you would run your issue tracker. Self-host it for a private project. Do not put a hosted instance you do not control between agents working on confidential code.
+The practical consequence: run Tandryx where you would run your issue tracker. Self-host it for a private project. Do not put a hosted instance you do not control between agents working on confidential code.
 
 **What never reaches the server:**
 
@@ -30,7 +30,7 @@ Login returns the same `401` and takes comparable time whether the account exist
 
 ### Access tokens
 
-HS256 JWTs, issuer `agentmesh`, audience `agentmesh-api`, default lifetime one hour. Verified without a database round trip, which is exactly why they are short-lived: there is no revocation list, and expiry *is* the revocation mechanism. Signing out, removing a member or disabling an account only takes effect once the token expires, so raising `ACCESS_TOKEN_TTL` to days or weeks buys convenience by giving up revocation for that long. Staying signed in is the refresh token's job.
+HS256 JWTs, issuer `tandryx`, audience `tandryx-api`, default lifetime one hour. Verified without a database round trip, which is exactly why they are short-lived: there is no revocation list, and expiry *is* the revocation mechanism. Signing out, removing a member or disabling an account only takes effect once the token expires, so raising `ACCESS_TOKEN_TTL` to days or weeks buys convenience by giving up revocation for that long. Staying signed in is the refresh token's job.
 
 `JWT_SECRET` is **required** in production. In development an ephemeral secret is generated per process, so tokens simply do not survive a restart.
 
@@ -62,7 +62,7 @@ Two decisions worth stating explicitly:
 
 ## 4. Input validation
 
-Every request body, query string and websocket frame is parsed with the zod schemas from `@gish_reloaded/agentmesh-protocol` before any handler sees it. The same schemas type the SDK, so client and server cannot drift.
+Every request body, query string and websocket frame is parsed with the zod schemas from `@gish_reloaded/tandryx-protocol` before any handler sees it. The same schemas type the SDK, so client and server cannot drift.
 
 Size caps:
 
@@ -104,7 +104,7 @@ Websocket authentication happens in the first frame rather than the URL, so toke
 
 - `.env` is git-ignored; `.env.example` carries no values.
 - `npm run setup` generates a random `JWT_SECRET` and never regenerates it for an existing `.env` — doing so would sign everyone out.
-- The CLI writes `~/.agentmesh/config.json` with mode `0600`.
+- The CLI writes `~/.tandryx/config.json` with mode `0600`.
 - Tokens are returned exactly once at creation and are never retrievable afterwards; only hashes are stored.
 - No secret is ever logged: error handlers serialize a code and a message, never the request body.
 

@@ -1,12 +1,12 @@
 import {
-  AgentMeshError,
+  TandryxError,
   ErrorCode,
   Permission,
   createInviteRequestSchema,
   createSessionRequestSchema,
   updateMemberRequestSchema,
   updateSessionRequestSchema,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import type { FastifyInstance } from 'fastify';
 import type { Services } from '../../container.js';
 import { authenticate, requireUser } from '../auth.js';
@@ -96,7 +96,7 @@ export async function sessionRoutes(app: FastifyInstance, services: Services): P
   app.post('/invites/:token/accept', async (request) => {
     const principal = requireUser(request);
     const token = param(request, 'token');
-    if (!token) throw new AgentMeshError(ErrorCode.ValidationFailed, 'Invite token is missing.');
+    if (!token) throw new TandryxError(ErrorCode.ValidationFailed, 'Invite token is missing.');
 
     const { sessionId, alreadyMember } = await services.invites.accept(token, principal.userId);
     const access = await services.access.require(principal, sessionId);

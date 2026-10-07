@@ -1,4 +1,4 @@
-import { connect } from '@gish_reloaded/agentmesh-sdk';
+import { connect } from '@gish_reloaded/tandryx-sdk';
 import type { Command } from 'commander';
 import { resolve } from 'node:path';
 import { PRESETS, getPreset } from '../agent-runtime/presets.js';
@@ -20,7 +20,7 @@ function parseCapabilities(list: string | undefined): Record<string, boolean> {
 }
 
 export function registerAgentCommands(program: Command): void {
-  const agent = program.command('agent').description('Register and run AgentMesh agents');
+  const agent = program.command('agent').description('Register and run Tandryx agents');
 
   agent
     .command('register <name>')
@@ -54,7 +54,7 @@ export function registerAgentCommands(program: Command): void {
           ...(options.machine ? { machineId: options.machine } : {}),
         });
 
-        // Store it so `agentmesh agent connect <name>` works without copying
+        // Store it so `tandryx agent connect <name>` works without copying
         // tokens around; it is also printed once for use in other tooling.
         const config = loadConfig();
         const profile = config.profiles[config.profile];
@@ -65,7 +65,7 @@ export function registerAgentCommands(program: Command): void {
         success(`Registered agent ${style.bold(result.agent.name)}`);
         info(`  id:    ${result.agent.id}`);
         info(`  token: ${style.bold(result.token)}`);
-        warn('The token is shown once. Store it in AGENTMESH_TOKEN for your agent runtime.');
+        warn('The token is shown once. Store it in TANDRYX_TOKEN for your agent runtime.');
       },
     );
 
@@ -120,14 +120,14 @@ export function registerAgentCommands(program: Command): void {
         info(`${style.bold(preset.id.padEnd(8))} ${preset.label.padEnd(22)} ${mark}`);
         info(style.dim(`         ${preset.notes}`));
       }
-      info(style.dim('\nRun one with:  agentmesh agent run <agent-name> --preset <id>'));
+      info(style.dim('\nRun one with:  tandryx agent run <agent-name> --preset <id>'));
     });
 
   agent
     .command('run [name] [tool...]')
     .description('Run a local coding agent as a participant, driven by its own subscription')
     .option('-s, --session <id>', 'session id or slug')
-    .option('-t, --token <token>', 'agent token (defaults to AGENTMESH_TOKEN or the stored one)')
+    .option('-t, --token <token>', 'agent token (defaults to TANDRYX_TOKEN or the stored one)')
     .option('-P, --preset <id>', 'claude | codex | gemini | custom', 'claude')
     .option('-w, --workspace <dir>', 'directory the tool runs in', process.cwd())
     .option('--command <bin>', 'override the executable')
@@ -174,19 +174,19 @@ export function registerAgentCommands(program: Command): void {
         const profile = currentProfile(loadConfig());
         const sessionId = options.session ?? profile.currentSession;
         const stored = agentName && sessionId ? profile.agentTokens?.[`${sessionId}:${agentName}`] : undefined;
-        const token = options.token ?? process.env.AGENTMESH_TOKEN ?? stored;
+        const token = options.token ?? process.env.TANDRYX_TOKEN ?? stored;
 
         if (!token) {
           throw new Error(
             'No agent token. Register one first:\n' +
-              `  agentmesh agent register "${agentName ?? 'My Agent'}" --provider <provider> --model <model>\n` +
-              'then pass it with --token, or set AGENTMESH_TOKEN.',
+              `  tandryx agent register "${agentName ?? 'My Agent'}" --provider <provider> --model <model>\n` +
+              'then pass it with --token, or set TANDRYX_TOKEN.',
           );
         }
 
         const preset = { ...getPreset(options.preset) };
 
-        // `agentmesh agent run "Name" -- mytool --flag {prompt}` is the readable
+        // `tandryx agent run "Name" -- mytool --flag {prompt}` is the readable
         // way to plug in an arbitrary tool; the JSON form below stays for
         // scripts and config files.
         if (tool.length > 0) {
@@ -245,24 +245,24 @@ export function registerAgentCommands(program: Command): void {
     .command('connect [name]')
     .description('Connect as an agent and stream session activity')
     .option('-s, --session <id>', 'session id or slug')
-    .option('-t, --token <token>', 'agent token (defaults to AGENTMESH_TOKEN or the stored one)')
+    .option('-t, --token <token>', 'agent token (defaults to TANDRYX_TOKEN or the stored one)')
     .action(async (name: string | undefined, options: { session?: string; token?: string }) => {
       const config = loadConfig();
       const profile = config.profiles[config.profile];
       const sessionId = options.session ?? profile?.currentSession;
       const stored = name && sessionId ? profile?.agentTokens?.[`${sessionId}:${name}`] : undefined;
-      const token = options.token ?? process.env.AGENTMESH_TOKEN ?? stored;
+      const token = options.token ?? process.env.TANDRYX_TOKEN ?? stored;
 
       if (!token) {
         throw new Error(
-          'No agent token. Register one with: agentmesh agent register <name>, or pass --token.',
+          'No agent token. Register one with: tandryx agent register <name>, or pass --token.',
         );
       }
 
       const mesh = await connect({
         url: profile?.url ?? 'http://localhost:4000',
         token,
-        clientName: 'agentmesh-cli',
+        clientName: 'tandryx-cli',
       });
 
       const identity = mesh.identity;

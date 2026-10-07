@@ -2,7 +2,7 @@
 /** Deterministic SDK demo: no model calls and no source-file changes. */
 import { randomBytes } from 'node:crypto';
 import { parseArgs } from 'node:util';
-import { RestClient, connect } from '@gish_reloaded/agentmesh-sdk';
+import { RestClient, connect } from '@gish_reloaded/tandryx-sdk';
 
 const { values } = parseArgs({
   options: {
@@ -22,7 +22,7 @@ const password = randomBytes(18).toString('base64url');
 const tokens = await rest.register({ email, password, displayName: 'Demo Developer' });
 rest.setToken(tokens.accessToken);
 const session = await rest.createSession({
-  name: 'AgentMesh · shared API contract',
+  name: 'Tandryx · shared API contract',
   description: 'Scripted SDK demo. No model calls or file changes.',
 });
 const backend = await rest.registerAgent(session.id, {

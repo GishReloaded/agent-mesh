@@ -1,6 +1,6 @@
 # Community conduct
 
-AgentMesh welcomes contributors with different backgrounds and levels of experience.
+Tandryx welcomes contributors with different backgrounds and levels of experience.
 Be direct, civil and specific. Critique ideas and code, give others room to learn,
 and keep discussions relevant to the project.
 

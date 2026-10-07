@@ -1,6 +1,6 @@
 {
-  "name": "agentmesh",
-  "version": "0.1.0",
+  "name": "tandryx",
+  "version": "0.2.0",
   "private": true,
   "description": "Shared collaboration infrastructure for AI coding agents and developers",
   "license": "Apache-2.0",
@@ -22,14 +22,14 @@
     "metrics": "node scripts/metrics.mjs",
     "release:check": "npm run build && node scripts/check-packages.mjs",
     "release:pack": "npm run build && node scripts/check-packages.mjs --output tmp/release",
-    "build:libs": "npm run build -w @gish_reloaded/agentmesh-protocol && npm run build -w @gish_reloaded/agentmesh-sdk",
-    "build": "npm run build:libs && npm run build -w @agentmesh/server && npm run build -w @gish_reloaded/agentmesh-cli && npm run build -w @agentmesh/web",
-    "dev": "npm run build:libs && concurrently -n server,web -c blue,magenta \"npm run dev -w @agentmesh/server\" \"npm run dev -w @agentmesh/web\"",
-    "start": "npm run build && npm run start -w @agentmesh/server",
-    "start:server": "npm run start -w @agentmesh/server",
-    "db:migrate": "npm run migrate -w @agentmesh/server",
-    "db:reset": "npm run migrate:reset -w @agentmesh/server",
-    "test": "npm run build:libs && npm run test:setup && npm run test -w @gish_reloaded/agentmesh-protocol && npm run test -w @gish_reloaded/agentmesh-sdk && npm run test -w @gish_reloaded/agentmesh-cli && npm run test -w @agentmesh/web && npm run test -w @agentmesh/server",
+    "build:libs": "npm run build -w @gish_reloaded/tandryx-protocol && npm run build -w @gish_reloaded/tandryx-sdk",
+    "build": "npm run build:libs && npm run build -w @tandryx/server && npm run build -w @gish_reloaded/tandryx-cli && npm run build -w @tandryx/web",
+    "dev": "npm run build:libs && concurrently -n server,web -c blue,magenta \"npm run dev -w @tandryx/server\" \"npm run dev -w @tandryx/web\"",
+    "start": "npm run build && npm run start -w @tandryx/server",
+    "start:server": "npm run start -w @tandryx/server",
+    "db:migrate": "npm run migrate -w @tandryx/server",
+    "db:reset": "npm run migrate:reset -w @tandryx/server",
+    "test": "npm run build:libs && npm run test:setup && npm run test -w @gish_reloaded/tandryx-protocol && npm run test -w @gish_reloaded/tandryx-sdk && npm run test -w @gish_reloaded/tandryx-cli && npm run test -w @tandryx/web && npm run test -w @tandryx/server",
     "test:setup": "node --test scripts/test/setup.test.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -54,10 +54,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GishReloaded/agent-mesh.git"
+    "url": "git+https://github.com/GishReloaded/tandryx.git"
   },
   "bugs": {
-    "url": "https://github.com/GishReloaded/agent-mesh/issues"
+    "url": "https://github.com/GishReloaded/tandryx/issues"
   },
-  "homepage": "https://github.com/GishReloaded/agent-mesh#readme"
+  "homepage": "https://github.com/GishReloaded/tandryx#readme"
 }

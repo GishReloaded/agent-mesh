@@ -4,11 +4,11 @@ import { join } from 'node:path';
 import {
   DevEventType,
   connect,
-  type AgentMeshSession,
+  type TandryxSession,
   type CodexApprovalResponse,
   type CodexControlRequest,
   type Message,
-} from '@gish_reloaded/agentmesh-sdk';
+} from '@gish_reloaded/tandryx-sdk';
 import { actorLabel, clock, info, style, success, warn } from '../output.js';
 import { diagnose } from './diagnose.js';
 import { RunLog } from './log.js';
@@ -50,7 +50,7 @@ const PROGRESS_INTERVAL_MS = 2000;
 const MAX_PROGRESS_EVENTS = 40;
 
 /**
- * Bridges a local, subscription-backed coding agent into an AgentMesh session.
+ * Bridges a local, subscription-backed coding agent into an Tandryx session.
  *
  * The loop is deliberately simple: a mention arrives, the tool runs once in the
  * developer's workspace, its answer goes back to the session. What makes it
@@ -59,7 +59,7 @@ const MAX_PROGRESS_EVENTS = 40;
  * once, and failure is reported as `AGENT_BLOCKED` instead of silence.
  */
 export class AgentRunner {
-  private mesh: AgentMeshSession | null = null;
+  private mesh: TandryxSession | null = null;
   private queue: Job[] = [];
   private busy = false;
   private started = false;
@@ -79,7 +79,7 @@ export class AgentRunner {
     const mesh = await connect({
       url: this.options.url,
       token: this.options.token,
-      clientName: `agentmesh-agent/${this.options.preset.id}`,
+      clientName: `tandryx-agent/${this.options.preset.id}`,
     });
     this.mesh = mesh;
 

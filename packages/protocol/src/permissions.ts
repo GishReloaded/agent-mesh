@@ -2,7 +2,7 @@ import { SessionRole } from './primitives.js';
 
 /**
  * Actions a session participant may attempt. Kept as a flat list on purpose:
- * AgentMesh does not need an ACL engine, it needs a table small enough that a
+ * Tandryx does not need an ACL engine, it needs a table small enough that a
  * reviewer can check it at a glance.
  */
 export const Permission = {

@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Deploy AgentMesh to AWS: source archive to S3, then a CloudFormation stack
+  Deploy Tandryx to AWS: source archive to S3, then a CloudFormation stack
   with one EC2 origin behind CloudFront.
 
 .DESCRIPTION
@@ -14,7 +14,7 @@
   ./deploy/aws/deploy.ps1 -Destroy
 #>
 param(
-  [string]$StackName = 'agentmesh',
+  [string]$StackName = 'tandryx',
   [string]$Region = '',
   [ValidateSet('t4g.small', 't4g.medium', 't3.small', 't3.medium')]
   [string]$InstanceType = 't4g.small',
@@ -64,7 +64,7 @@ Push-Location $repoRoot
 try {
   $dirty = git status --porcelain
   if ($dirty) { Note 'note: uncommitted changes are NOT included - the archive is built from HEAD' }
-  $archive = Join-Path $env:TEMP 'agentmesh-src.tar.gz'
+  $archive = Join-Path $env:TEMP 'tandryx-src.tar.gz'
   # git archive gives exactly the committed tree: no node_modules, no .env.
   git archive --format=tar.gz -o $archive HEAD
   $sizeMb = [Math]::Round((Get-Item $archive).Length / 1MB, 2)
@@ -73,7 +73,7 @@ try {
   Pop-Location
 }
 
-$bucket = "agentmesh-deploy-$account-$Region"
+$bucket = "tandryx-deploy-$account-$Region"
 Step "Uploading to s3://$bucket"
 $exists = aws s3api head-bucket --bucket $bucket --region $Region 2>&1
 if ($LASTEXITCODE -ne 0) {
@@ -89,7 +89,7 @@ if ($LASTEXITCODE -ne 0) {
   aws s3api put-bucket-encryption --bucket $bucket `
     --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}' | Out-Null
 }
-aws s3 cp $archive "s3://$bucket/agentmesh-src.tar.gz" --region $Region | Out-Null
+aws s3 cp $archive "s3://$bucket/tandryx-src.tar.gz" --region $Region | Out-Null
 Note 'uploaded'
 
 # --- AMI --------------------------------------------------------------------
@@ -110,7 +110,7 @@ Note 'first run takes 10-20 minutes: CloudFront provisioning and the initial bui
 
 $parameters = @(
   "SourceBucket=$bucket",
-  'SourceKey=agentmesh-src.tar.gz',
+  'SourceKey=tandryx-src.tar.gz',
   "AmiId=$amiId",
   "InstanceType=$InstanceType",
   "AllowRegistration=$AllowRegistration"
@@ -124,7 +124,7 @@ aws cloudformation deploy `
   --template-file (Join-Path $PSScriptRoot 'cloudformation.yml') `
   --capabilities CAPABILITY_IAM `
   --parameter-overrides $parameters `
-  --tags "project=agentmesh"
+  --tags "project=tandryx"
 
 if ($LASTEXITCODE -ne 0) { throw 'Stack deployment failed. See the CloudFormation events in the console.' }
 

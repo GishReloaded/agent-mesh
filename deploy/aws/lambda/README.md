@@ -1,4 +1,4 @@
-# AgentMesh on AWS Lambda
+# Tandryx on AWS Lambda
 
 Two Lambda functions and two API Gateway APIs. Nothing is billed while idle, and you bring your own PostgreSQL.
 
@@ -8,7 +8,7 @@ Two Lambda functions and two API Gateway APIs. Nothing is billed while idle, and
                  │                                          │
                  ▼                                          ▼
         ┌──────────────────┐                    ┌──────────────────────┐
-        │  agentmesh-http  │                    │    agentmesh-ws      │
+        │  tandryx-http  │                    │    tandryx-ws      │
         │  REST + web UI   │                    │  $connect/$default/  │
         │  (Fastify)       │                    │  $disconnect         │
         └────────┬─────────┘                    └──────────┬───────────┘
@@ -54,13 +54,13 @@ Not part of this stack, deliberately: you said you would host it, and a database
 Anything speaking PostgreSQL 14+ works. Prefer one that tolerates many short-lived connections — Neon, Supabase and RDS with a modest pool all do. The connection string must be reachable from Lambda, which means either a public endpoint or the functions placed in your VPC (this template does not do VPC attachment; adding it also requires a NAT gateway, which is not free).
 
 ```
-postgres://user:password@host:5432/agentmesh?sslmode=require
+postgres://user:password@host:5432/tandryx?sslmode=require
 ```
 
 ## Deploy
 
 ```powershell
-./deploy/aws/lambda/deploy.ps1 -DatabaseUrl "postgres://user:pass@host:5432/agentmesh?sslmode=require"
+./deploy/aws/lambda/deploy.ps1 -DatabaseUrl "postgres://user:pass@host:5432/tandryx?sslmode=require"
 ```
 
 The connection string and a generated `JWT_SECRET` are stored in SSM Parameter Store, so later deploys need no arguments:
@@ -89,14 +89,14 @@ If you would rather not run the script, it is three commands plus migrations:
 
 ```bash
 node deploy/aws/lambda/build.mjs
-cd dist-lambda && zip -r ../agentmesh-lambda.zip . && cd ..
-aws s3 cp agentmesh-lambda.zip s3://<bucket>/lambda/agentmesh.zip
+cd dist-lambda && zip -r ../tandryx-lambda.zip . && cd ..
+aws s3 cp tandryx-lambda.zip s3://<bucket>/lambda/tandryx.zip
 
 aws cloudformation deploy \
-  --stack-name agentmesh \
+  --stack-name tandryx \
   --template-file deploy/aws/lambda/template.yaml \
   --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
-  --parameter-overrides CodeBucket=<bucket> CodeKey=lambda/agentmesh.zip \
+  --parameter-overrides CodeBucket=<bucket> CodeKey=lambda/tandryx.zip \
     DatabaseUrl='postgres://…' JwtSecret='<64 hex chars>'
 
 DATABASE_URL='postgres://…' npm run db:migrate
@@ -143,8 +143,8 @@ Watch the connection-minutes if you leave agents connected around the clock: an 
 ## Operating it
 
 ```powershell
-aws logs tail /aws/lambda/agentmesh-http --follow
-aws logs tail /aws/lambda/agentmesh-ws --follow
+aws logs tail /aws/lambda/tandryx-http --follow
+aws logs tail /aws/lambda/tandryx-ws --follow
 ```
 
 | Symptom | Likely cause |

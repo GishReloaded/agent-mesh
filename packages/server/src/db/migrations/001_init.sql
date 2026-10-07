@@ -1,4 +1,4 @@
--- AgentMesh initial schema.
+-- Tandryx initial schema.
 --
 -- The `events` table is the source of truth for everything that happens in a
 -- session: it is append-only and ordered by a per-session `seq`. The

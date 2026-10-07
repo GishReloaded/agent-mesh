@@ -79,14 +79,14 @@ export const ERROR_HTTP_STATUS: Record<ErrorCode, number> = {
 };
 
 /** Error type shared by the server, the SDK and the CLI. */
-export class AgentMeshError extends Error {
+export class TandryxError extends Error {
   readonly code: ErrorCode;
   readonly details?: unknown;
   readonly ref?: string;
 
   constructor(code: ErrorCode, message: string, options?: { details?: unknown; ref?: string; cause?: unknown }) {
     super(message, options?.cause === undefined ? undefined : { cause: options.cause });
-    this.name = 'AgentMeshError';
+    this.name = 'TandryxError';
     this.code = code;
     this.details = options?.details;
     this.ref = options?.ref;
@@ -103,10 +103,10 @@ export class AgentMeshError extends Error {
     return body;
   }
 
-  static fromBody(body: ErrorBody): AgentMeshError {
+  static fromBody(body: ErrorBody): TandryxError {
     const code = (Object.values(ErrorCode) as string[]).includes(body.code)
       ? (body.code as ErrorCode)
       : ErrorCode.Internal;
-    return new AgentMeshError(code, body.message, { details: body.details, ref: body.ref });
+    return new TandryxError(code, body.message, { details: body.details, ref: body.ref });
   }
 }

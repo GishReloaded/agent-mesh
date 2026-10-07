@@ -1,4 +1,4 @@
-import { API_PREFIX } from '@gish_reloaded/agentmesh-protocol';
+import { API_PREFIX } from '@gish_reloaded/tandryx-protocol';
 import type {
   Actor,
   Agent,
@@ -12,7 +12,7 @@ import type {
   SessionMember,
   Task,
   User,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import type { Selectable } from 'kysely';
 import type {
   AgentsTable,

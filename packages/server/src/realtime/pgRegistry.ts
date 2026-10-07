@@ -1,4 +1,4 @@
-import { ServerFrameType, type Actor, type Event } from '@gish_reloaded/agentmesh-protocol';
+import { ServerFrameType, type Actor, type Event } from '@gish_reloaded/tandryx-protocol';
 import type { Principal } from '../auth/principal.js';
 import type { Db } from '../db/client.js';
 import type { ConnectionHandle, ConnectionRecord, ConnectionRegistry, EventSink } from './registry.js';
@@ -132,7 +132,7 @@ export class PostgresConnectionRegistry implements ConnectionRegistry, EventSink
     if (targets.length === 0) return;
 
     const envelope = {
-      v: 'agentmesh/v1',
+      v: 'tandryx/v1',
       id: `s${Date.now().toString(36)}`,
       type: frame.type,
       ts: new Date().toISOString(),
@@ -197,7 +197,7 @@ export class PostgresConnectionRegistry implements ConnectionRegistry, EventSink
       // There is no "close with a code" over the management API, so the reason
       // is delivered as a final error frame before the connection is dropped.
       await this.sendFrame(row.id, {
-        v: 'agentmesh/v1',
+        v: 'tandryx/v1',
         id: `s${Date.now().toString(36)}`,
         type: ServerFrameType.Error,
         ts: new Date().toISOString(),
@@ -233,7 +233,7 @@ export class PostgresConnectionRegistry implements ConnectionRegistry, EventSink
 
     for (const id of ids) {
       await this.sendFrame(id, {
-        v: 'agentmesh/v1',
+        v: 'tandryx/v1',
         id: `s${Date.now().toString(36)}`,
         type: ServerFrameType.Unsubscribed,
         ts: new Date().toISOString(),

@@ -1,13 +1,13 @@
 {
-  "name": "@agentmesh/server",
-  "version": "0.1.0",
-  "description": "AgentMesh collaboration server: REST API, realtime gateway and session event log",
+  "name": "@tandryx/server",
+  "version": "0.2.0",
+  "description": "Tandryx collaboration server: REST API, realtime gateway and session event log",
   "license": "Apache-2.0",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
-    "agentmesh-server": "./dist/index.js"
+    "tandryx-server": "./dist/index.js"
   },
   "files": [
     "dist",
@@ -30,7 +30,7 @@
     "@fastify/helmet": "^13.0.0",
     "@fastify/rate-limit": "^10.2.1",
     "@fastify/static": "^10.1.5",
-    "@gish_reloaded/agentmesh-protocol": "0.1.0",
+    "@gish_reloaded/tandryx-protocol": "0.2.0",
     "fastify": "^5.2.0",
     "jose": "^5.9.6",
     "kysely": "^0.29.6",
@@ -46,15 +46,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GishReloaded/agent-mesh.git",
+    "url": "git+https://github.com/GishReloaded/tandryx.git",
     "directory": "packages/server"
   },
   "bugs": {
-    "url": "https://github.com/GishReloaded/agent-mesh/issues"
+    "url": "https://github.com/GishReloaded/tandryx/issues"
   },
-  "homepage": "https://github.com/GishReloaded/agent-mesh/tree/main/packages/server#readme",
+  "homepage": "https://github.com/GishReloaded/tandryx/tree/main/packages/server#readme",
   "keywords": [
-    "agentmesh",
+    "tandryx",
     "ai-agents",
     "collaboration",
     "realtime",

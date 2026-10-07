@@ -23,7 +23,7 @@ test(
   },
   () => {
     assert(/test/i.test(new URL(databaseUrl).pathname), 'Setup test requires a dedicated test database');
-    const fixture = mkdtempSync(join(tmpdir(), 'agentmesh-setup-'));
+    const fixture = mkdtempSync(join(tmpdir(), 'tandryx-setup-'));
     try {
       mkdirSync(join(fixture, 'scripts'));
       copyFileSync(join(root, 'scripts', 'setup.mjs'), join(fixture, 'scripts', 'setup.mjs'));
@@ -57,7 +57,7 @@ test(
       }
     } finally {
       assert.equal(dirname(resolve(fixture)), resolve(tmpdir()));
-      assert(fixture.startsWith(join(tmpdir(), 'agentmesh-setup-')));
+      assert(fixture.startsWith(join(tmpdir(), 'tandryx-setup-')));
       rmSync(fixture, { recursive: true, force: true });
     }
   },

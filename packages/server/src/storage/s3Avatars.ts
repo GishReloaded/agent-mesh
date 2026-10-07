@@ -4,7 +4,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import type { AvatarMimeType } from '@gish_reloaded/agentmesh-protocol';
+import type { AvatarMimeType } from '@gish_reloaded/tandryx-protocol';
 import type { AvatarStore } from './avatars.js';
 
 /**

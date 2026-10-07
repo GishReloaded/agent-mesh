@@ -13,7 +13,7 @@ body:
       label: What happened
       description: What you did, what happened, and what you expected instead.
       placeholder: |
-        I ran `agentmesh agent run "Claude"` and the agent connected but never answered a mention.
+        I ran `tandryx agent run "Claude"` and the agent connected but never answered a mention.
         I expected it to reply in the session.
     validations:
       required: true
@@ -28,7 +28,7 @@ body:
         - web client
         - CLI
         - SDK
-        - agent runner (agentmesh agent run)
+        - agent runner (tandryx agent run)
         - deployment (Docker, AWS)
         - protocol / documentation
         - not sure
@@ -40,7 +40,7 @@ body:
     attributes:
       label: Version
       description: Output of `GET /api/v1/version`, or the commit you are on.
-      placeholder: 0.1.0 / agentmesh/v1
+      placeholder: 0.1.0 / tandryx/v1
     validations:
       required: true
 

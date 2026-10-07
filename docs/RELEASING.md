@@ -1,6 +1,6 @@
-# Releasing AgentMesh
+# Releasing Tandryx
 
-The public packages are `@gish_reloaded/agentmesh-protocol`, `@gish_reloaded/agentmesh-sdk` and `@gish_reloaded/agentmesh-cli`.
+The public packages are `@gish_reloaded/tandryx-protocol`, `@gish_reloaded/tandryx-sdk` and `@gish_reloaded/tandryx-cli`.
 Server/web are private workspaces distributed via source and the Docker build.
 Keep public versions and internal dependency versions synchronized.
 
@@ -29,9 +29,9 @@ scope changes, update package names, imports, internal dependencies and docs tog
 After `npm login` and release verification, publish in dependency order:
 
 ```bash
-npm publish -w @gish_reloaded/agentmesh-protocol --access public
-npm publish -w @gish_reloaded/agentmesh-sdk --access public
-npm publish -w @gish_reloaded/agentmesh-cli --access public
+npm publish -w @gish_reloaded/tandryx-protocol --access public
+npm publish -w @gish_reloaded/tandryx-sdk --access public
+npm publish -w @gish_reloaded/tandryx-cli --access public
 ```
 
 Initial publication may need an interactive 2FA challenge. Verify `npm view` for
@@ -40,7 +40,7 @@ all three before claiming registry availability in README.
 ## Later releases: trusted publishing
 
 For each existing npm package configure GitHub owner `GishReloaded`, repository
-`agent-mesh`, workflow filename `publish-npm.yml`, and allow direct publishing.
+`tandryx`, workflow filename `publish-npm.yml`, and allow direct publishing.
 No GitHub environment is used by this workflow.
 
 Dispatch the workflow with a published release tag. It checks versions and runs

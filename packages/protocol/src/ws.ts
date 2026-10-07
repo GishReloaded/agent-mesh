@@ -19,7 +19,7 @@ import { PROTOCOL_VERSION } from './version.js';
  * Every websocket frame shares one envelope:
  *
  * ```json
- * { "v": "agentmesh/v1", "id": "01J...", "type": "message.send", "ts": "...", "payload": {} }
+ * { "v": "tandryx/v1", "id": "01J...", "type": "message.send", "ts": "...", "payload": {} }
  * ```
  *
  * `id` is chosen by the sender and is echoed back in `ack` / `error` frames, so
@@ -75,7 +75,7 @@ export const helloPayloadSchema = z.object({
   token: z.string().min(1).max(4096),
   client: z
     .object({
-      /** Free-form client label, e.g. "agentmesh-cli/0.1.0" or "web". */
+      /** Free-form client label, e.g. "tandryx-cli/0.2.0" or "web". */
       name: z.string().max(120).optional(),
       version: z.string().max(40).optional(),
     })
@@ -292,7 +292,7 @@ export const RECONNECT_BACKOFF = {
   jitter: 0.25,
 } as const;
 
-/** Websocket close codes AgentMesh assigns meaning to. */
+/** Websocket close codes Tandryx assigns meaning to. */
 export const CloseCode = {
   Normal: 1000,
   GoingAway: 1001,

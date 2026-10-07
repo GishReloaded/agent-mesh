@@ -1,4 +1,4 @@
-import { AgentMeshError, ErrorCode, type Actor, type Event } from '@gish_reloaded/agentmesh-protocol';
+import { TandryxError, ErrorCode, type Actor, type Event } from '@gish_reloaded/tandryx-protocol';
 import { sql, type Transaction } from 'kysely';
 import { jsonb, type Db } from '../db/client.js';
 import type { Database } from '../db/types.js';
@@ -122,8 +122,8 @@ async function nextSeq(trx: Transaction<Database>, sessionId: string): Promise<n
       .where('id', '=', sessionId)
       .executeTakeFirst();
     throw exists
-      ? new AgentMeshError(ErrorCode.SessionArchived, 'This session is archived and accepts no new activity.')
-      : new AgentMeshError(ErrorCode.NotFound, 'Session not found.');
+      ? new TandryxError(ErrorCode.SessionArchived, 'This session is archived and accepts no new activity.')
+      : new TandryxError(ErrorCode.NotFound, 'Session not found.');
   }
   return Number(row.last_seq);
 }

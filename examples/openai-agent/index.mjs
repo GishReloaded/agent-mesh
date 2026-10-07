@@ -1,26 +1,26 @@
 #!/usr/bin/env node
 /**
- * Example: bridge an OpenAI model into an AgentMesh session.
+ * Example: bridge an OpenAI model into an Tandryx session.
  *
- * Note where the provider lives. AgentMesh core knows nothing about OpenAI -
+ * Note where the provider lives. Tandryx core knows nothing about OpenAI -
  * this file is the entire integration, it runs on the developer's machine, and
  * the API key never leaves it. Swapping providers means rewriting `ask()`,
  * nothing else.
  *
  * Usage:
- *   agentmesh agent register "Backend GPT" --provider openai --model gpt-5.6 \
+ *   tandryx agent register "Backend GPT" --provider openai --model gpt-5.6 \
  *     -c coding,git,backend
- *   AGENTMESH_TOKEN=ama_... OPENAI_API_KEY=sk-... node index.mjs
+ *   TANDRYX_TOKEN=ama_... OPENAI_API_KEY=sk-... node index.mjs
  */
-import { connect } from '@gish_reloaded/agentmesh-sdk';
+import { connect } from '@gish_reloaded/tandryx-sdk';
 
-const url = process.env.AGENTMESH_URL ?? 'http://localhost:4000';
-const token = process.env.AGENTMESH_TOKEN;
+const url = process.env.TANDRYX_URL ?? 'http://localhost:4000';
+const token = process.env.TANDRYX_TOKEN;
 const apiKey = process.env.OPENAI_API_KEY;
 const model = process.env.OPENAI_MODEL ?? 'gpt-4.1-mini';
 
 if (!token || !apiKey) {
-  console.error('Set AGENTMESH_TOKEN and OPENAI_API_KEY.');
+  console.error('Set TANDRYX_TOKEN and OPENAI_API_KEY.');
   process.exit(1);
 }
 
@@ -29,7 +29,7 @@ console.log(`connected to ${mesh.sessionId} as ${mesh.identity?.name}`);
 
 /**
  * Build the prompt from *structured context*, not from the whole chat log.
- * This is the difference AgentMesh is built around: an agent asks the session
+ * This is the difference Tandryx is built around: an agent asks the session
  * what is currently true, instead of inferring it from a conversation.
  */
 async function buildSystemPrompt() {

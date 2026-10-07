@@ -18,16 +18,16 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_USER: agentmesh
-          POSTGRES_PASSWORD: agentmesh
-          POSTGRES_DB: agentmesh_release_test
+          POSTGRES_USER: tandryx
+          POSTGRES_PASSWORD: tandryx
+          POSTGRES_DB: tandryx_release_test
         ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U agentmesh -d agentmesh_release_test"
+          --health-cmd "pg_isready -U tandryx -d tandryx_release_test"
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      DATABASE_URL: postgres://agentmesh:agentmesh@localhost:5432/agentmesh_release_test
-      TEST_DATABASE_URL: postgres://agentmesh:agentmesh@localhost:5432/agentmesh_release_test
+      DATABASE_URL: postgres://tandryx:tandryx@localhost:5432/tandryx_release_test
+      TEST_DATABASE_URL: postgres://tandryx:tandryx@localhost:5432/tandryx_release_test
       JWT_SECRET: release-test-secret-at-least-thirty-two-characters
     steps:
       - uses: actions/checkout@v4
@@ -42,8 +42,8 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run release:pack
-      - run: docker build -t agentmesh:release .
+      - run: docker build -t tandryx:release .
       - name: Publish source release and package assets
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" tmp/release/*.tgz tmp/release/SHA256SUMS --title "AgentMesh $GITHUB_REF_NAME" --notes-file "docs/releases/${GITHUB_REF_NAME#v}.md" --verify-tag
+        run: gh release create "$GITHUB_REF_NAME" tmp/release/*.tgz tmp/release/SHA256SUMS --title "Tandryx $GITHUB_REF_NAME" --notes-file "docs/releases/${GITHUB_REF_NAME#v}.md" --verify-tag

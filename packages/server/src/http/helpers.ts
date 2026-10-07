@@ -1,4 +1,4 @@
-import type { Permission } from '@gish_reloaded/agentmesh-protocol';
+import type { Permission } from '@gish_reloaded/tandryx-protocol';
 import type { FastifyRequest } from 'fastify';
 import type { SessionAccess } from '../auth/principal.js';
 import type { Services } from '../container.js';

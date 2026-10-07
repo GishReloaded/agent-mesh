@@ -4,12 +4,12 @@ import {
   PostToConnectionCommand,
 } from '@aws-sdk/client-apigatewaymanagementapi';
 import {
-  AgentMeshError,
+  TandryxError,
   ClientFrameType,
   ErrorCode,
   PROTOCOL_VERSION,
   ServerFrameType,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import type { Principal } from '../auth/principal.js';
 import {
   announcePresenceLeft,
@@ -121,7 +121,7 @@ async function handleFrame(
 
   if (error || !frame) {
     await send(
-      { type: ServerFrameType.Error, payload: { ...(error ?? new AgentMeshError(ErrorCode.MalformedFrame, 'Bad frame')).toBody(), ref: id } },
+      { type: ServerFrameType.Error, payload: { ...(error ?? new TandryxError(ErrorCode.MalformedFrame, 'Bad frame')).toBody(), ref: id } },
       id,
     );
     return;
@@ -133,9 +133,9 @@ async function handleFrame(
       principal = await authenticate(svc, frame.payload.token);
     } catch (caught) {
       const failure =
-        caught instanceof AgentMeshError
+        caught instanceof TandryxError
           ? caught
-          : new AgentMeshError(ErrorCode.Unauthorized, 'Authentication failed.');
+          : new TandryxError(ErrorCode.Unauthorized, 'Authentication failed.');
       await send({ type: ServerFrameType.Error, payload: { ...failure.toBody(), ref: frame.id } }, frame.id);
       await client.send(new DeleteConnectionCommand({ ConnectionId: connectionId })).catch(() => undefined);
       return;
@@ -184,8 +184,8 @@ async function handleFrame(
     await dispatchCommand(svc, connection, frame);
   } catch (caught) {
     const failure =
-      caught instanceof AgentMeshError ? caught : new AgentMeshError(ErrorCode.Internal, 'Internal server error.');
-    if (!(caught instanceof AgentMeshError)) console.error('command failed', caught);
+      caught instanceof TandryxError ? caught : new TandryxError(ErrorCode.Internal, 'Internal server error.');
+    if (!(caught instanceof TandryxError)) console.error('command failed', caught);
     await send({ type: ServerFrameType.Error, payload: { ...failure.toBody(), ref: frame.id } }, frame.id);
   }
 }

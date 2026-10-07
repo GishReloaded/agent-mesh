@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Example: put a local coding agent CLI into an AgentMesh session.
+ * Example: put a local coding agent CLI into an Tandryx session.
  *
  * This bridge shells out to `claude -p` (Claude Code in non-interactive mode),
  * but the shape is the same for any command-line agent: read the mention, run
@@ -11,23 +11,23 @@
  * contracts in shared context rather than only describing them in chat.
  *
  * Usage:
- *   agentmesh agent register "Frontend Claude" --provider anthropic \
+ *   tandryx agent register "Frontend Claude" --provider anthropic \
  *     --model claude-opus -c coding,git,frontend
- *   AGENTMESH_TOKEN=ama_... AGENT_WORKSPACE=/path/to/repo node index.mjs
+ *   TANDRYX_TOKEN=ama_... AGENT_WORKSPACE=/path/to/repo node index.mjs
  */
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { connect } from '@gish_reloaded/agentmesh-sdk';
+import { connect } from '@gish_reloaded/tandryx-sdk';
 
 const run = promisify(execFile);
 
-const url = process.env.AGENTMESH_URL ?? 'http://localhost:4000';
-const token = process.env.AGENTMESH_TOKEN;
+const url = process.env.TANDRYX_URL ?? 'http://localhost:4000';
+const token = process.env.TANDRYX_TOKEN;
 const workspace = process.env.AGENT_WORKSPACE ?? process.cwd();
 const command = process.env.AGENT_COMMAND ?? 'claude';
 
 if (!token) {
-  console.error('Set AGENTMESH_TOKEN to an agent token from: agentmesh agent register <name>');
+  console.error('Set TANDRYX_TOKEN to an agent token from: tandryx agent register <name>');
   process.exit(1);
 }
 

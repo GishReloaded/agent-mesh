@@ -19,7 +19,7 @@ import {
 } from './primitives.js';
 
 /**
- * AgentMesh has one append-only log per session. Chat messages, task changes,
+ * Tandryx has one append-only log per session. Chat messages, task changes,
  * context updates and development events are all entries in that log, ordered
  * by `seq`. Two naming conventions live in the same namespace, and the casing
  * tells you which is which:
