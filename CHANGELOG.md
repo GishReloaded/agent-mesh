@@ -21,7 +21,7 @@ evaluation, small self-hosted teams and integration feedback.
 ### Distribution
 
 The GitHub release includes protocol, SDK and CLI tarballs with SHA-256 checksums.
-npm registry publication is pending the maintainer's 2FA setup. The server and web client
+npm registry availability is being verified after first publication. The server and web client
 are distributed as source and through the documented Docker build.
 
 ### Current limits

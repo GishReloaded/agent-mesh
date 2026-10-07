@@ -9,7 +9,7 @@
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
-    "agentmesh": "./dist/index.js"
+    "agentmesh": "dist/index.js"
   },
   "files": [
     "dist",

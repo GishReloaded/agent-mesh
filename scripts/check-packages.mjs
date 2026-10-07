@@ -77,6 +77,8 @@ const reportedVersion = execFileSync(process.execPath, [cli, '--version'], {
   encoding: 'utf8',
 }).trim();
 assert.equal(reportedVersion, version, 'Packed CLI version differs from release');
+const commandVersion = npm(['exec', '--offline', '--', 'agentmesh', '--version'], consumer).trim();
+assert.equal(commandVersion, version, 'Installed CLI command is missing or has the wrong version');
 const sums = tarballs.map(
   (path) => `${createHash('sha256').update(readFileSync(path)).digest('hex')}  ${path.split(/[\\/]/).at(-1)}`,
 );

@@ -4,6 +4,17 @@ These drafts are ready to adapt for channels the maintainer chooses. They have n
 been posted to external communities. Disclose that you built the project, read each
 community's rules, post once where relevant and respond to technical feedback.
 
+These drafts were prepared with AI assistance. DEV requires disclosure of AI
+assistance; include it when adapting a technical article. Hacker News explicitly
+prohibits generated text and automated posting: the maintainer must write and
+submit their own Show HN text. Do not submit these drafts there.
+See [HN guidelines](https://news.ycombinator.com/newsguidelines.html) and
+[DEV Code of Conduct](https://dev.to/code-of-conduct).
+
+The [DEV article](launch/DEV.md) contains a technical walkthrough and an explicit
+AI-assistance disclosure. Publish it after signing in to the maintainer's DEV
+account and verifying the current community guidelines.
+
 ## English announcement
 
 **AgentMesh: shared contracts and context for coding agents across machines**
