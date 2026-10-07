@@ -2,7 +2,7 @@
 
 ## Cost decision
 
-Use one static site in **S3 Standard + CloudFront OAC + free, non-exportable ACM**. DNS stays with adm.tools. No fixed compute, NAT, load balancer, API Gateway, Lambda, edge function, WAF, Route 53, paid CI service, access logs, versioning, replication or extra site copy is required.
+Use one static site in **S3 Standard + CloudFront OAC + free, non-exportable ACM**. The chosen free website name is `tandryx.js.org`; JS.ORG maintains its DNS. No fixed compute, NAT, load balancer, API Gateway, Lambda, edge function, WAF, Route 53, paid CI service, access logs, versioning, replication or extra site copy is required.
 
 The current $0/month CloudFront flat-rate plan was evaluated. It requires a WAF association, limits custom configuration and bundles services not needed here. The simpler pay-as-you-go distribution has no fixed monthly charge and benefits from the recurring CloudFront free allowance. Other distributions share that account/organization allowance; this is an estimate for the website's incremental usage, not a cap on the entire AWS account bill.
 
@@ -46,26 +46,31 @@ The stack creates one private SSE-S3 bucket, OAC, distribution, bucket policy, G
 
 If reusing the template in a different account that already has the GitHub OIDC provider, set `CreateGitHubOidc=false`. Keep this parameter unchanged for the current stack: removing its provider could disrupt roles sharing it.
 
-## Domain connection — owner action
+## Domain connection — JS.ORG approval pending
 
-**Do not buy a domain or change DNS automatically.** The intended address is `tandryx.com`. The .com registry returned no registration on October 7, 2026; only the registrar can confirm availability at checkout. If a different name is chosen, update site metadata, sitemap, robots, redirect, docs and request a matching certificate before connecting it.
+The owner selected **tandryx.js.org** instead of buying a domain. JS.ORG provides a free subdomain for JavaScript ecosystem projects through a registration pull request. Tandryx has a published TypeScript SDK, protocol package and Node.js CLI; the website links to the actual npm packages and examples. JS.ORG permits other hosting providers, so the existing AWS site stays in place. See [registration and content requirements](https://github.com/js-org/js.org#other-providers) and [service terms](https://js.org/terms.html).
 
-ACM certificate ARN: `arn:aws:acm:us-east-1:478681635233:certificate/4707a54e-66fc-431d-8f81-3f2c4507330e`.
+The request adds only this alphabetically ordered line to `cnames_active.js`:
 
-After purchase, first add the validation records below in adm.tools. TTL: **300 seconds**, or the lowest allowed value if 300 is unavailable. NAME is shown in full; adm.tools' Subdomain field usually expects the relative portion, so omit the trailing `.tandryx.com` there. Keep validation CNAMEs permanently for automatic renewal.
+```js
+  "tandryx": "d38num53uhx947.cloudfront.net", // noCF
+```
 
-| TYPE  | NAME                                                | VALUE                                                              | TTL |
-| ----- | --------------------------------------------------- | ------------------------------------------------------------------ | --- |
-| CNAME | `_c132517acf0a863d5884aca99f940dd4.tandryx.com`     | `_49eadfb318d810efff5dd36a7f1648f8.wzccmgtwzk.acm-validations.aws` | 300 |
-| CNAME | `_0409cdf6dd01ef605d13bf69001d7070.www.tandryx.com` | `_043c6130d9fcd3ac6cf8c2c0fe0cafdb.wzccmgtwzk.acm-validations.aws` | 300 |
+`noCF` requests DNS-only resolution without Cloudflare proxying. A source and deployed `CNAME` file also records the intended name; AWS does not process that file automatically. Registration is subject to maintainers' review, and the new domain is not operational until DNS and HTTPS are verified.
 
-Validation requests can time out if DNS is not added promptly; check current ACM status and re-request if needed before relying on these values.
+ACM certificate ARN: `arn:aws:acm:us-east-1:478681635233:certificate/ea110f9d-5aa9-4583-aa56-4cefb9dcd3af`. It covers only `tandryx.js.org`, is non-exportable, and costs $0 with CloudFront.
 
-Once ACM is **ISSUED**, update the existing stack with `CertificateArn` and `DomainName=tandryx.com`, preserving all other parameters, and wait for CloudFront to finish deploying. Only then add the apex ALIAS and www CNAME listed under the live resources section below. Do not copy CloudFront's IP addresses into A records; they can change. Remove conflicting A/AAAA/ALIAS records only for those exact website names, preserving mail and verification records.
+JS.ORG maintainers must first add this **DNS-only** validation CNAME. Keep it permanently for certificate renewal. TTL 300 seconds or the provider default is suitable.
 
-The provider documents [ALIAS support for the apex](https://www.ukraine.com.ua/wiki/domain/management/dns-records-types/alias/). Root CNAME is inappropriate; ALIAS permits separate mail TXT/MX records. DNS names remain on adm.tools; there is no Route 53 hosted zone.
+| TYPE  | NAME                                               | VALUE                                                              | TTL |
+| ----- | -------------------------------------------------- | ------------------------------------------------------------------ | --- |
+| CNAME | `_a0540782c902720754c3a54d6a18724a.tandryx.js.org` | `_82c936a281006a012efddf3b3d5c6b41.wzccmgtwzk.acm-validations.aws` | 300 |
 
-The prepared `www` redirect runs in the browser, preserves path/query/fragment and uses the apex canonical metadata. It is not HTTP 301 and requires JavaScript. An HTTP 301 cannot be implemented using private S3/OAC and CloudFront configuration alone. An optional CloudFront Function would be needed for a server-side redirect; its current 2 million monthly free invocations and small excess usage price make it inexpensive, but it is unnecessary for this first static launch and has not been provisioned.
+The registration PR requests this additional validation record in its body; it does not insert an unrelated record into the one-line CNAME change. Validation can time out before maintainers add DNS: check ACM status and re-request if needed.
+
+Once ACM is **ISSUED**, update the existing stack with `CertificateArn`, `DomainName=tandryx.js.org` and `IncludeWww=false`, preserving `CreateGitHubOidc=true`. Wait for CloudFront to finish deploying, then activate the website CNAME `tandryx.js.org -> d38num53uhx947.cloudfront.net`. Verify DNS, HTTPS, pages, assets and the custom 404 on the new host. Do not attach a pending certificate or mark the domain ready based only on PR submission.
+
+No `www.tandryx.js.org` name, certificate SAN or redirect is requested. Adding another name later requires its own approval and certificate coverage. No additional AWS redirect service is needed.
 
 ## GitHub Actions
 
@@ -91,29 +96,28 @@ The deploy script compares content digests, uploads assets before HTML and inval
 
 ## Email
 
-Mailbox selection and SPF/DKIM/DMARC steps are in [startup readiness](anthropic-startup-readiness.md#mailbox-plan). No SES infrastructure or paid mailbox has been created. Exact provider verification and DKIM values must come from the selected account after domain purchase.
+Mailbox selection and SPF/DKIM/DMARC steps are in [startup readiness](anthropic-startup-readiness.md#mailbox-plan). JS.ORG registration does not provide a mailbox or independent DNS administration. New NS delegation is discontinued, so custom mail is not assumed available on this free website name. No SES infrastructure or paid mailbox has been created. A separately owned domain remains an option if a branded mailbox is required.
 
 ## Live resources
 
 CloudFormation stack: `tandryx-website` in `us-east-1`.
 
-| Resource                    | Identifier                                                                |
-| --------------------------- | ------------------------------------------------------------------------- |
-| Private S3 bucket           | `tandryx-website-478681635233-us-east-1`                                  |
-| CloudFront distribution     | `E2Y8A4H8ZSCKC5`                                                          |
-| Technical website address   | **https://d38num53uhx947.cloudfront.net**                                 |
-| GitHub OIDC deployment role | `arn:aws:iam::478681635233:role/tandryx-website-github-deploy`            |
-| Domain certificate          | `4707a54e-66fc-431d-8f81-3f2c4507330e`, us-east-1, pending DNS validation |
+| Resource                    | Identifier                                                                       |
+| --------------------------- | -------------------------------------------------------------------------------- |
+| Private S3 bucket           | `tandryx-website-478681635233-us-east-1`                                         |
+| CloudFront distribution     | `E2Y8A4H8ZSCKC5`                                                                 |
+| Technical website address   | **https://d38num53uhx947.cloudfront.net**                                        |
+| GitHub OIDC deployment role | `arn:aws:iam::478681635233:role/tandryx-website-github-deploy`                   |
+| Domain certificate          | `ea110f9d-5aa9-4583-aa56-4cefb9dcd3af`, us-east-1, pending JS.ORG DNS validation |
 
-After the validated certificate is attached to CloudFront, add these website records:
+After the validated certificate is attached to CloudFront, JS.ORG activates this website record:
 
-| TYPE  | NAME              | VALUE                           | TTL |
-| ----- | ----------------- | ------------------------------- | --- |
-| ALIAS | `@` (tandryx.com) | `d38num53uhx947.cloudfront.net` | 300 |
-| CNAME | `www`             | `d38num53uhx947.cloudfront.net` | 300 |
+| TYPE  | NAME             | VALUE                           | TTL |
+| ----- | ---------------- | ------------------------------- | --- |
+| CNAME | `tandryx.js.org` | `d38num53uhx947.cloudfront.net` | 300 |
 
-These two records direct traffic; the two validation CNAMEs above prove domain ownership. They serve different purposes and all four are needed. Keep mail MX/TXT/DKIM records independent.
+The website record directs traffic; the separate validation CNAME proves domain control to ACM. Both are required for direct CloudFront hosting with HTTPS.
 
 Verified October 7, 2026: home, Privacy, Terms, robots, sitemap and all linked assets return HTTP 200; a nonexistent route returns the custom HTML page with HTTP 404. HTTP redirects to HTTPS with 301, text responses use Brotli compression and managed security headers are present. Direct S3 access returns 403. Website source passed link/metadata/build checks and desktop/mobile browser review. Current text source audit found no previous-brand strings or AWS/GitHub token/private-key patterns.
 
-The technical CloudFront address is free to use with this distribution and works before domain purchase. Free `github.io` project addresses are another option, but domain-branded mail requires ownership of the chosen domain. Some verified student programs offer a domain for one year; registration renewal then costs money. Do not assume a free first year means a permanently free domain.
+The technical CloudFront address remains available while the free domain request is reviewed. JS.ORG is a voluntary service with no ownership or availability guarantee for the subdomain; it has no registration or renewal charge.

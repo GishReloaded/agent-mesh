@@ -5,7 +5,7 @@ Last reviewed: October 7, 2026. This records preparation; no Anthropic applicati
 ## Project
 
 - Project: **Tandryx**
-- Website: **https://tandryx.com** — intended canonical address; domain purchase and DNS are pending.
+- Website: **https://tandryx.js.org** — selected free canonical address; JS.ORG approval and DNS validation are pending. The site is live at https://d38num53uhx947.cloudfront.net.
 - Company email: **founder@tandryx.com** — planned mailbox; not yet operational.
 - GitHub: **https://github.com/GishReloaded/tandryx**
 - Maintainer: **GishReloaded**. No legal entity, customer base, funding or partnership is represented here.
@@ -47,7 +47,7 @@ The public marketing website is separate from the dynamic collaboration applicat
 
 Hosting uses one private, encrypted S3 bucket, CloudFront Origin Access Control and HTTPS. CloudFront redirects HTTP to HTTPS, compresses supported responses, honors origin cache headers and adds AWS-managed security headers. Missing paths return HTTP 404, including private S3's missing-key 403 responses. There is no SPA fallback, server compute, database, WAF or Route 53 for this website.
 
-The `www` behavior is a static browser redirect preserving path, query and fragment. This uses no extra service and is **not an HTTP 301**. It will be verified on the actual domain after certificate issuance and alias attachment. If an HTTP redirect becomes necessary, discuss the optional CloudFront Function first; no such function has been created.
+Only `tandryx.js.org` is requested; there is no separate `www` host or redirect. The existing CloudFront distribution will receive this alias after JS.ORG maintainers add the ACM validation record and the certificate is issued. No extra redirect service is required.
 
 GitHub Actions builds on pull requests and deploys main using AWS OIDC. The AWS role trusts only `GishReloaded/tandryx` on `refs/heads/main`, can read/write website objects and invalidate only this distribution. It cannot create infrastructure, access the application's secrets or assume wider AWS permissions. Hashed assets have immutable caching; only changed stable paths are invalidated.
 
@@ -57,7 +57,9 @@ Amazon SES was evaluated first. Its usage-based sending prices are low, but SES 
 
 Start with **Zoho Mail Free**, if offered for the user's account and region: one custom domain, up to five users and 5 GB per user. Use its webmail/mobile app for receiving and sending. IMAP/POP/ActiveSync are not included, and availability is limited to selected data centers. The fallback is its low-cost Mail Lite plan only after the user approves payment. An existing mailbox included with another paid service may be even cheaper if it supports custom-domain sending, SPF and DKIM.
 
-After buying the domain:
+The selected JS.ORG website name does not include a mailbox or independent DNS management; new NS delegation is discontinued. Do not assume `founder@tandryx.js.org` can be provisioned. The original `founder@tandryx.com` mailbox remains an unfulfilled plan for a separately owned domain, and no purchase is authorized by the free website registration request.
+
+If the owner later buys a separate domain for email:
 
 1. Create the provider account as the domain owner and choose an actually free plan if available.
 2. Verify domain ownership using the exact TXT/CNAME token issued by that provider.
@@ -76,8 +78,8 @@ References checked October 7, 2026: [SES pricing](https://aws.amazon.com/ses/pri
 
 - [x] Site deployed — https://d38num53uhx947.cloudfront.net; all public pages and assets verified.
 - [x] HTTPS working — valid CloudFront HTTPS; HTTP redirects with 301.
-- [ ] tandryx.com working — domain purchase/DNS pending.
-- [ ] www redirect working — actual domain verification pending; static client redirect prepared.
+- [ ] tandryx.js.org working — JS.ORG approval, ACM validation and CloudFront alias pending.
+- [x] www decision recorded — no additional www host requested for the free JS.ORG name.
 - [x] Mobile checked — 390 px and 320 px layouts, no horizontal overflow; menu toggles and closes on navigation.
 - [x] GitHub link working — points to the actual public repository.
 - [x] Privacy working — `/privacy` returns HTTP 200.
@@ -94,4 +96,4 @@ References checked October 7, 2026: [SES pricing](https://aws.amazon.com/ses/pri
 
 ## Before application
 
-The owner must purchase the chosen domain and add the DNS records in [the hosting runbook](website-hosting.md). After the domain is validated, attach its free ACM certificate to CloudFront and verify both HTTPS hosts. Complete mailbox setup and authentication checks, re-check website/GitHub content, then perform the separate Anthropic program review. Domain registration and renewal are outside the AWS website estimate.
+Follow the JS.ORG registration and DNS steps in [the hosting runbook](website-hosting.md). After DNS validation, attach the free ACM certificate to the existing CloudFront distribution and verify `tandryx.js.org` over HTTPS. Resolve the mailbox separately, re-check website/GitHub content, then perform the separate Anthropic program review. No domain purchase or Anthropic application has been made.
