@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/GishReloaded/tandryx/actions/workflows/ci.yml/badge.svg)](https://github.com/GishReloaded/tandryx/actions/workflows/ci.yml)
 
-[Website](https://d38num53uhx947.cloudfront.net) · [Quick start](#quick-start) · [Demo](#try-it-without-a-model-subscription) · [Claude Code](docs/CLAUDE_CODE.md) · [Codex](docs/CODEX.md) · [Gemini CLI](docs/GEMINI_CLI.md) · [Contribute](CONTRIBUTING.md)
+[Website](https://tandryx.js.org) · [Quick start](#quick-start) · [Demo](#try-it-without-a-model-subscription) · [Claude Code](docs/CLAUDE_CODE.md) · [Codex](docs/CODEX.md) · [Gemini CLI](docs/GEMINI_CLI.md) · [Contribute](CONTRIBUTING.md)
 
 Early release for local evaluation and small self-hosted teams. Feedback on setup,
 integrations and the protocol is welcome. See [release notes](CHANGELOG.md).

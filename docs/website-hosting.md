@@ -46,7 +46,7 @@ The stack creates one private SSE-S3 bucket, OAC, distribution, bucket policy, G
 
 If reusing the template in a different account that already has the GitHub OIDC provider, set `CreateGitHubOidc=false`. Keep this parameter unchanged for the current stack: removing its provider could disrupt roles sharing it.
 
-## Domain connection — JS.ORG approval pending
+## Domain connection — DNS configured
 
 The owner selected **tandryx.js.org** instead of buying a domain. JS.ORG provides a free subdomain for JavaScript ecosystem projects through a registration pull request. Tandryx has a published TypeScript SDK, protocol package and Node.js CLI; the website links to the actual npm packages and examples. JS.ORG permits other hosting providers, so the existing AWS site stays in place. See [registration and content requirements](https://github.com/js-org/js.org#other-providers) and [service terms](https://js.org/terms.html).
 
@@ -56,19 +56,19 @@ The request adds only this alphabetically ordered line to `cnames_active.js`:
   "tandryx": "d38num53uhx947.cloudfront.net", // noCF
 ```
 
-`noCF` requests DNS-only resolution without Cloudflare proxying. A source and deployed `CNAME` file also records the intended name; AWS does not process that file automatically. Registration is subject to maintainers' review, and the new domain is not operational until DNS and HTTPS are verified.
+`noCF` requests DNS-only resolution without Cloudflare proxying. A source and deployed `CNAME` file also records the intended name; AWS does not process that file automatically. [Registration PR #12666](https://github.com/js-org/js.org/pull/12666) remains open: maintainer `indus` confirmed adding both DNS records and will merge after verifying the hosted site. Keep the request open until that review completes.
 
 ACM certificate ARN: `arn:aws:acm:us-east-1:478681635233:certificate/ea110f9d-5aa9-4583-aa56-4cefb9dcd3af`. It covers only `tandryx.js.org`, is non-exportable, and costs $0 with CloudFront.
 
-JS.ORG maintainers must first add this **DNS-only** validation CNAME. Keep it permanently for certificate renewal. TTL 300 seconds or the provider default is suitable.
+JS.ORG maintainers added this **DNS-only** validation CNAME. Both authoritative nameservers returned the exact requested value, and ACM issued the certificate on October 7, 2026. Keep the record permanently for certificate renewal. TTL 300 seconds or the provider default is suitable.
 
 | TYPE  | NAME                                               | VALUE                                                              | TTL |
 | ----- | -------------------------------------------------- | ------------------------------------------------------------------ | --- |
 | CNAME | `_a0540782c902720754c3a54d6a18724a.tandryx.js.org` | `_82c936a281006a012efddf3b3d5c6b41.wzccmgtwzk.acm-validations.aws` | 300 |
 
-The registration PR requests this additional validation record in its body; it does not insert an unrelated record into the one-line CNAME change. Validation can time out before maintainers add DNS: check ACM status and re-request if needed.
+The registration PR requests this additional validation record in its body; it does not insert an unrelated record into the one-line CNAME change. A future replacement certificate can use the retained validation record; always verify its current status and record values.
 
-Once ACM is **ISSUED**, update the existing stack with `CertificateArn`, `DomainName=tandryx.js.org` and `IncludeWww=false`, preserving `CreateGitHubOidc=true`. Wait for CloudFront to finish deploying, then activate the website CNAME `tandryx.js.org -> d38num53uhx947.cloudfront.net`. Verify DNS, HTTPS, pages, assets and the custom 404 on the new host. Do not attach a pending certificate or mark the domain ready based only on PR submission.
+After ACM became **ISSUED**, the existing stack was updated with `CertificateArn`, `DomainName=tandryx.js.org` and `IncludeWww=false`, preserving `CreateGitHubOidc=true`. The reviewed change set modified only the existing CloudFront distribution with no replacement or additional resources. JS.ORG's website CNAME is `tandryx.js.org -> d38num53uhx947.cloudfront.net`. Public HTTPS on the new domain was verified on October 7, 2026: all pages and linked assets return 200, HTTP redirects with 301, and a nonexistent route returns the custom HTML 404.
 
 No `www.tandryx.js.org` name, certificate SAN or redirect is requested. Adding another name later requires its own approval and certificate coverage. No additional AWS redirect service is needed.
 
@@ -102,15 +102,16 @@ Mailbox selection and SPF/DKIM/DMARC steps are in [startup readiness](anthropic-
 
 CloudFormation stack: `tandryx-website` in `us-east-1`.
 
-| Resource                    | Identifier                                                                       |
-| --------------------------- | -------------------------------------------------------------------------------- |
-| Private S3 bucket           | `tandryx-website-478681635233-us-east-1`                                         |
-| CloudFront distribution     | `E2Y8A4H8ZSCKC5`                                                                 |
-| Technical website address   | **https://d38num53uhx947.cloudfront.net**                                        |
-| GitHub OIDC deployment role | `arn:aws:iam::478681635233:role/tandryx-website-github-deploy`                   |
-| Domain certificate          | `ea110f9d-5aa9-4583-aa56-4cefb9dcd3af`, us-east-1, pending JS.ORG DNS validation |
+| Resource                    | Identifier                                                     |
+| --------------------------- | -------------------------------------------------------------- |
+| Private S3 bucket           | `tandryx-website-478681635233-us-east-1`                       |
+| CloudFront distribution     | `E2Y8A4H8ZSCKC5`                                               |
+| Technical website address   | **https://d38num53uhx947.cloudfront.net**                      |
+| Public website address      | **https://tandryx.js.org**                                     |
+| GitHub OIDC deployment role | `arn:aws:iam::478681635233:role/tandryx-website-github-deploy` |
+| Domain certificate          | `ea110f9d-5aa9-4583-aa56-4cefb9dcd3af`, us-east-1, issued      |
 
-After the validated certificate is attached to CloudFront, JS.ORG activates this website record:
+JS.ORG has activated this website record:
 
 | TYPE  | NAME             | VALUE                           | TTL |
 | ----- | ---------------- | ------------------------------- | --- |
