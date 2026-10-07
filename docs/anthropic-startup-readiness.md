@@ -5,8 +5,9 @@ Last reviewed: October 7, 2026. This records preparation; no Anthropic applicati
 ## Project
 
 - Project: **Tandryx**
-- Website: **https://tandryx.js.org** — live over HTTPS. JS.ORG added the DNS records; [registration PR #12666](https://github.com/js-org/js.org/pull/12666) remains open for final maintainer verification. The technical CloudFront address also works.
-- Company email: **founder@tandryx.com** — planned mailbox; not yet operational.
+- Application website: **https://tandryx.top** — live over HTTPS and matches the company email domain.
+- Retained free website: **https://tandryx.js.org** — live over HTTPS. JS.ORG added the DNS records; [registration PR #12666](https://github.com/js-org/js.org/pull/12666) remains open for final maintainer verification. The technical CloudFront address also works.
+- Company email: **founder@tandryx.top** — created on Zoho Mail Free (EU); incoming delivery from an independent provider verified and a test reply sent. The owner confirmed the reply arrived in the Gmail inbox; Gmail shows tandryx.top as the signed-by domain and TLS transport. Full recipient Authentication-Results, particularly DMARC alignment, have not yet been independently inspected.
 - GitHub: **https://github.com/GishReloaded/tandryx**
 - Maintainer: **GishReloaded**. No legal entity, customer base, funding or partnership is represented here.
 - License: Apache 2.0. Current release: v0.2.0.
@@ -47,7 +48,9 @@ The public marketing website is separate from the dynamic collaboration applicat
 
 Hosting uses one private, encrypted S3 bucket, CloudFront Origin Access Control and HTTPS. CloudFront redirects HTTP to HTTPS, compresses supported responses, honors origin cache headers and adds AWS-managed security headers. Missing paths return HTTP 404, including private S3's missing-key 403 responses. There is no SPA fallback, server compute, database, WAF or Route 53 for this website.
 
-Only `tandryx.js.org` is requested; there is no separate `www` host or redirect. JS.ORG maintainers added the ACM validation record, AWS issued the free certificate, and the alias and certificate were attached to the existing CloudFront distribution. Public HTTPS, pages, assets and the custom 404 were verified. No extra redirect service is required.
+JS.ORG maintainers added the ACM validation record, AWS issued the free certificate, and the alias and certificate were attached to the existing CloudFront distribution. Public HTTPS, pages, assets and the custom 404 on `tandryx.js.org` were verified. The owner subsequently registered `tandryx.top` through Spaceship for $1.60 for the first year, with current renewal at $4.05/year including ICANN fees. Its DNS is configured, a free certificate covering both domains is issued, and CloudFront is deployed with both aliases. Public HTTPS and all website routes/assets were verified on both names. Both names use the same site. No separate `www` host or additional redirect service is required.
+
+Anthropic currently asks for a company email matching the website domain. Use `https://tandryx.top` with `founder@tandryx.top` in the application, while retaining the working JS.ORG address. Domain and email matching alone does not establish program eligibility. See [current program requirements](https://claude.com/programs/startups).
 
 GitHub Actions builds on pull requests and deploys main using AWS OIDC. The AWS role trusts only `GishReloaded/tandryx` on `refs/heads/main`, can read/write website objects and invalidate only this distribution. It cannot create infrastructure, access the application's secrets or assume wider AWS permissions. Hashed assets have immutable caching; only changed stable paths are invalidated.
 
@@ -55,22 +58,33 @@ GitHub Actions builds on pull requests and deploys main using AWS OIDC. The AWS 
 
 Amazon SES was evaluated first. Its usage-based sending prices are low, but SES is not a normal mailbox. Receiving into S3 plus forwarding, identity verification and external inbox arrangements would add unnecessary operations for a single founder address. No SES resources were created.
 
-Start with **Zoho Mail Free**, if offered for the user's account and region: one custom domain, up to five users and 5 GB per user. Use its webmail/mobile app for receiving and sending. IMAP/POP/ActiveSync are not included, and availability is limited to selected data centers. The fallback is its low-cost Mail Lite plan only after the user approves payment. An existing mailbox included with another paid service may be even cheaper if it supports custom-domain sending, SPF and DKIM.
+**Zoho Mail Free (EU)** was selected and the admin console confirms the actual Mail Free plan, with no trial or renewal date. It provides: one custom domain, up to five users and 5 GB per user. Use its webmail/mobile app for receiving and sending. IMAP/POP/ActiveSync are not included, and availability is limited to selected data centers. No paid mailbox or upgrade was selected.
 
-The selected JS.ORG website name does not include a mailbox or independent DNS management; new NS delegation is discontinued. Do not assume `founder@tandryx.js.org` can be provisioned. The original `founder@tandryx.com` mailbox remains an unfulfilled plan for a separately owned domain, and no purchase is authorized by the free website registration request.
+The JS.ORG website name does not include a mailbox or independent DNS management; new NS delegation is discontinued. Do not assume `founder@tandryx.js.org` can be provisioned. The owner has now purchased the separate `tandryx.top` domain and authorized connecting it to the website and mailbox. Spaceship DNS supports the website apex ALIAS alongside mail MX/TXT records.
 
-If the owner later buys a separate domain for email:
+Mailbox configuration procedure:
 
 1. Create the provider account as the domain owner and choose an actually free plan if available.
 2. Verify domain ownership using the exact TXT/CNAME token issued by that provider.
-3. Create `founder@tandryx.com`. Add the provider's regional MX records.
+3. Create `founder@tandryx.top`. Add the provider's regional MX records.
 4. Add exactly one SPF TXT record using that provider's current instructions; do not combine multiple SPF records.
 5. Generate DKIM in the provider console, add its actual selector/public key and enable signing.
-6. Start DMARC at `_dmarc.tandryx.com` with `v=DMARC1; p=none; adkim=r; aspf=r`. Add a reporting address only when a monitored mailbox is ready. Move toward `quarantine`/`reject` after verifying legitimate senders.
+6. Start DMARC at `_dmarc.tandryx.top` with `v=DMARC1; p=none; adkim=r; aspf=r`. Add a reporting address only when a monitored mailbox is ready. Move toward `quarantine`/`reject` after verifying legitimate senders.
 7. Test incoming mail and outgoing mail to an independent provider; inspect Authentication-Results for SPF/DKIM/DMARC alignment and check spam placement.
 8. Replace the temporary GitHub-only contact on the website with the working mailbox, update this checklist and deploy.
 
-Do not publish invented verification tokens, DKIM keys or regional MX values. Exact mailbox DNS records will be supplied after provider selection and account setup.
+Configured and publicly verified on October 7, 2026 (TTL 300 seconds):
+
+| Type | Host             | Value                                                                                    | Priority |
+| ---- | ---------------- | ---------------------------------------------------------------------------------------- | -------- |
+| MX   | @                | mx.zoho.eu                                                                               | 10       |
+| MX   | @                | mx2.zoho.eu                                                                              | 20       |
+| MX   | @                | mx3.zoho.eu                                                                              | 50       |
+| TXT  | @                | v=spf1 include:zohomail.eu ~all                                                          | —        |
+| TXT  | zmail._domainkey | Actual RSA public key issued by Zoho; verified in the admin console, DKIM status enabled | —        |
+| TXT  | _dmarc           | v=DMARC1; p=none; adkim=r; aspf=r                                                        | —        |
+
+Domain ownership was verified using the issued CNAME at `zb49416801`, pointing to `zmverify.zoho.eu`; the corresponding verification TXT is retained. Both mail and website records coexist on Spaceship DNS. A real test message from the owner’s independent mailbox arrived in the Zoho inbox, and an authorized reply was sent. The owner confirmed the reply arrived in the Gmail inbox. Gmail shows tandryx.top as the signed-by domain and TLS transport; full recipient Authentication-Results have not yet been independently inspected.
 
 References checked October 7, 2026: [SES pricing](https://aws.amazon.com/ses/pricing/), [Zoho plans and Free availability](https://www.zoho.com/mail/zohomail-pricing.html), [adm.tools provider guide for Zoho](https://www.ukraine.com.ua/wiki/domain/third-party-services/zohomail/).
 
@@ -84,11 +98,13 @@ References checked October 7, 2026: [SES pricing](https://aws.amazon.com/ses/pri
 - [x] GitHub link working — points to the actual public repository.
 - [x] Privacy working — `/privacy` returns HTTP 200.
 - [x] Terms working — `/terms` returns HTTP 200.
-- [ ] founder@tandryx.com receives email.
-- [ ] founder@tandryx.com sends email.
-- [ ] SPF valid.
-- [ ] DKIM valid.
-- [ ] DMARC valid.
+- [x] tandryx.top working — DNS, issued ACM certificate and CloudFront alias complete; public pages, assets and HTTPS verified.
+- [x] founder@tandryx.top receives email — independent-provider test arrived in the inbox.
+- [x] founder@tandryx.top sends email — reply arrived in the owner’s Gmail inbox.
+- [x] SPF valid — one SPF record, publicly resolved and verified by Zoho.
+- [x] DKIM valid — issued public key resolves; Zoho selector verified and signing enabled.
+- [x] DMARC DNS policy published — p=none record publicly resolved.
+- [ ] Outbound SPF/DKIM/DMARC alignment independently checked in recipient Authentication-Results.
 - [x] No previous-brand references remain — current tracked/new text source audited. Historical Git objects and compatibility resource names are outside the public website's brand audit.
 - [x] No secrets exposed — changed files reviewed and current text source checked for AWS/GitHub token and private-key patterns; website contains no credentials.
 - [x] No fake claims — website distinguishes available features, plans and scripted demonstration.
@@ -96,4 +112,4 @@ References checked October 7, 2026: [SES pricing](https://aws.amazon.com/ses/pri
 
 ## Before application
 
-The free website domain and HTTPS are operational; keep the JS.ORG registration PR open until maintainers finish their verification and merge it. Resolve the mailbox separately, re-check website/GitHub content, then perform the separate Anthropic program review. No domain purchase or Anthropic application has been made.
+The free website domain and HTTPS are operational; keep the JS.ORG registration PR open until maintainers finish their verification and merge it. The separate `tandryx.top` domain is purchased. Its Mail Free mailbox receives and sends mail in real independent-provider tests. The public contact address and notices are updated. Inspect recipient-side Authentication-Results to finish the detailed alignment check, then perform the separate Anthropic program eligibility/application review. No Anthropic application has been made.
