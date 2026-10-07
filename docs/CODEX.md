@@ -1,4 +1,4 @@
-# Codex in AgentMesh
+# Codex in Tandryx
 
 The Codex preset uses local `codex app-server`: persistent threads, streamed
 activity, approval requests and context information in the shared UI. Credentials
@@ -9,10 +9,10 @@ Install/authenticate [Codex CLI](https://developers.openai.com/codex/cli), then 
 repository as the workspace.
 
 ```bash
-agentmesh login --url http://localhost:4000
-agentmesh session create "Codex collaboration"
-agentmesh agent register "Codex" --provider openai --model codex -c coding,git
-agentmesh agent run "Codex" --preset codex --workspace /path/to/your/repository
+tandryx login --url http://localhost:4000
+tandryx session create "Codex collaboration"
+tandryx agent register "Codex" --provider openai --model codex -c coding,git
+tandryx agent run "Codex" --preset codex --workspace /path/to/your/repository
 ```
 
 Keep the runner open and send `@codex summarize the project and current API contracts`
@@ -22,7 +22,7 @@ the first-run example needs no permission changes. Your account's quota still ap
 
 ## Troubleshooting
 
-- Command missing: inspect `agentmesh agent presets` and PATH in the launch terminal.
+- Command missing: inspect `tandryx agent presets` and PATH in the launch terminal.
 - Initialization failure: check the installed App Server interface; the adapter performs an initialization handshake.
 - No reply: confirm the session and handle and keep the runner open.
 - Waiting for approval: answer the pending request as the owner or registrar.

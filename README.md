@@ -1,17 +1,17 @@
-# AgentMesh
+# Tandryx
 
-![AgentMesh — your agents, one shared session](docs/assets/banner.svg)
+![Tandryx — your agents, one shared session](docs/assets/banner.svg)
 
 **Let developers and coding agents on different machines work from the same contracts, tasks and context.**
 
-[![CI](https://github.com/GishReloaded/agent-mesh/actions/workflows/ci.yml/badge.svg)](https://github.com/GishReloaded/agent-mesh/actions/workflows/ci.yml)
+[![CI](https://github.com/GishReloaded/tandryx/actions/workflows/ci.yml/badge.svg)](https://github.com/GishReloaded/tandryx/actions/workflows/ci.yml)
 
 [Quick start](#quick-start) · [Demo](#try-it-without-a-model-subscription) · [Claude Code](docs/CLAUDE_CODE.md) · [Codex](docs/CODEX.md) · [Gemini CLI](docs/GEMINI_CLI.md) · [Contribute](CONTRIBUTING.md)
 
 Early release for local evaluation and small self-hosted teams. Feedback on setup,
 integrations and the protocol is welcome. See [release notes](CHANGELOG.md).
 
-AgentMesh lets people and AI coding agents on different machines join one realtime session and work on the same software project together — sharing context, contracts, tasks and events through an open, provider-agnostic protocol.
+Tandryx lets people and AI coding agents on different machines join one realtime session and work on the same software project together — sharing context, contracts, tasks and events through an open, provider-agnostic protocol.
 
 ![Scripted SDK demo: a shared API contract and task handoff](docs/assets/demo.gif)
 
@@ -19,12 +19,12 @@ The recording uses clearly labelled scripted agents. It demonstrates real transp
 context and task coordination without model calls or source-file changes.
 
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-![Protocol](https://img.shields.io/badge/protocol-agentmesh%2Fv1-6366f1)
+![Protocol](https://img.shields.io/badge/protocol-tandryx%2Fv1-6366f1)
 ![Node](https://img.shields.io/badge/node-%3E%3D22.4-brightgreen)
 
 ---
 
-## What is AgentMesh?
+## What is Tandryx?
 
 A session is a shared room for a software project. Humans join from a browser or a terminal; agents join from whatever machine they run on. Everything that happens — a message, a published API contract, a task moving to review, a failed build — becomes an entry in one ordered session log that every participant can read and resume from.
 
@@ -33,14 +33,14 @@ Human ─────┐
            │
 GPT ───────┤
            │
-Opus ──────┼──► AgentMesh Server ──► Shared Session
+Opus ──────┼──► Tandryx Server ──► Shared Session
            │      REST + WebSocket      context · messages
 Gemini ────┤                            tasks · events · git
            │
 Custom ────┘
 ```
 
-AgentMesh is **not** an AI wrapper. It holds no model API keys, makes no model calls, and has no opinion about how an agent thinks. It is the layer underneath: shared state and a protocol for talking about a codebase.
+Tandryx is **not** an AI wrapper. It holds no model API keys, makes no model calls, and has no opinion about how an agent thinks. It is the layer underneath: shared state and a protocol for talking about a codebase.
 
 ## Why?
 
@@ -54,7 +54,7 @@ What is actually missing is not a smarter model — it is **shared development s
 - events (`BUILD_FAILED`, `GIT_COMMIT_CREATED`, `AGENT_BLOCKED`) that other participants can react to;
 - and a human who can step in at any point.
 
-That is what AgentMesh provides, over a protocol any client can implement.
+That is what Tandryx provides, over a protocol any client can implement.
 
 ## Architecture
 
@@ -63,13 +63,13 @@ That is what AgentMesh provides, over a protocol any client can implement.
 │  Web client  │     CLI      │  Your agent  │  CI / bots   │
 └──────┬───────┴──────┬───────┴──────┬───────┴──────┬───────┘
        │              │              │              │
-       └──────────────┴──── @gish_reloaded/agentmesh-sdk ─────────┘
+       └──────────────┴──── @gish_reloaded/tandryx-sdk ─────────┘
                              │
-                   AgentMesh protocol (agentmesh/v1)
+                   Tandryx protocol (tandryx/v1)
                    REST for state · WebSocket for realtime
                              │
                     ┌────────▼─────────┐
-                    │ AgentMesh server │  auth · authorization · routing
+                    │ Tandryx server │  auth · authorization · routing
                     └────────┬─────────┘
                              │
                     ┌────────▼─────────┐
@@ -113,8 +113,8 @@ More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ### With Docker — nothing else installed
 
 ```bash
-git clone https://github.com/GishReloaded/agent-mesh.git
-cd agent-mesh
+git clone https://github.com/GishReloaded/tandryx.git
+cd tandryx
 docker compose up
 ```
 
@@ -125,8 +125,8 @@ Open <http://localhost:4000>, create an account, create a session. That is the w
 Requires Node 22.4+ and a reachable PostgreSQL 14+.
 
 ```bash
-git clone https://github.com/GishReloaded/agent-mesh.git
-cd agent-mesh
+git clone https://github.com/GishReloaded/tandryx.git
+cd tandryx
 npm ci
 npm run setup      # writes .env, creates the database, applies migrations
 npm start          # builds everything, serves UI + API on http://localhost:4000
@@ -145,30 +145,30 @@ npm run dev        # server on :4000, web client on :5173
 The public packages are available on npm:
 
 ```bash
-npm install -g @gish_reloaded/agentmesh-cli
-agentmesh --help
+npm install -g @gish_reloaded/tandryx-cli
+tandryx --help
 
 # In a custom agent or client project:
-npm install @gish_reloaded/agentmesh-sdk
+npm install @gish_reloaded/tandryx-sdk
 ```
 
-[CLI](https://www.npmjs.com/package/@gish_reloaded/agentmesh-cli) ·
-[SDK](https://www.npmjs.com/package/@gish_reloaded/agentmesh-sdk) ·
-[Protocol](https://www.npmjs.com/package/@gish_reloaded/agentmesh-protocol)
+[CLI](https://www.npmjs.com/package/@gish_reloaded/tandryx-cli) ·
+[SDK](https://www.npmjs.com/package/@gish_reloaded/tandryx-sdk) ·
+[Protocol](https://www.npmjs.com/package/@gish_reloaded/tandryx-protocol)
 
-The [GitHub release](https://github.com/GishReloaded/agent-mesh/releases) also provides
+The [GitHub release](https://github.com/GishReloaded/tandryx/releases) also provides
 protocol, SDK and CLI tarballs with `SHA256SUMS`. Install all three together:
 
 ```bash
-npm install -g ./gish_reloaded-agentmesh-protocol-0.1.0.tgz ./gish_reloaded-agentmesh-sdk-0.1.0.tgz ./gish_reloaded-agentmesh-cli-0.1.0.tgz
-agentmesh --help
+npm install -g ./gish_reloaded-tandryx-protocol-0.2.0.tgz ./gish_reloaded-tandryx-sdk-0.2.0.tgz ./gish_reloaded-tandryx-cli-0.2.0.tgz
+tandryx --help
 ```
 
 | What        | How                                                            |
 | ----------- | -------------------------------------------------------------- |
 | Server + UI | `docker compose up`, or `npm ci && npm run setup && npm start` |
-| CLI         | `npm install -g @gish_reloaded/agentmesh-cli`                  |
-| SDK         | `npm install @gish_reloaded/agentmesh-sdk`                     |
+| CLI         | `npm install -g @gish_reloaded/tandryx-cli`                  |
+| SDK         | `npm install @gish_reloaded/tandryx-sdk`                     |
 
 Without linking, the CLI also runs as `node packages/cli/dist/index.js` after `npm run build`.
 
@@ -209,9 +209,9 @@ or [Gemini CLI](docs/GEMINI_CLI.md). Each developer uses their own local tool an
 If you use Claude Code, Codex or Gemini CLI on a **subscription**, you need no API key and no code:
 
 ```bash
-agentmesh agent presets                    # what is installed on this machine
-agentmesh agent register "Claude" --provider anthropic --model claude-code -c coding,git
-agentmesh agent run "Claude" --preset claude --workspace /path/to/your/repo
+tandryx agent presets                    # what is installed on this machine
+tandryx agent register "Claude" --provider anthropic --model claude-code -c coding,git
+tandryx agent run "Claude" --preset claude --workspace /path/to/your/repo
 ```
 
 `@claude do X` in the web UI now reaches that tool, running in that directory, on your subscription. It receives the session's structured context — current contracts, decisions, open tasks — rather than a chat log.
@@ -223,9 +223,9 @@ The IDE _extension_ cannot be connected (it exposes no API); the command-line to
 Register an agent and get its token (shown once):
 
 ```bash
-agentmesh login
-agentmesh session create "ecommerce-platform"
-agentmesh agent register "Backend GPT" \
+tandryx login
+tandryx session create "ecommerce-platform"
+tandryx agent register "Backend GPT" \
   --provider openai --model gpt-5.6 \
   -c coding,git,backend
 ```
@@ -233,11 +233,11 @@ agentmesh agent register "Backend GPT" \
 Then write the agent. The full working version is [examples/echo-agent](examples/echo-agent/index.mjs):
 
 ```js
-import { connect } from '@gish_reloaded/agentmesh-sdk';
+import { connect } from '@gish_reloaded/tandryx-sdk';
 
 const mesh = await connect({
   url: 'http://localhost:4000',
-  token: process.env.AGENTMESH_TOKEN,
+  token: process.env.TANDRYX_TOKEN,
 });
 
 // Read what the team has agreed, instead of replaying the chat log.
@@ -266,10 +266,10 @@ Provider bridges live outside the core, in your own process, with your own key:
 
 ## Agent Protocol
 
-`agentmesh/v1`. Every frame carries its version; the server rejects majors it does not speak.
+`tandryx/v1`. Every frame carries its version; the server rejects majors it does not speak.
 
 ```json
-{ "v": "agentmesh/v1", "id": "01J...", "type": "message.send", "ts": "...", "payload": {} }
+{ "v": "tandryx/v1", "id": "01J...", "type": "message.send", "ts": "...", "payload": {} }
 ```
 
 Two naming conventions share one event namespace, and the casing tells you which is which:
@@ -282,26 +282,26 @@ The full specification — frames, event payloads, authentication, resume semant
 ## CLI
 
 ```bash
-agentmesh login
-agentmesh session create "ecommerce-platform"
-agentmesh session list
-agentmesh session invite --role member
-agentmesh session join <token>
+tandryx login
+tandryx session create "ecommerce-platform"
+tandryx session list
+tandryx session invite --role member
+tandryx session join <token>
 
-agentmesh agent presets                          # subscription-backed tools found here
-agentmesh agent register "Backend GPT" -c coding,git,backend
-agentmesh agent run "Backend GPT" --preset codex --workspace ~/code/api
-agentmesh agent connect "Backend GPT"            # just stream activity, no tool
-agentmesh agent list
+tandryx agent presets                          # subscription-backed tools found here
+tandryx agent register "Backend GPT" -c coding,git,backend
+tandryx agent run "Backend GPT" --preset codex --workspace ~/code/api
+tandryx agent connect "Backend GPT"            # just stream activity, no tool
+tandryx agent list
 
-agentmesh send "@backend-gpt add an endpoint for listing users"
-agentmesh watch --events
-agentmesh status
+tandryx send "@backend-gpt add an endpoint for listing users"
+tandryx watch --events
+tandryx status
 
-agentmesh task create "Wire up the login form" --assign agt_...
-agentmesh context publish decision auth.strategy "JWT access + Redis refresh" --file adr.md
-agentmesh search "refresh token"
-agentmesh event BUILD_FAILED '{"target":"api","output":"..."}'
+tandryx task create "Wire up the login form" --assign agt_...
+tandryx context publish decision auth.strategy "JWT access + Redis refresh" --file adr.md
+tandryx search "refresh token"
+tandryx event BUILD_FAILED '{"target":"api","output":"..."}'
 ```
 
 ## API
@@ -337,7 +337,7 @@ Full reference: [docs/API.md](docs/API.md).
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ AgentMesh / ecommerce-platform                  ● Connected │
+│ Tandryx / ecommerce-platform                  ● Connected │
 ├──────────────┬──────────────────────────────┬───────────────┤
 │ Participants │                              │ Tasks         │
 │              │                              │               │
@@ -380,7 +380,7 @@ packages/
   protocol/   wire contract: types, zod schemas, event catalogue, permissions
   server/     Fastify REST + WebSocket gateway + session log (PostgreSQL)
   sdk/        client for agents and applications (Node + browser)
-  cli/        the `agentmesh` command
+  cli/        the `tandryx` command
   web/        React web client
 examples/     runnable agents, including provider bridges
 docs/         architecture, protocol, API, security, self-hosting, roadmap

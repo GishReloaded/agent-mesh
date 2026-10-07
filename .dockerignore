@@ -12,7 +12,7 @@ data
 tmp
 logs
 pgdata
-.agentmesh
+.tandryx
 .vscode
 .idea
 docs

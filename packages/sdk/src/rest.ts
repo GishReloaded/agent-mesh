@@ -1,6 +1,6 @@
 import {
   API_PREFIX,
-  AgentMeshError,
+  TandryxError,
   ErrorCode,
   errorResponseSchema,
   type AuthTokens,
@@ -38,7 +38,7 @@ import {
   type UpdateTaskRequest,
   type User,
   type VersionResponse,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 
 /** Pull something readable out of a fetch failure, including its cause chain. */
 function describeCause(error: unknown): string {
@@ -63,10 +63,10 @@ export interface RestClientOptions {
 }
 
 /**
- * Thin, fully typed wrapper over the AgentMesh REST API.
+ * Thin, fully typed wrapper over the Tandryx REST API.
  *
  * It deliberately has no runtime dependencies: the protocol package supplies
- * the types, `fetch` comes from the platform. That is what makes an AgentMesh
+ * the types, `fetch` comes from the platform. That is what makes an Tandryx
  * client implementable in any language — this file is a convenience, not a
  * requirement.
  */
@@ -134,10 +134,10 @@ export class RestClient {
     } catch (cause) {
       // `fetch` reports every transport failure as "fetch failed", which tells
       // the user nothing. The address being called is almost always the answer.
-      throw new AgentMeshError(
+      throw new TandryxError(
         ErrorCode.Internal,
-        `Could not reach the AgentMesh server at ${this.base} (${describeCause(cause)}). ` +
-          'Check the URL, or sign in against the right server with: agentmesh login --url <url>',
+        `Could not reach the Tandryx server at ${this.base} (${describeCause(cause)}). ` +
+          'Check the URL, or sign in against the right server with: tandryx login --url <url>',
         { cause },
       );
     }
@@ -158,8 +158,8 @@ export class RestClient {
     if (!response.ok) {
       const parsed = errorResponseSchema.safeParse(payload);
       throw parsed.success
-        ? AgentMeshError.fromBody(parsed.data.error)
-        : new AgentMeshError(ErrorCode.Internal, `Request failed with status ${response.status}.`);
+        ? TandryxError.fromBody(parsed.data.error)
+        : new TandryxError(ErrorCode.Internal, `Request failed with status ${response.status}.`);
     }
     return payload as T;
   }
@@ -219,8 +219,8 @@ export class RestClient {
     if (!response.ok) {
       const parsed = errorResponseSchema.safeParse(payload);
       throw parsed.success
-        ? AgentMeshError.fromBody(parsed.data.error)
-        : new AgentMeshError(ErrorCode.Internal, `Upload failed with status ${response.status}.`);
+        ? TandryxError.fromBody(parsed.data.error)
+        : new TandryxError(ErrorCode.Internal, `Upload failed with status ${response.status}.`);
     }
     return payload as User;
   }

@@ -1,6 +1,6 @@
-# AgentMesh Protocol — `agentmesh/v1`
+# Tandryx Protocol — `tandryx/v1`
 
-This document specifies the AgentMesh wire protocol. It is complete enough to implement a client or a server in any language; `@gish_reloaded/agentmesh-sdk` is a convenience built on top of it, not a requirement.
+This document specifies the Tandryx wire protocol. It is complete enough to implement a client or a server in any language; `@gish_reloaded/tandryx-sdk` is a convenience built on top of it, not a requirement.
 
 The normative schemas live in [`packages/protocol`](../packages/protocol/src) and are the source of truth. Where this document and the schemas disagree, the schemas win.
 
@@ -11,12 +11,12 @@ The normative schemas live in [`packages/protocol`](../packages/protocol/src) an
 Every frame carries a version string:
 
 ```
-agentmesh/v1
+tandryx/v1
 ```
 
 - The **major** version is negotiated. A server rejects frames whose major it does not implement with `PROTOCOL_VERSION_UNSUPPORTED` and closes with code `4003`.
 - Additive changes never bump the major: new event types, new optional fields, new error codes. Clients **must** ignore unknown fields and **must** tolerate unknown event types rather than failing.
-- Removing a field, changing its meaning, or changing an existing frame's shape requires `agentmesh/v2`.
+- Removing a field, changing its meaning, or changing an existing frame's shape requires `tandryx/v2`.
 
 ## 2. Transport
 
@@ -60,7 +60,7 @@ The `hello` frame carries the token in its payload, not in the websocket URL. Qu
 
 ```jsonc
 {
-  "v": "agentmesh/v1",
+  "v": "tandryx/v1",
   "id": "01JABCDEF...",   // sender-chosen, echoed in ack/error
   "type": "message.send",
   "ts": "2026-08-18T09:12:00.000Z",

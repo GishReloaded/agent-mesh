@@ -178,7 +178,7 @@ export class CodexAppServer {
     });
 
     await rpc.request('initialize', {
-      clientInfo: { name: 'agentmesh', title: 'AgentMesh', version: '0.1.0' },
+      clientInfo: { name: 'tandryx', title: 'Tandryx', version: '0.2.0' },
       capabilities: {},
     });
     rpc.notify('initialized', {});
@@ -209,7 +209,7 @@ export class CodexAppServer {
   }): Promise<CodexThread> {
     const result = await this.rpc.request<{ thread: CodexThread }>('thread/start', {
       cwd: input.cwd,
-      serviceName: 'agentmesh',
+      serviceName: 'tandryx',
       ...(input.model ? { model: input.model } : {}),
       ...(input.approvalPolicy ? { approvalPolicy: input.approvalPolicy } : {}),
       ...(input.approvalsReviewer ? { approvalsReviewer: input.approvalsReviewer } : {}),

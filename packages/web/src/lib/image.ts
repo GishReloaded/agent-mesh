@@ -1,4 +1,4 @@
-import { AVATAR_MAX_BYTES } from '@gish_reloaded/agentmesh-sdk';
+import { AVATAR_MAX_BYTES } from '@gish_reloaded/tandryx-sdk';
 
 /**
  * Prepare a picture for use as an avatar.

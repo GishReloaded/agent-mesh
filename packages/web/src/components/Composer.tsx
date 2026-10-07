@@ -1,4 +1,4 @@
-import { toHandle, type Agent, type SessionMember } from '@gish_reloaded/agentmesh-sdk';
+import { toHandle, type Agent, type SessionMember } from '@gish_reloaded/tandryx-sdk';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 export interface ComposerHandle {

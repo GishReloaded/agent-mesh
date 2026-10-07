@@ -279,7 +279,7 @@ export type ContextEntryWithRevisions = z.infer<typeof contextEntryWithRevisions
 // --- meta ------------------------------------------------------------------
 
 export const versionResponseSchema = z.object({
-  name: z.literal('agentmesh'),
+  name: z.literal('tandryx'),
   version: z.string(),
   protocol: z.string(),
   limits: z.record(z.string(), z.number()),

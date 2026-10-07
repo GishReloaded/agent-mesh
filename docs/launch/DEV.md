@@ -1,10 +1,10 @@
 ---
-title: AgentMesh — sharing API contracts between local coding agents
+title: Tandryx — sharing API contracts between local coding agents
 published: false
 tags: opensource, ai, typescript, devtools
 ---
 
-I maintain [AgentMesh](https://github.com/GishReloaded/agent-mesh), an Apache-2.0
+I maintain [Tandryx](https://github.com/GishReloaded/tandryx), an Apache-2.0
 project for developers who run coding agents on different machines. This is its
 first public release. This article was prepared with AI assistance; the example
 below uses scripted agents and makes no model calls.
@@ -13,7 +13,7 @@ below uses scripted agents and makes no model calls.
 
 A backend agent changes the login response. A frontend agent keeps working with
 the old response. Each can be productive locally while the shared API contract
-drifts. AgentMesh gives participants a shared session where that contract is a
+drifts. Tandryx gives participants a shared session where that contract is a
 versioned record rather than a detail buried in chat.
 
 The server does not run inference. Each developer keeps their own working copy
@@ -25,8 +25,8 @@ TypeScript SDK or implement the REST/WebSocket protocol.
 You need Docker with Compose:
 
 ```bash
-git clone https://github.com/GishReloaded/agent-mesh.git
-cd agent-mesh
+git clone https://github.com/GishReloaded/tandryx.git
+cd tandryx
 docker compose up --build
 ```
 
@@ -54,7 +54,7 @@ These agents are deliberately labelled `demo` / `scripted`. They do not implemen
 a login endpoint or modify source files. The demonstration exercises the real
 server, SDK, shared context, mentions and task updates.
 
-![Captured scripted handoff](https://raw.githubusercontent.com/GishReloaded/agent-mesh/main/docs/assets/demo.gif)
+![Captured scripted handoff](https://raw.githubusercontent.com/GishReloaded/tandryx/main/docs/assets/demo.gif)
 
 ## What is shared?
 
@@ -72,14 +72,14 @@ and account quotas still apply.
 
 ## Where this early release stops
 
-AgentMesh does not synchronize working copies, provide a MCP server or dispatch
+Tandryx does not synchronize working copies, provide a MCP server or dispatch
 tasks automatically by capability. Mobile Tasks/Context navigation needs work.
 Messages, context and tool activity are visible to session members, so review
 what you share and keep credentials out of logs.
 
 The most useful feedback is a concrete first-run failure or a real handoff that
 does not fit the protocol. There are scoped
-[contributor issues](https://github.com/GishReloaded/agent-mesh/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
-and guides for [Claude Code](https://github.com/GishReloaded/agent-mesh/blob/main/docs/CLAUDE_CODE.md),
-[Codex](https://github.com/GishReloaded/agent-mesh/blob/main/docs/CODEX.md) and
-[Gemini CLI](https://github.com/GishReloaded/agent-mesh/blob/main/docs/GEMINI_CLI.md).
+[contributor issues](https://github.com/GishReloaded/tandryx/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
+and guides for [Claude Code](https://github.com/GishReloaded/tandryx/blob/main/docs/CLAUDE_CODE.md),
+[Codex](https://github.com/GishReloaded/tandryx/blob/main/docs/CODEX.md) and
+[Gemini CLI](https://github.com/GishReloaded/tandryx/blob/main/docs/GEMINI_CLI.md).

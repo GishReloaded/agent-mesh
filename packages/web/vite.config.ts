@@ -1,7 +1,7 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
-const serverUrl = process.env.AGENTMESH_SERVER_URL ?? 'http://localhost:4000';
+const serverUrl = process.env.TANDRYX_SERVER_URL ?? 'http://localhost:4000';
 
 export default defineConfig({
   plugins: [react()],

@@ -1,5 +1,5 @@
 import {
-  AgentMeshError,
+  TandryxError,
   ClientFrameType,
   ErrorCode,
   HEARTBEAT,
@@ -12,7 +12,7 @@ import {
   type Event,
   type Identity,
   type SessionSnapshot,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import { principalActor, type Principal, type SessionAccess } from '../auth/principal.js';
 import type { Services } from '../container.js';
 import { resolveToken } from '../http/auth.js';
@@ -29,13 +29,13 @@ export const MAX_REPLAY_EVENTS = 500;
  * into subtly different protocols.
  */
 
-export function parseFrame(raw: string): { frame?: ClientFrame; error?: AgentMeshError; id: string } {
+export function parseFrame(raw: string): { frame?: ClientFrame; error?: TandryxError; id: string } {
   let json: unknown;
   let id = 'unknown';
   try {
     json = JSON.parse(raw);
   } catch {
-    return { error: new AgentMeshError(ErrorCode.MalformedFrame, 'Frame is not valid JSON.'), id };
+    return { error: new TandryxError(ErrorCode.MalformedFrame, 'Frame is not valid JSON.'), id };
   }
 
   if (typeof (json as { id?: unknown }).id === 'string') id = (json as { id: string }).id;
@@ -43,7 +43,7 @@ export function parseFrame(raw: string): { frame?: ClientFrame; error?: AgentMes
   const version = (json as { v?: unknown }).v;
   if (typeof version !== 'string' || !isSupportedProtocolVersion(version)) {
     return {
-      error: new AgentMeshError(
+      error: new TandryxError(
         ErrorCode.ProtocolVersionUnsupported,
         `This server speaks ${PROTOCOL_VERSION}. Received: ${String(version)}.`,
       ),
@@ -54,7 +54,7 @@ export function parseFrame(raw: string): { frame?: ClientFrame; error?: AgentMes
   const parsed = clientFrameSchema.safeParse(json);
   if (!parsed.success) {
     return {
-      error: new AgentMeshError(ErrorCode.MalformedFrame, 'Frame does not match the protocol schema.', {
+      error: new TandryxError(ErrorCode.MalformedFrame, 'Frame does not match the protocol schema.', {
         details: parsed.error.issues.slice(0, 5),
       }),
       id,
@@ -181,7 +181,7 @@ async function requireSubscribed(
     connection.subscriptions.has(sessionId) ||
     (await services.registry.isSubscribed(connection.id, sessionId));
   if (!subscribed) {
-    throw new AgentMeshError(ErrorCode.NotSubscribed, 'Subscribe to the session before writing to it.');
+    throw new TandryxError(ErrorCode.NotSubscribed, 'Subscribe to the session before writing to it.');
   }
   const access = await services.access.require(connection.principal, sessionId);
   if (permission) services.access.requirePermission(access, permission);
@@ -200,7 +200,7 @@ export async function dispatchCommand(
 
   switch (frame.type) {
     case ClientFrameType.Hello:
-      throw new AgentMeshError(ErrorCode.Conflict, 'Already authenticated.');
+      throw new TandryxError(ErrorCode.Conflict, 'Already authenticated.');
 
     case ClientFrameType.Ping:
       await connection.send({ type: ServerFrameType.Pong }, frame.id);
@@ -294,7 +294,7 @@ export async function dispatchCommand(
 
     case ClientFrameType.AgentStatus: {
       if (principal.kind !== 'agent') {
-        throw new AgentMeshError(ErrorCode.Forbidden, 'Only agents report their own status.');
+        throw new TandryxError(ErrorCode.Forbidden, 'Only agents report their own status.');
       }
       const access = await requireSubscribed(services, connection, frame.payload.sessionId);
       await services.agents.reportStatus(access, principal.agentId, frame.payload.status, frame.payload.note);
@@ -321,6 +321,6 @@ export async function dispatchCommand(
     }
 
     default:
-      throw new AgentMeshError(ErrorCode.MalformedFrame, 'Unsupported frame type.');
+      throw new TandryxError(ErrorCode.MalformedFrame, 'Unsupported frame type.');
   }
 }

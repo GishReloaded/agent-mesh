@@ -1,4 +1,4 @@
-import type { AgentMeshSession, ContextEntry, Message, Task } from '@gish_reloaded/agentmesh-sdk';
+import type { TandryxSession, ContextEntry, Message, Task } from '@gish_reloaded/tandryx-sdk';
 
 const MAX_CONTEXT_CHARS = 12_000;
 
@@ -7,10 +7,10 @@ const MAX_CONTEXT_CHARS = 12_000;
  *
  * The brief is assembled from *shared context* - current contracts, decisions,
  * project notes, open tasks - rather than from the message history. That is the
- * whole point of AgentMesh: an agent should work from what the team has agreed,
+ * whole point of Tandryx: an agent should work from what the team has agreed,
  * not infer it from a conversation and guess which message still holds.
  */
-export async function buildBrief(mesh: AgentMeshSession): Promise<string> {
+export async function buildBrief(mesh: TandryxSession): Promise<string> {
   const [context, tasks] = await Promise.all([
     mesh.getContext().catch(() => [] as ContextEntry[]),
     mesh.getTasks().catch(() => [] as Task[]),
@@ -21,7 +21,7 @@ export async function buildBrief(mesh: AgentMeshSession): Promise<string> {
   const agents = mesh.agents.filter((agent) => agent.name !== self).map((agent) => agent.name);
 
   const sections: string[] = [
-    `You are "${self}", a participant in a shared development session on AgentMesh.`,
+    `You are "${self}", a participant in a shared development session on Tandryx.`,
     'Other participants you can address by mention:',
     `  people: ${people.length > 0 ? people.map(handle).join(', ') : '(none)'}`,
     `  agents: ${agents.length > 0 ? agents.map(handle).join(', ') : '(none)'}`,
@@ -119,7 +119,7 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function identityName(mesh: AgentMeshSession): string {
+function identityName(mesh: TandryxSession): string {
   const identity = mesh.identity;
   return identity?.kind === 'agent' ? identity.name : 'an agent';
 }

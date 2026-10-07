@@ -23,16 +23,16 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_USER: agentmesh
-          POSTGRES_PASSWORD: agentmesh
-          POSTGRES_DB: agentmesh_publish_test
+          POSTGRES_USER: tandryx
+          POSTGRES_PASSWORD: tandryx
+          POSTGRES_DB: tandryx_publish_test
         ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U agentmesh -d agentmesh_publish_test"
+          --health-cmd "pg_isready -U tandryx -d tandryx_publish_test"
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      DATABASE_URL: postgres://agentmesh:agentmesh@localhost:5432/agentmesh_publish_test
-      TEST_DATABASE_URL: postgres://agentmesh:agentmesh@localhost:5432/agentmesh_publish_test
+      DATABASE_URL: postgres://tandryx:tandryx@localhost:5432/tandryx_publish_test
+      TEST_DATABASE_URL: postgres://tandryx:tandryx@localhost:5432/tandryx_publish_test
       JWT_SECRET: publish-test-secret-at-least-thirty-two-characters
       RELEASE_TAG: ${{ inputs.tag }}
     steps:
@@ -50,6 +50,6 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run release:check
-      - run: npm publish -w @gish_reloaded/agentmesh-protocol --access public
-      - run: npm publish -w @gish_reloaded/agentmesh-sdk --access public
-      - run: npm publish -w @gish_reloaded/agentmesh-cli --access public
+      - run: npm publish -w @gish_reloaded/tandryx-protocol --access public
+      - run: npm publish -w @gish_reloaded/tandryx-sdk --access public
+      - run: npm publish -w @gish_reloaded/tandryx-cli --access public

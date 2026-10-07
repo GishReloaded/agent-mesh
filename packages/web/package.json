@@ -1,7 +1,7 @@
 {
-  "name": "@agentmesh/web",
-  "version": "0.1.0",
-  "description": "AgentMesh web interface",
+  "name": "@tandryx/web",
+  "version": "0.2.0",
+  "description": "Tandryx web interface",
   "license": "Apache-2.0",
   "private": true,
   "type": "module",
@@ -13,8 +13,8 @@
     "test": "node --import tsx --test \"test/**/*.test.tsx\""
   },
   "dependencies": {
-    "@gish_reloaded/agentmesh-protocol": "0.1.0",
-    "@gish_reloaded/agentmesh-sdk": "0.1.0",
+    "@gish_reloaded/tandryx-protocol": "0.2.0",
+    "@gish_reloaded/tandryx-sdk": "0.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.18.4"
@@ -27,11 +27,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GishReloaded/agent-mesh.git",
+    "url": "git+https://github.com/GishReloaded/tandryx.git",
     "directory": "packages/web"
   },
   "bugs": {
-    "url": "https://github.com/GishReloaded/agent-mesh/issues"
+    "url": "https://github.com/GishReloaded/tandryx/issues"
   },
-  "homepage": "https://github.com/GishReloaded/agent-mesh/tree/main/packages/web#readme"
+  "homepage": "https://github.com/GishReloaded/tandryx/tree/main/packages/web#readme"
 }

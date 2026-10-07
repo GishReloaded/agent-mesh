@@ -61,7 +61,7 @@ const envSchema = z.object({
 
   /**
    * Directory holding the built web client. When present the server serves the
-   * UI and the API from one origin, so a self-hosted AgentMesh is a single
+   * UI and the API from one origin, so a self-hosted Tandryx is a single
    * process on a single port with no CORS setup. Empty disables it.
    */
   WEB_DIST: z.string().optional(),

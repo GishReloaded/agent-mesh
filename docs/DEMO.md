@@ -1,6 +1,6 @@
 # Shared API-contract demo
 
-Two scripted SDK agents connect to a real AgentMesh server. They do not call a
+Two scripted SDK agents connect to a real Tandryx server. They do not call a
 model or edit source files. Their responses are sample data, not generated code.
 
 Follow the Node quick start in [README](../README.md), keep `npm start` running,

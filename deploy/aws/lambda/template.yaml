@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  AgentMesh, serverless. Two Lambda functions - one behind an HTTP API for the
+  Tandryx, serverless. Two Lambda functions - one behind an HTTP API for the
   REST surface and the web client, one behind a WebSocket API for realtime -
   sharing a PostgreSQL database you host yourself.
 
@@ -11,7 +11,7 @@ Description: >
 Parameters:
   ProjectName:
     Type: String
-    Default: agentmesh
+    Default: tandryx
 
   CodeBucket:
     Type: String
@@ -26,7 +26,7 @@ Parameters:
     NoEcho: true
     Description: >
       PostgreSQL connection string, e.g.
-      postgres://user:pass@host:5432/agentmesh?sslmode=require
+      postgres://user:pass@host:5432/tandryx?sslmode=require
       Use a provider that tolerates short-lived connections.
 
   JwtSecret:

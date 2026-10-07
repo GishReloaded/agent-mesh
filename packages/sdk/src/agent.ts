@@ -12,14 +12,14 @@ import {
   type SessionSnapshot,
   type Task,
   type TaskStatus,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import { RealtimeClient, type RealtimeEvents } from './realtime.js';
 import { RestClient } from './rest.js';
 
 export interface ConnectOptions {
   /** Server base URL, e.g. `http://localhost:4000`. */
   url: string;
-  /** Agent token issued by `agentmesh agent register`, or a user access token. */
+  /** Agent token issued by `tandryx agent register`, or a user access token. */
   token: string;
   /** Required when connecting with a user token; agent tokens carry their session. */
   sessionId?: string;
@@ -32,11 +32,11 @@ export interface ConnectOptions {
 /**
  * The interface an agent runtime talks to.
  *
- * Nothing here knows about models, prompts or providers — an AgentMesh agent is
+ * Nothing here knows about models, prompts or providers — an Tandryx agent is
  * whatever calls these methods. A shell script, a CI job and a frontier model
  * are all first-class participants.
  */
-export class AgentMeshSession {
+export class TandryxSession {
   private snapshot: SessionSnapshot | null = null;
 
   constructor(
@@ -248,16 +248,16 @@ export class AgentMeshSession {
 }
 
 /**
- * Connect to an AgentMesh session.
+ * Connect to an Tandryx session.
  *
  * ```ts
- * const mesh = await connect({ url, token: process.env.AGENTMESH_TOKEN! });
+ * const mesh = await connect({ url, token: process.env.TANDRYX_TOKEN! });
  * mesh.onMention(async (message) => {
  *   await mesh.sendMessage(`Working on it.`);
  * });
  * ```
  */
-export async function connect(options: ConnectOptions): Promise<AgentMeshSession> {
+export async function connect(options: ConnectOptions): Promise<TandryxSession> {
   const rest = new RestClient({ url: options.url, token: options.token });
   const realtime = new RealtimeClient({
     url: await rest.resolveRealtimeUrl(),
@@ -277,7 +277,7 @@ export async function connect(options: ConnectOptions): Promise<AgentMeshSession
     throw new Error('sessionId is required when connecting with a user token.');
   }
 
-  const session = new AgentMeshSession(rest, realtime, sessionId);
+  const session = new TandryxSession(rest, realtime, sessionId);
   realtime.on('subscribed', ({ sessionId: id, snapshot }) => {
     if (id === sessionId) session.setSnapshot(snapshot);
   });

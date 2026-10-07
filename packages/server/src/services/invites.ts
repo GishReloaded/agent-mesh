@@ -1,10 +1,10 @@
 import {
-  AgentMeshError,
+  TandryxError,
   ErrorCode,
   type CreateInviteRequest,
   type CreateInviteResponse,
   type Invite,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import type { Db } from '../db/client.js';
 import type { SessionAccess } from '../auth/principal.js';
 import { TokenPrefix, createOpaqueToken, hashToken } from '../auth/tokens.js';
@@ -23,7 +23,7 @@ export class InviteService {
 
   async create(access: SessionAccess, input: CreateInviteRequest): Promise<CreateInviteResponse> {
     if (access.principal.kind !== 'user') {
-      throw new AgentMeshError(ErrorCode.Forbidden, 'Agents cannot create invites.');
+      throw new TandryxError(ErrorCode.Forbidden, 'Agents cannot create invites.');
     }
     const { token, hash } = createOpaqueToken(TokenPrefix.Invite);
     const ttl = input.expiresIn ?? DEFAULT_TTL_SECONDS;
@@ -70,7 +70,7 @@ export class InviteService {
       .where('revoked_at', 'is', null)
       .returning('id')
       .executeTakeFirst();
-    if (!result) throw new AgentMeshError(ErrorCode.NotFound, 'Invite not found.');
+    if (!result) throw new TandryxError(ErrorCode.NotFound, 'Invite not found.');
   }
 
   /**
@@ -85,12 +85,12 @@ export class InviteService {
       .where('token_hash', '=', hash)
       .executeTakeFirst();
 
-    if (!invite) throw new AgentMeshError(ErrorCode.InvalidToken, 'This invite link is not valid.');
+    if (!invite) throw new TandryxError(ErrorCode.InvalidToken, 'This invite link is not valid.');
     if (invite.revoked_at !== null) {
-      throw new AgentMeshError(ErrorCode.InvalidToken, 'This invite has been revoked.');
+      throw new TandryxError(ErrorCode.InvalidToken, 'This invite has been revoked.');
     }
     if (new Date(invite.expires_at).getTime() <= Date.now()) {
-      throw new AgentMeshError(ErrorCode.TokenExpired, 'This invite has expired.');
+      throw new TandryxError(ErrorCode.TokenExpired, 'This invite has expired.');
     }
 
     const existingRole = await this.db
@@ -110,7 +110,7 @@ export class InviteService {
       .returning('id')
       .executeTakeFirst();
     if (!claimed) {
-      throw new AgentMeshError(ErrorCode.InvalidToken, 'This invite has already been used.');
+      throw new TandryxError(ErrorCode.InvalidToken, 'This invite has already been used.');
     }
 
     await this.sessions.addMember(invite.session_id, userId, invite.role);

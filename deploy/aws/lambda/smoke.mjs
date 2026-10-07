@@ -180,7 +180,7 @@ const wsEvent = (routeKey, body) => ({
   requestContext: { connectionId, routeKey, domainName: '127.0.0.1', stage: 'prod' },
   ...(body === undefined ? {} : { body: JSON.stringify(body) }),
 });
-const frame = (type, payload) => ({ v: 'agentmesh/v1', id: `t${Date.now()}`, type, payload });
+const frame = (type, payload) => ({ v: 'tandryx/v1', id: `t${Date.now()}`, type, payload });
 
 function expectFrame(label, type) {
   const found = delivered.some((item) => item.frame?.type === type);

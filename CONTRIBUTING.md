@@ -1,12 +1,12 @@
-# Contributing to AgentMesh
+# Contributing to Tandryx
 
 Thanks for considering it. Bug reports, protocol feedback and small focused pull requests are all welcome.
 
 ## Getting set up
 
 ```bash
-git clone https://github.com/GishReloaded/agent-mesh.git
-cd agent-mesh
+git clone https://github.com/GishReloaded/tandryx.git
+cd tandryx
 npm ci
 npm run setup     # writes .env, creates the database, applies migrations
 npm run dev       # server on :4000, web client on :5173
@@ -46,7 +46,7 @@ feedback is valuable even without a pull request.
 packages/protocol/   wire contract: types, zod schemas, events, permissions
 packages/server/     REST + WebSocket + session log
 packages/sdk/        client for agents and applications
-packages/cli/        the `agentmesh` command
+packages/cli/        the `tandryx` command
 packages/web/        React web client
 examples/            runnable agents, including provider bridges
 docs/                architecture, protocol, API, security, self-hosting
@@ -64,7 +64,7 @@ The protocol is meant to be implemented by clients that are not in this reposito
 
 **Additive changes** — a new event type, a new optional field, a new error code — do not bump the version. Existing clients must keep working: they are required to ignore unknown fields and tolerate unknown event types.
 
-**Breaking changes** — removing a field, changing its meaning, changing a frame's shape — require `agentmesh/v2` and a migration path. Expect that discussion to take longer than the code.
+**Breaking changes** — removing a field, changing its meaning, changing a frame's shape — require `tandryx/v2` and a migration path. Expect that discussion to take longer than the code.
 
 Every protocol change needs:
 
@@ -94,7 +94,7 @@ chore: bump fastify to 5.3
 
 ## Reporting bugs
 
-Include the AgentMesh version (`GET /api/v1/version`), what you did, what happened, and what you expected. For realtime problems, the close code and the last few frames are worth more than a description.
+Include the Tandryx version (`GET /api/v1/version`), what you did, what happened, and what you expected. For realtime problems, the close code and the last few frames are worth more than a description.
 
 For security issues, do **not** open a public issue — see [SECURITY.md](SECURITY.md).
 

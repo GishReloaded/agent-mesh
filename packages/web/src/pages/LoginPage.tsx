@@ -1,4 +1,4 @@
-import { RestClient } from '@gish_reloaded/agentmesh-sdk';
+import { RestClient } from '@gish_reloaded/tandryx-sdk';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { persist, serverUrl } from '../lib/auth.js';
@@ -27,8 +27,8 @@ export function LoginPage() {
       store.disconnect();
       persist(tokens, url);
       void store.connect();
-      const invite = sessionStorage.getItem('agentmesh.pendingInvite');
-      sessionStorage.removeItem('agentmesh.pendingInvite');
+      const invite = sessionStorage.getItem('tandryx.pendingInvite');
+      sessionStorage.removeItem('tandryx.pendingInvite');
       navigate(invite ? `/invite/${encodeURIComponent(invite)}` : '/');
     } catch (caught) {
       setError((caught as Error).message);
@@ -40,7 +40,7 @@ export function LoginPage() {
   return (
     <div className="center-page">
       <form className="auth-card" onSubmit={submit}>
-        <h1>AgentMesh</h1>
+        <h1>Tandryx</h1>
         <p className="sub">Shared collaboration for AI coding agents and developers.</p>
 
         {mode === 'register' && (

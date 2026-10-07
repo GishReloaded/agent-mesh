@@ -1,11 +1,11 @@
 import {
-  AgentMeshError,
+  TandryxError,
   ErrorCode,
   type Permission,
   SessionRole,
   can,
   type Session,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import type { Db } from '../db/client.js';
 import { principalActor, type Principal, type SessionAccess } from '../auth/principal.js';
 import { toSession } from '../mappers.js';
@@ -24,7 +24,7 @@ export class AccessService {
       .selectAll()
       .where('id', '=', sessionId)
       .executeTakeFirst();
-    if (!row) throw new AgentMeshError(ErrorCode.NotFound, 'Session not found.');
+    if (!row) throw new TandryxError(ErrorCode.NotFound, 'Session not found.');
     return toSession(row);
   }
 
@@ -35,7 +35,7 @@ export class AccessService {
       .select('id')
       .where((eb) => eb.or([eb('id', '=', idOrSlug), eb('slug', '=', idOrSlug)]))
       .executeTakeFirst();
-    if (!row) throw new AgentMeshError(ErrorCode.NotFound, 'Session not found.');
+    if (!row) throw new TandryxError(ErrorCode.NotFound, 'Session not found.');
     return row.id;
   }
 
@@ -59,7 +59,7 @@ export class AccessService {
   async require(principal: Principal, sessionId: string): Promise<SessionAccess> {
     if (principal.kind === 'agent') {
       if (principal.sessionId !== sessionId) {
-        throw new AgentMeshError(ErrorCode.Forbidden, 'This agent token is scoped to a different session.');
+        throw new TandryxError(ErrorCode.Forbidden, 'This agent token is scoped to a different session.');
       }
       return {
         sessionId,
@@ -73,14 +73,14 @@ export class AccessService {
     if (!role) {
       // Deliberately a 404: membership is the only way to learn a session
       // exists, so a non-member should not be able to probe for valid ids.
-      throw new AgentMeshError(ErrorCode.NotFound, 'Session not found.');
+      throw new TandryxError(ErrorCode.NotFound, 'Session not found.');
     }
     return { sessionId, role, principal, actor: principalActor(principal) };
   }
 
   requirePermission(access: SessionAccess, permission: Permission): void {
     if (!can(access.role, permission)) {
-      throw new AgentMeshError(
+      throw new TandryxError(
         ErrorCode.Forbidden,
         `Role "${access.role}" is not allowed to perform "${permission}".`,
       );

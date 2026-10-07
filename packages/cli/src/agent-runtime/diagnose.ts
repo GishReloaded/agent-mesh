@@ -36,11 +36,11 @@ const KNOWN: KnownFailure[] = [
   },
   {
     match: /ENOENT|command not found|is not recognized as/i,
-    hint: 'The executable was not found. Check the name with `agentmesh agent presets`, or pass a full path with --command.',
+    hint: 'The executable was not found. Check the name with `tandryx agent presets`, or pass a full path with --command.',
   },
   {
     match: /unknown (option|argument|flag)|unrecognized (option|argument)|invalid (option|argument)/i,
-    hint: 'The flags do not match this version of the tool. Check `--help` and override them: `agentmesh agent run "<name>" -- <command> <flags> "{prompt}"`.',
+    hint: 'The flags do not match this version of the tool. Check `--help` and override them: `tandryx agent run "<name>" -- <command> <flags> "{prompt}"`.',
   },
 ];
 

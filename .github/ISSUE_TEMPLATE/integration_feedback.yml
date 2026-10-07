@@ -9,7 +9,7 @@ body:
     id: environment
     attributes:
       label: Versions and environment
-      description: OS, Node, AgentMesh version/commit and coding CLI version
+      description: OS, Node, Tandryx version/commit and coding CLI version
     validations:
       required: true
   - type: dropdown

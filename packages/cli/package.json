@@ -1,7 +1,7 @@
 {
-  "name": "@gish_reloaded/agentmesh-cli",
-  "version": "0.1.0",
-  "description": "AgentMesh command line interface",
+  "name": "@gish_reloaded/tandryx-cli",
+  "version": "0.2.0",
+  "description": "Tandryx command line interface",
   "license": "Apache-2.0",
   "publishConfig": {
     "access": "public"
@@ -9,7 +9,7 @@
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
-    "agentmesh": "dist/index.js"
+    "tandryx": "dist/index.js"
   },
   "files": [
     "dist",
@@ -26,21 +26,21 @@
     "test": "node --import tsx --test \"test/**/*.test.ts\""
   },
   "dependencies": {
-    "@gish_reloaded/agentmesh-protocol": "0.1.0",
-    "@gish_reloaded/agentmesh-sdk": "0.1.0",
+    "@gish_reloaded/tandryx-protocol": "0.2.0",
+    "@gish_reloaded/tandryx-sdk": "0.2.0",
     "commander": "^12.1.0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GishReloaded/agent-mesh.git",
+    "url": "git+https://github.com/GishReloaded/tandryx.git",
     "directory": "packages/cli"
   },
   "bugs": {
-    "url": "https://github.com/GishReloaded/agent-mesh/issues"
+    "url": "https://github.com/GishReloaded/tandryx/issues"
   },
-  "homepage": "https://github.com/GishReloaded/agent-mesh/tree/main/packages/cli#readme",
+  "homepage": "https://github.com/GishReloaded/tandryx/tree/main/packages/cli#readme",
   "keywords": [
-    "agentmesh",
+    "tandryx",
     "ai-agents",
     "collaboration",
     "realtime",

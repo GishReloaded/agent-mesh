@@ -1,4 +1,4 @@
-import { API_PREFIX, AVATAR_MIME_TYPES, PROTOCOL_LIMITS } from '@gish_reloaded/agentmesh-protocol';
+import { API_PREFIX, AVATAR_MIME_TYPES, PROTOCOL_LIMITS } from '@gish_reloaded/tandryx-protocol';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
@@ -61,7 +61,7 @@ export async function buildApp(config: Config, overrides: ServiceOverrides = {})
   });
 
   // Serving the built web client from the same origin makes a self-hosted
-  // AgentMesh one process on one port, with no CORS configuration at all.
+  // Tandryx one process on one port, with no CORS configuration at all.
   if (config.webDist) {
     await app.register(fastifyStatic, { root: config.webDist, wildcard: false });
   }

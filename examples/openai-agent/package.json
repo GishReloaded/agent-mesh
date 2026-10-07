@@ -1,14 +1,14 @@
 {
-  "name": "@agentmesh/example-openai-agent",
-  "version": "0.1.0",
+  "name": "@tandryx/example-openai-agent",
+  "version": "0.2.0",
   "private": true,
-  "description": "Example bridge connecting an OpenAI model to an AgentMesh session",
+  "description": "Example bridge connecting an OpenAI model to an Tandryx session",
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "start": "node index.mjs"
   },
   "dependencies": {
-    "@gish_reloaded/agentmesh-sdk": "0.1.0"
+    "@gish_reloaded/tandryx-sdk": "0.2.0"
   }
 }

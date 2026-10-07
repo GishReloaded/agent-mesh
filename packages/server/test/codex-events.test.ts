@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { DevEventType, SessionRole } from '@gish_reloaded/agentmesh-protocol';
+import { DevEventType, SessionRole } from '@gish_reloaded/tandryx-protocol';
 import type { SessionAccess } from '../src/auth/principal.js';
 import { assertCodexEventAuthority } from '../src/services/devEvents.js';
 

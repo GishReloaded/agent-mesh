@@ -5,7 +5,7 @@
  * This is the integration path that matters for most people: Claude Code,
  * Codex and Gemini CLI all authenticate the same way their IDE extension does,
  * so a developer who pays for one already has everything needed to put that
- * assistant into an AgentMesh session. No API key, no separate billing.
+ * assistant into an Tandryx session. No API key, no separate billing.
  *
  * The IDE extension itself cannot be driven from outside - it exposes no local
  * API - but the command-line tool of the same product shares its login.
@@ -37,7 +37,7 @@ export interface AgentPreset {
   streamFormat?: 'claude-stream-json';
   defaultProvider: string;
   defaultModel: string;
-  /** Shown by `agentmesh agent presets`. */
+  /** Shown by `tandryx agent presets`. */
   notes: string;
 }
 
@@ -46,7 +46,7 @@ const CLAUDE: AgentPreset = {
   label: 'Claude Code',
   command: 'claude',
   // --print is the documented non-interactive mode. --session-id pins one
-  // conversation so the agent remembers earlier turns of this AgentMesh
+  // conversation so the agent remembers earlier turns of this Tandryx
   // session instead of waking up amnesiac on every mention.
   args: ['--print', '--output-format', 'text', '--session-id', '{session}'],
   continueArgs: ['--print', '--output-format', 'text', '--resume', '{session}'],

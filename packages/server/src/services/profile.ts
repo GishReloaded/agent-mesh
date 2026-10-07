@@ -1,10 +1,10 @@
 import {
-  AgentMeshError,
+  TandryxError,
   ErrorCode,
   LifecycleEventType,
   type UpdateProfileRequest,
   type User,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import type { Db } from '../db/client.js';
 import { toPublicUser, toUser } from '../mappers.js';
 import { prepareAvatar, type AvatarStore } from '../storage/avatars.js';
@@ -37,7 +37,7 @@ export class ProfileService {
       .where('id', '=', userId)
       .returningAll()
       .executeTakeFirst();
-    if (!row) throw new AgentMeshError(ErrorCode.NotFound, 'Account not found.');
+    if (!row) throw new TandryxError(ErrorCode.NotFound, 'Account not found.');
 
     await this.announce(userId);
     return toUser(row);
@@ -49,7 +49,7 @@ export class ProfileService {
       .select('avatar_key')
       .where('id', '=', userId)
       .executeTakeFirst();
-    if (!existing) throw new AgentMeshError(ErrorCode.NotFound, 'Account not found.');
+    if (!existing) throw new TandryxError(ErrorCode.NotFound, 'Account not found.');
 
     const { key, contentType } = prepareAvatar(userId, body);
     await this.avatars.put(key, body, contentType);
@@ -84,7 +84,7 @@ export class ProfileService {
       .where('id', '=', userId)
       .returningAll()
       .executeTakeFirst();
-    if (!row) throw new AgentMeshError(ErrorCode.NotFound, 'Account not found.');
+    if (!row) throw new TandryxError(ErrorCode.NotFound, 'Account not found.');
     if (previous?.avatar_key) await this.avatars.delete(previous.avatar_key).catch(() => undefined);
 
     await this.announce(userId);

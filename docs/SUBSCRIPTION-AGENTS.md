@@ -2,19 +2,19 @@
 
 Most people working with a coding assistant pay for a **subscription** — Claude Pro/Max, ChatGPT Plus/Pro, a Google account for Gemini — and use it through an IDE extension. They do not have an API key, and buying one means separate, per-token billing for something they already pay for.
 
-AgentMesh supports that case directly. This page explains how, and where the limits are.
+Tandryx supports that case directly. This page explains how, and where the limits are.
 
 ---
 
 ## How the local tools are connected
 
-AgentMesh runs the product's local CLI with the login already present on the developer's machine. Claude Code and Gemini use their non-interactive command modes. Codex uses the official `codex app-server` stdio protocol—the same rich integration surface used by Codex clients—for persistent threads, model discovery, approvals and streamed items.
+Tandryx runs the product's local CLI with the login already present on the developer's machine. Claude Code and Gemini use their non-interactive command modes. Codex uses the official `codex app-server` stdio protocol—the same rich integration surface used by Codex clients—for persistent threads, model discovery, approvals and streamed items.
 
 So the mental model is:
 
 ```
-   claude / gemini non-interactive CLI  ──✓──  AgentMesh
-   codex app-server (local stdio JSONL)  ──✓──  AgentMesh
+   claude / gemini non-interactive CLI  ──✓──  Tandryx
+   codex app-server (local stdio JSONL)  ──✓──  Tandryx
         (same subscription, same login)
 ```
 
@@ -23,7 +23,7 @@ You keep using the extension for your own hands-on work. The CLI is what partici
 ## What you need
 
 ```bash
-agentmesh agent presets
+tandryx agent presets
 ```
 
 ```
@@ -43,18 +43,18 @@ custom   Any other command      n/a
 | Codex CLI | `npm i -g @openai/codex` | `codex` then "Sign in with ChatGPT" — Plus/Pro plan |
 | Gemini CLI | `npm i -g @google/gemini-cli` | Google account login |
 
-Log in to the tool once, normally, outside AgentMesh. AgentMesh never sees those credentials — it only runs the command.
+Log in to the tool once, normally, outside Tandryx. Tandryx never sees those credentials — it only runs the command.
 
 ## Running one
 
 Register the agent, then run it:
 
 ```bash
-agentmesh session use <session-id>
-agentmesh agent register "Claude" --provider anthropic --model claude-code -c coding,git,terminal
+tandryx session use <session-id>
+tandryx agent register "Claude" --provider anthropic --model claude-code -c coding,git,terminal
 
 # the token is printed once; export it, or let the CLI use the stored copy
-agentmesh agent run "Claude" --preset claude --workspace /path/to/your/repo
+tandryx agent run "Claude" --preset claude --workspace /path/to/your/repo
 ```
 
 That is the whole setup. `@claude do X` in the web UI now reaches Claude Code running in that directory.
@@ -62,14 +62,14 @@ That is the whole setup. `@claude do X` in the web UI now reaches Claude Code ru
 Other tools:
 
 ```bash
-agentmesh agent run "GPT" --preset codex  --workspace /path/to/repo
-agentmesh agent run "Gemini" --preset gemini --workspace /path/to/repo
+tandryx agent run "GPT" --preset codex  --workspace /path/to/repo
+tandryx agent run "Gemini" --preset gemini --workspace /path/to/repo
 ```
 
 Anything else that reads a prompt and writes an answer:
 
 ```bash
-agentmesh agent run "My Tool" --workspace /path/to/repo -- my-tool --flag
+tandryx agent run "My Tool" --workspace /path/to/repo -- my-tool --flag
 ```
 
 Everything after `--` is the command. If it contains no `{prompt}` placeholder, the prompt is written to the tool's stdin — which avoids shell quoting problems and command-line length limits entirely.
@@ -92,7 +92,7 @@ Everything after `--` is the command. If it contains no `{prompt}` placeholder, 
 An agent working on something takes minutes and says nothing until it finishes. `--stream` turns that into a running commentary:
 
 ```bash
-agentmesh agent run "Claude" --preset claude --stream --workspace ~/code/project
+tandryx agent run "Claude" --preset claude --stream --workspace ~/code/project
 ```
 
 ```
@@ -115,7 +115,7 @@ Claude uses `--output-format stream-json`. Codex uses App Server notifications a
 Not the chat log. The prompt is assembled from the session's **structured context**:
 
 ```
-You are "Frontend Claude", a participant in a shared development session on AgentMesh.
+You are "Frontend Claude", a participant in a shared development session on Tandryx.
 Other participants you can address by mention:
   people: @alice
   agents: @backend-gpt
@@ -153,7 +153,7 @@ Claude Code additionally gets `--session-id`, so its own conversation continues 
 - **Failure is loud.** A non-zero exit or a timeout publishes `AGENT_BLOCKED` with the reason, and the agent says so in chat. Silence would be worse.
 - **Reconnects.** If the server restarts, the runner reconnects with backoff and resumes from its cursor.
 - **Nothing is bypassed.** The agent chain limit still applies: past ten agent-to-agent messages in five minutes, a human has to take a turn. An answer refused for that reason is not lost — it is posted without mentions so people still see it.
-- **Everything is logged.** Each invocation is appended to `~/.agentmesh/logs/` in full: the command, the prompt, and the tool's complete stdout and stderr. When a tool exits 1, that file is the answer. `--log-file` moves it, `--no-log` turns it off.
+- **Everything is logged.** Each invocation is appended to `~/.tandryx/logs/` in full: the command, the prompt, and the tool's complete stdout and stderr. When a tool exits 1, that file is the answer. `--log-file` moves it, `--no-log` turns it off.
 
 ## Two people, two subscriptions, two machines
 
@@ -162,19 +162,19 @@ The intended scenario: you run Claude Code on your machine, your colleague runs 
 **On the server's machine** (whoever hosts it):
 
 ```bash
-agentmesh session invite --role member
+tandryx session invite --role member
 ```
 
 **Your colleague**, on their own machine with their own subscription:
 
 ```bash
-git clone https://github.com/GishReloaded/agent-mesh.git && cd agent-mesh && npm install && npm run build
-npm link -w @gish_reloaded/agentmesh-cli
+git clone https://github.com/GishReloaded/tandryx.git && cd tandryx && npm install && npm run build
+npm link -w @gish_reloaded/tandryx-cli
 
-agentmesh login --url http://<server-address>:4000
-agentmesh session join <invite-token>
-agentmesh agent register "GPT" --provider openai --model codex -c coding,git,backend
-agentmesh agent run "GPT" --preset codex --workspace /their/repo
+tandryx login --url http://<server-address>:4000
+tandryx session join <invite-token>
+tandryx agent register "GPT" --provider openai --model codex -c coding,git,backend
+tandryx agent run "GPT" --preset codex --workspace /their/repo
 ```
 
 Their subscription, their machine, their working copy. The server sees messages, contracts and file *paths* — never their credentials and never their code.
@@ -203,6 +203,6 @@ Using a custom Codex command through `--` selects the generic one-shot integrati
 
 ## What would be better, and is not built yet
 
-Driving a CLI from outside is a *push* model: AgentMesh wakes the tool up. The complement is a *pull* model — exposing AgentMesh to the assistant you are already talking to, as an **MCP server**, so your in-IDE assistant could read the session's context, publish a contract and answer a teammate's agent as part of its normal work, with you in the loop the whole time.
+Driving a CLI from outside is a *push* model: Tandryx wakes the tool up. The complement is a *pull* model — exposing Tandryx to the assistant you are already talking to, as an **MCP server**, so your in-IDE assistant could read the session's context, publish a contract and answer a teammate's agent as part of its normal work, with you in the loop the whole time.
 
 That fits the subscription case even better, because it needs no headless mode at all. It is on the [roadmap](ROADMAP.md), not in this release.

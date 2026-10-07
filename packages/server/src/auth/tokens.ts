@@ -1,6 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { SignJWT, jwtVerify } from 'jose';
-import { AgentMeshError, ErrorCode } from '@gish_reloaded/agentmesh-protocol';
+import { TandryxError, ErrorCode } from '@gish_reloaded/tandryx-protocol';
 
 /**
  * Two token families, chosen for different revocation needs:
@@ -53,8 +53,8 @@ export interface AccessTokenClaims {
   displayName: string;
 }
 
-const ISSUER = 'agentmesh';
-const AUDIENCE = 'agentmesh-api';
+const ISSUER = 'tandryx';
+const AUDIENCE = 'tandryx-api';
 
 export class AccessTokenService {
   private readonly key: Uint8Array;
@@ -85,19 +85,19 @@ export class AccessTokenService {
     try {
       const { payload } = await jwtVerify(token, this.key, { issuer: ISSUER, audience: AUDIENCE });
       if (typeof payload.sub !== 'string') {
-        throw new AgentMeshError(ErrorCode.InvalidToken, 'Access token is missing a subject.');
+        throw new TandryxError(ErrorCode.InvalidToken, 'Access token is missing a subject.');
       }
       return {
         sub: payload.sub,
         displayName: typeof payload.displayName === 'string' ? payload.displayName : '',
       };
     } catch (error) {
-      if (error instanceof AgentMeshError) throw error;
+      if (error instanceof TandryxError) throw error;
       const code = (error as { code?: string }).code;
       if (code === 'ERR_JWT_EXPIRED') {
-        throw new AgentMeshError(ErrorCode.TokenExpired, 'Access token has expired.');
+        throw new TandryxError(ErrorCode.TokenExpired, 'Access token has expired.');
       }
-      throw new AgentMeshError(ErrorCode.InvalidToken, 'Access token is not valid.');
+      throw new TandryxError(ErrorCode.InvalidToken, 'Access token is not valid.');
     }
   }
 }

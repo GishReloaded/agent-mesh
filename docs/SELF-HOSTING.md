@@ -1,14 +1,14 @@
-# Self-Hosting AgentMesh
+# Self-Hosting Tandryx
 
-AgentMesh is one Node process, one PostgreSQL database, and a static web bundle the same process serves. There is no queue, no cache tier and no object storage to operate.
+Tandryx is one Node process, one PostgreSQL database, and a static web bundle the same process serves. There is no queue, no cache tier and no object storage to operate.
 
 ---
 
 ## Fastest path: Docker Compose
 
 ```bash
-git clone https://github.com/GishReloaded/agent-mesh.git
-cd agent-mesh
+git clone https://github.com/GishReloaded/tandryx.git
+cd tandryx
 
 # Generate a real secret before anything long-lived.
 export JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
@@ -22,7 +22,7 @@ The stack is:
 | Service | What it is |
 |---|---|
 | `postgres` | PostgreSQL 17 with a named volume |
-| `agentmesh` | API + realtime gateway + web UI on port 4000 |
+| `tandryx` | API + realtime gateway + web UI on port 4000 |
 
 Migrations run automatically on boot, so a fresh volume needs no extra step.
 
@@ -42,8 +42,8 @@ The serverless variant keeps its connection registry in PostgreSQL instead of pr
 Requires Node 22.4+ and PostgreSQL 14+.
 
 ```bash
-git clone https://github.com/GishReloaded/agent-mesh.git
-cd agent-mesh
+git clone https://github.com/GishReloaded/tandryx.git
+cd tandryx
 npm ci
 npm run setup                 # .env, database, migrations
 npm run build
@@ -54,14 +54,14 @@ Run it under a process supervisor. A minimal systemd unit:
 
 ```ini
 [Unit]
-Description=AgentMesh
+Description=Tandryx
 After=network.target postgresql.service
 
 [Service]
 Type=simple
-User=agentmesh
-WorkingDirectory=/opt/agentmesh
-EnvironmentFile=/opt/agentmesh/.env
+User=tandryx
+WorkingDirectory=/opt/tandryx
+EnvironmentFile=/opt/tandryx/.env
 ExecStart=/usr/bin/node packages/server/dist/index.js
 Restart=on-failure
 RestartSec=5
@@ -146,8 +146,8 @@ Logs are JSON on stdout (pino). Set `LOG_LEVEL=warn` in production if `info` is 
 Everything durable is in PostgreSQL.
 
 ```bash
-pg_dump --format=custom "$DATABASE_URL" > agentmesh-$(date +%F).dump
-pg_restore --clean --if-exists --dbname "$DATABASE_URL" agentmesh-2026-08-18.dump
+pg_dump --format=custom "$DATABASE_URL" > tandryx-$(date +%F).dump
+pg_restore --clean --if-exists --dbname "$DATABASE_URL" tandryx-2026-08-18.dump
 ```
 
 Back up `JWT_SECRET` with it. Restoring a database with a different secret leaves every account signed out — recoverable, but confusing during an incident.
@@ -162,10 +162,10 @@ npm ci
 npm run build
 # Migrations also run automatically on boot.
 npm run db:migrate
-systemctl restart agentmesh
+systemctl restart tandryx
 ```
 
-Migrations are forward-only `.sql` files applied in order inside a transaction each, recorded in `_agentmesh_migrations`. Take a dump before upgrading a deployment you care about.
+Migrations are forward-only `.sql` files applied in order inside a transaction each, recorded in `_tandryx_migrations`. Take a dump before upgrading a deployment you care about.
 
 Clients reconnect on their own with backoff, so a restart costs a few seconds of latency, not a lost session: every client resumes from its cursor.
 

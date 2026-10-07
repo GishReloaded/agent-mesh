@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { loadConfig } from '../src/config.js';
 
-const base = { DATABASE_URL: 'postgres://user:pass@localhost:5432/agentmesh' };
+const base = { DATABASE_URL: 'postgres://user:pass@localhost:5432/tandryx' };
 
 describe('configuration', () => {
   it('accepts PORT=0, which means "let the OS pick"', () => {

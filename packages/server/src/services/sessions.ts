@@ -1,5 +1,5 @@
 import {
-  AgentMeshError,
+  TandryxError,
   ErrorCode,
   LifecycleEventType,
   SessionRole,
@@ -9,7 +9,7 @@ import {
   type SessionMember,
   type SessionSummary,
   type UpdateSessionRequest,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import { jsonb, type Db } from '../db/client.js';
 import { principalActor, systemActor, type Principal, type SessionAccess } from '../auth/principal.js';
 import { IdPrefix, newId } from '../ids.js';
@@ -149,7 +149,7 @@ export class SessionService {
       .selectAll()
       .where('id', '=', access.sessionId)
       .executeTakeFirst();
-    if (!row) throw new AgentMeshError(ErrorCode.NotFound, 'Session not found.');
+    if (!row) throw new TandryxError(ErrorCode.NotFound, 'Session not found.');
 
     return {
       session: toSession(row),
@@ -172,7 +172,7 @@ export class SessionService {
       .where('id', '=', access.sessionId)
       .returningAll()
       .executeTakeFirst();
-    if (!row) throw new AgentMeshError(ErrorCode.NotFound, 'Session not found.');
+    if (!row) throw new TandryxError(ErrorCode.NotFound, 'Session not found.');
     const session = toSession(row);
 
     if (input.archived === true) {
@@ -210,7 +210,7 @@ export class SessionService {
 
   async setMemberRole(access: SessionAccess, userId: string, role: SessionRole) {
     if (role === SessionRole.Agent) {
-      throw new AgentMeshError(ErrorCode.ValidationFailed, 'The agent role cannot be assigned to a person.');
+      throw new TandryxError(ErrorCode.ValidationFailed, 'The agent role cannot be assigned to a person.');
     }
     const session = await this.db
       .selectFrom('sessions')
@@ -219,7 +219,7 @@ export class SessionService {
       .executeTakeFirstOrThrow();
 
     if (session.owner_id === userId && role !== SessionRole.Owner) {
-      throw new AgentMeshError(
+      throw new TandryxError(
         ErrorCode.Conflict,
         'The session owner cannot be demoted. Transfer ownership first.',
       );
@@ -232,7 +232,7 @@ export class SessionService {
       .where('user_id', '=', userId)
       .returningAll()
       .executeTakeFirst();
-    if (!updated) throw new AgentMeshError(ErrorCode.NotFound, 'This user is not a member of the session.');
+    if (!updated) throw new TandryxError(ErrorCode.NotFound, 'This user is not a member of the session.');
 
     await this.log.write(access.sessionId, async (ctx) => {
       await ctx.append(LifecycleEventType.ParticipantRoleChanged, access.actor, { userId, role });
@@ -250,7 +250,7 @@ export class SessionService {
       .where('id', '=', access.sessionId)
       .executeTakeFirstOrThrow();
     if (session.owner_id === userId) {
-      throw new AgentMeshError(ErrorCode.Conflict, 'The session owner cannot be removed.');
+      throw new TandryxError(ErrorCode.Conflict, 'The session owner cannot be removed.');
     }
 
     const revokedAgents = await this.db.transaction().execute(async (trx) => {
@@ -260,7 +260,7 @@ export class SessionService {
         .where('user_id', '=', userId)
         .returningAll()
         .executeTakeFirst();
-      if (!deleted) throw new AgentMeshError(ErrorCode.NotFound, 'This user is not a member of the session.');
+      if (!deleted) throw new TandryxError(ErrorCode.NotFound, 'This user is not a member of the session.');
 
       return trx
         .updateTable('agents')
@@ -329,7 +329,7 @@ export class SessionService {
       .where('id', '=', sessionId)
       .executeTakeFirstOrThrow();
     if (session.owner_id === principal.userId) {
-      throw new AgentMeshError(
+      throw new TandryxError(
         ErrorCode.Conflict,
         'The owner cannot leave their own session. Delete it or transfer ownership.',
       );

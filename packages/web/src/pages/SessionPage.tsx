@@ -1,4 +1,4 @@
-import type { SearchResponse, Task } from '@gish_reloaded/agentmesh-sdk';
+import type { SearchResponse, Task } from '@gish_reloaded/tandryx-sdk';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Composer, type ComposerHandle } from '../components/Composer.js';

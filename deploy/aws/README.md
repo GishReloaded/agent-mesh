@@ -1,4 +1,4 @@
-# Deploying AgentMesh on AWS
+# Deploying Tandryx on AWS
 
 Two supported shapes. They run the same code — the realtime frame handling in `packages/server/src/realtime/commands.ts` is shared — and differ only in where connections are kept.
 
@@ -21,13 +21,13 @@ Two supported shapes. They run the same code — the realtime frame handling in 
 **Do not deploy with root credentials.** Root access keys cannot be restricted by any policy, and a leak means the whole account including billing. Create an IAM user once — bootstrapping IAM is the one job root is for:
 
 ```powershell
-aws iam create-user --user-name agentmesh-deploy
-aws iam attach-user-policy --user-name agentmesh-deploy `
+aws iam create-user --user-name tandryx-deploy
+aws iam attach-user-policy --user-name tandryx-deploy `
   --policy-arn arn:aws:iam::aws:policy/AdministratorAccess
-aws iam create-access-key --user-name agentmesh-deploy
+aws iam create-access-key --user-name tandryx-deploy
 
-aws configure --profile agentmesh
-$env:AWS_PROFILE = 'agentmesh'
+aws configure --profile tandryx
+$env:AWS_PROFILE = 'tandryx'
 ```
 
 Then delete the root keys in the console: **IAM → Security credentials → Access keys → Delete**.
@@ -43,13 +43,13 @@ Say the deployment printed `https://abc123.execute-api.eu-north-1.amazonaws.com`
 ## You — set up the session
 
 ```powershell
-cd D:\Projects\AgentMesh
+cd D:\Projects\Tandryx
 npm run build
-npm link -w @gish_reloaded/agentmesh-cli
+npm link -w @gish_reloaded/tandryx-cli
 
-agentmesh login --url https://abc123.execute-api.eu-north-1.amazonaws.com --register
-agentmesh session create "our-project"
-agentmesh session invite --role member --uses 5
+tandryx login --url https://abc123.execute-api.eu-north-1.amazonaws.com --register
+tandryx session create "our-project"
+tandryx session invite --role member --uses 5
 #   copy the token - it is shown once
 ```
 
@@ -60,11 +60,11 @@ Send your collaborator the URL and the invite token.
 Using the subscription you already pay for, no API key:
 
 ```powershell
-agentmesh agent presets
-agentmesh agent register "Claude" --provider anthropic --model claude-code -c coding,git,terminal
-agentmesh agent run "Claude" --dry-run --workspace D:\Projects\our-project
+tandryx agent presets
+tandryx agent register "Claude" --provider anthropic --model claude-code -c coding,git,terminal
+tandryx agent run "Claude" --dry-run --workspace D:\Projects\our-project
 #   looks right? drop --dry-run:
-agentmesh agent run "Claude" --workspace D:\Projects\our-project -v
+tandryx agent run "Claude" --workspace D:\Projects\our-project -v
 ```
 
 ## Your collaborator — join
@@ -72,12 +72,12 @@ agentmesh agent run "Claude" --workspace D:\Projects\our-project -v
 Their subscription and their working copy stay on their machine. Node 22.4+ and a clone.
 
 ```bash
-git clone https://github.com/GishReloaded/agent-mesh.git && cd agent-mesh
+git clone https://github.com/GishReloaded/tandryx.git && cd tandryx
 npm install && npm run build
-npm link -w @gish_reloaded/agentmesh-cli
+npm link -w @gish_reloaded/tandryx-cli
 
-agentmesh login --url https://abc123.execute-api.eu-north-1.amazonaws.com --register
-agentmesh session join <invite-token>
+tandryx login --url https://abc123.execute-api.eu-north-1.amazonaws.com --register
+tandryx session join <invite-token>
 ```
 
 ## Your collaborator — attach their agent
@@ -86,8 +86,8 @@ agentmesh session join <invite-token>
 npm i -g @openai/codex
 codex                    # "Sign in with ChatGPT" - their subscription
 
-agentmesh agent register "GPT" --provider openai --model codex -c coding,git,backend
-agentmesh agent run "GPT" --preset codex --workspace ~/code/our-project
+tandryx agent register "GPT" --provider openai --model codex -c coding,git,backend
+tandryx agent run "GPT" --preset codex --workspace ~/code/our-project
 ```
 
 Someone who only wants to take part as a human can skip the clone entirely and use the web UI at the deployment URL.
@@ -97,16 +97,16 @@ Someone who only wants to take part as a human can skip the clone entirely and u
 In the browser, or from a terminal:
 
 ```bash
-agentmesh send "@gpt design the users endpoint, then publish the contract"
-agentmesh watch --events
-agentmesh context list
-agentmesh task list
+tandryx send "@gpt design the users endpoint, then publish the contract"
+tandryx watch --events
+tandryx context list
+tandryx task list
 ```
 
 The habit that makes this worth using: agents publish contracts and decisions into **shared context**, not only into chat.
 
 ```bash
-agentmesh context publish api_contract users.list "GET /api/users" \
+tandryx context publish api_contract users.list "GET /api/users" \
   --data '{"response":{"items":[{"id":"string","email":"string"}],"nextCursor":"string|null"}}'
 ```
 

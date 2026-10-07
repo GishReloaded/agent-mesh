@@ -20,7 +20,7 @@ out/
 *.p12
 *.pfx
 secrets/
-.agentmesh/
+.tandryx/
 
 # Local databases / runtime artifacts
 *.sqlite
@@ -50,7 +50,7 @@ test-results/
 Thumbs.db
 
 # Working documents that are not part of the project itself
-AgentMesh — промпт для разработки проекта.md
+Tandryx — промпт для разработки проекта.md
 
 # Caches
 .codebase-memory/

@@ -1,15 +1,15 @@
-import { RestClient, type AuthTokens, type User } from '@gish_reloaded/agentmesh-sdk';
+import { RestClient, type AuthTokens, type User } from '@gish_reloaded/tandryx-sdk';
 
 /**
  * Token handling for the browser client.
  *
  * The refresh token lives in `localStorage`, which is a deliberate trade for a
  * self-hosted developer tool: httpOnly cookies would need a same-site
- * deployment and CSRF protection, and AgentMesh is designed to be reachable
+ * deployment and CSRF protection, and Tandryx is designed to be reachable
  * from a CLI and agents on other machines too. The access token is short-lived
  * and kept in memory only.
  */
-const STORAGE_KEY = 'agentmesh.auth';
+const STORAGE_KEY = 'tandryx.auth';
 
 interface StoredAuth {
   serverUrl: string;
@@ -22,7 +22,7 @@ let generation = 0;
 
 export function serverUrl(): string {
   const stored = read();
-  return stored?.serverUrl ?? import.meta.env.VITE_AGENTMESH_URL ?? window.location.origin;
+  return stored?.serverUrl ?? import.meta.env.VITE_TANDRYX_URL ?? window.location.origin;
 }
 
 function read(): StoredAuth | null {

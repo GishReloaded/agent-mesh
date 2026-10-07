@@ -5,7 +5,7 @@ import {
   type CodexApprovalResponse,
   type CodexControlRequest,
   type ContextEntry,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import {
   CodexAppServer,
   sanitizeCodexNotification,
@@ -121,7 +121,7 @@ export interface CodexBridgeOptions {
   createServer?: (handlers: CodexBridgeHandlers) => Promise<CodexBridgeServer>;
 }
 
-/** Connects one AgentMesh agent to one local Codex app-server process. */
+/** Connects one Tandryx agent to one local Codex app-server process. */
 export class CodexBridge {
   private server: CodexBridgeServer | null = null;
   private starting: Promise<CodexBridgeServer> | null = null;
@@ -191,7 +191,7 @@ export class CodexBridge {
           return;
         case 'setModel': {
           const thread = this.threads.get(control.threadId);
-          if (!thread) throw new Error('Codex thread is not registered in this AgentMesh session.');
+          if (!thread) throw new Error('Codex thread is not registered in this Tandryx session.');
           thread.model = control.model;
           thread.reasoningEffort = control.reasoningEffort;
           await this.persistThread(thread);
@@ -200,7 +200,7 @@ export class CodexBridge {
         }
         case 'configureThread': {
           const thread = this.threads.get(control.threadId);
-          if (!thread) throw new Error('Codex thread is not registered in this AgentMesh session.');
+          if (!thread) throw new Error('Codex thread is not registered in this Tandryx session.');
           if (control.model !== undefined) thread.model = control.model;
           if (control.reasoningEffort !== undefined) thread.reasoningEffort = control.reasoningEffort;
           if (control.approvalPolicy !== undefined) thread.approvalPolicy = control.approvalPolicy;
@@ -309,7 +309,7 @@ export class CodexBridge {
 
   private async ensureThreadLoaded(threadId: string): Promise<ThreadRecord> {
     const thread = this.threads.get(threadId);
-    if (!thread || thread.archived) throw new Error('Codex thread is not active in this AgentMesh session.');
+    if (!thread || thread.archived) throw new Error('Codex thread is not active in this Tandryx session.');
     if (!this.loadedThreads.has(threadId)) {
       await (await this.ensureServer()).resumeThread(threadId);
       this.loadedThreads.add(threadId);

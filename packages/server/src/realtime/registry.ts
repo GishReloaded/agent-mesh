@@ -1,10 +1,10 @@
-import type { Actor, Event } from '@gish_reloaded/agentmesh-protocol';
+import type { Actor, Event } from '@gish_reloaded/tandryx-protocol';
 import type { Principal } from '../auth/principal.js';
 
 /**
  * A live client connection, as far as the rest of the server is concerned.
  *
- * The interface exists because AgentMesh runs in two very different shapes. On
+ * The interface exists because Tandryx runs in two very different shapes. On
  * a normal server a connection is an open socket this process owns, and
  * sending is a method call. On Lambda the socket belongs to API Gateway, this
  * process is gone between frames, and sending is an HTTP request against the

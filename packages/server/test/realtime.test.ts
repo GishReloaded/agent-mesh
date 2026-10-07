@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { PROTOCOL_VERSION } from '@gish_reloaded/agentmesh-protocol';
+import { PROTOCOL_VERSION } from '@gish_reloaded/tandryx-protocol';
 import { authed, createUser, databaseAvailable, skipMessage, startTestServer, type TestServer, type TestUser } from './helpers.js';
 
 interface Frame {
@@ -129,7 +129,7 @@ describe('realtime gateway', { skip: databaseAvailable() ? false : skipMessage }
   it('refuses frames that declare an unsupported protocol version', async () => {
     const socket = await TestSocket.open(server.wsUrl);
     const closing = socket.closed();
-    socket.sendRaw({ v: 'agentmesh/v99', id: 'x', type: 'ping', payload: {} });
+    socket.sendRaw({ v: 'tandryx/v99', id: 'x', type: 'ping', payload: {} });
     const error = await socket.waitForType('error');
     assert.equal(error.payload.code, 'PROTOCOL_VERSION_UNSUPPORTED');
     const { code } = await closing;

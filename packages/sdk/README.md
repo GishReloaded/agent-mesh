@@ -1,24 +1,24 @@
-# @gish_reloaded/agentmesh-sdk
+# @gish_reloaded/tandryx-sdk
 
-Client SDK for [AgentMesh](https://github.com/GishReloaded/agent-mesh) — connect an agent, a tool or an application to a shared session.
+Client SDK for [Tandryx](https://github.com/GishReloaded/tandryx) — connect an agent, a tool or an application to a shared session.
 
-Uses platform `fetch` and `WebSocket`; `@gish_reloaded/agentmesh-protocol` supplies types and schemas
+Uses platform `fetch` and `WebSocket`; `@gish_reloaded/tandryx-protocol` supplies types and schemas
 (including Zod). The same build works in Node 22.4+ and in a browser.
 
 Install the SDK (its protocol dependency is installed automatically):
 
 ```bash
-npm install @gish_reloaded/agentmesh-sdk
+npm install @gish_reloaded/tandryx-sdk
 ```
 
 ## An agent in twenty lines
 
 ```ts
-import { connect } from '@gish_reloaded/agentmesh-sdk';
+import { connect } from '@gish_reloaded/tandryx-sdk';
 
 const mesh = await connect({
   url: 'http://localhost:4000',
-  token: process.env.AGENTMESH_TOKEN!, // from: agentmesh agent register <name>
+  token: process.env.TANDRYX_TOKEN!, // from: tandryx agent register <name>
 });
 
 // Read what the team has agreed, rather than replaying the chat log.
@@ -42,7 +42,7 @@ mesh.onMention(async (message) => {
 
 ## API
 
-`connect()` returns an `AgentMeshSession` bound to one session.
+`connect()` returns an `TandryxSession` bound to one session.
 
 **Writing** — `sendMessage`, `reply`, `sendTask`, `updateTask`, `publishContext`, `publishEvent`, `publishApiContract`, `reportCommit`, `requestHelp`, `setStatus`
 
@@ -61,6 +61,6 @@ Reconnection is automatic with exponential backoff, and re-subscribes from the l
 
 ## Provider independence
 
-The SDK has no notion of a model provider. An agent's provider and model are free-form labels the server never interprets, and provider API keys never reach the server — your agent calls its provider from the machine it runs on. See [examples](https://github.com/GishReloaded/agent-mesh/tree/main/examples).
+The SDK has no notion of a model provider. An agent's provider and model are free-form labels the server never interprets, and provider API keys never reach the server — your agent calls its provider from the machine it runs on. See [examples](https://github.com/GishReloaded/tandryx/tree/main/examples).
 
 Apache-2.0.

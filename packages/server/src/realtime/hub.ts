@@ -1,8 +1,8 @@
-import { ServerFrameType, type Actor, type Event } from '@gish_reloaded/agentmesh-protocol';
+import { ServerFrameType, type Actor, type Event } from '@gish_reloaded/tandryx-protocol';
 import type { ConnectionHandle, ConnectionRecord, ConnectionRegistry, EventSink } from './registry.js';
 
 /**
- * In-process connection registry, used when AgentMesh runs as a normal server.
+ * In-process connection registry, used when Tandryx runs as a normal server.
  *
  * Everything lives in memory because everything is in one process: the sockets
  * are held here, so presence is simply "is there an open connection". The cost

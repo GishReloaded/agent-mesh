@@ -20,10 +20,10 @@ import {
 } from '../src/index.js';
 
 describe('protocol version', () => {
-  it('declares agentmesh/v1', () => {
-    assert.equal(PROTOCOL_VERSION, 'agentmesh/v1');
-    assert.ok(isSupportedProtocolVersion('agentmesh/v1'));
-    assert.equal(isSupportedProtocolVersion('agentmesh/v2'), false);
+  it('declares tandryx/v1', () => {
+    assert.equal(PROTOCOL_VERSION, 'tandryx/v1');
+    assert.ok(isSupportedProtocolVersion('tandryx/v1'));
+    assert.equal(isSupportedProtocolVersion('tandryx/v2'), false);
   });
 });
 
@@ -160,7 +160,7 @@ describe('permissions', () => {
     assert.equal(can(SessionRole.Agent, Permission.ControlAgent), false);
   });
 
-  it('reserves durable context for AgentMesh-owned Codex threads', () => {
+  it('reserves durable context for Tandryx-owned Codex threads', () => {
     assert.equal(ContextKind.CodexThread, 'codex_thread');
   });
 

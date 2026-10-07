@@ -1,5 +1,5 @@
 import {
-  AgentMeshError,
+  TandryxError,
   ErrorCode,
   LifecycleEventType,
   PROTOCOL_LIMITS,
@@ -10,7 +10,7 @@ import {
   type MentionCandidate,
   type Message,
   type MessagePage,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import { jsonb, type Db } from '../db/client.js';
 import type { SessionAccess } from '../auth/principal.js';
 import { IdPrefix, newId } from '../ids.js';
@@ -61,10 +61,10 @@ export class MessageService {
   async create(access: SessionAccess, input: CreateMessageRequest): Promise<Message> {
     const body = input.body.trim();
     if (body.length === 0) {
-      throw new AgentMeshError(ErrorCode.ValidationFailed, 'Message body cannot be empty.');
+      throw new TandryxError(ErrorCode.ValidationFailed, 'Message body cannot be empty.');
     }
     if (Buffer.byteLength(body, 'utf8') > PROTOCOL_LIMITS.messageBodyBytes) {
-      throw new AgentMeshError(
+      throw new TandryxError(
         ErrorCode.PayloadTooLarge,
         `Message body exceeds ${PROTOCOL_LIMITS.messageBodyBytes} bytes.`,
       );
@@ -150,7 +150,7 @@ export class MessageService {
 
     if (addressed >= this.agentChainLimit) {
       const minutes = Math.round(this.agentChainWindowMs / 60_000);
-      throw new AgentMeshError(
+      throw new TandryxError(
         ErrorCode.AgentChainLimit,
         `Agents have exchanged ${addressed} messages in the last ${minutes} minute(s) without a human. ` +
           'Someone needs to say something before they continue addressing each other.',

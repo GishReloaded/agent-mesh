@@ -33,7 +33,7 @@ export function createDb(config: Config): DbHandle {
     connectionString: config.database.url,
     max: config.database.poolMax,
     ssl: config.database.ssl ? { rejectUnauthorized: false } : undefined,
-    application_name: 'agentmesh-server',
+    application_name: 'tandryx-server',
   });
 
   const db = new Kysely<Database>({

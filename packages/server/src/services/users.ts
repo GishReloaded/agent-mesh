@@ -1,12 +1,12 @@
 import {
-  AgentMeshError,
+  TandryxError,
   ErrorCode,
   randomAvatarColor,
   type AuthTokens,
   type LoginRequest,
   type RegisterRequest,
   type User,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import type { Db } from '../db/client.js';
 import { hashPassword, passwordProblems, verifyPassword } from '../auth/passwords.js';
 import { type AccessTokenService, TokenPrefix, createOpaqueToken, hashToken } from '../auth/tokens.js';
@@ -24,17 +24,17 @@ export class UserService {
 
   async register(input: RegisterRequest, userAgent?: string): Promise<AuthTokens> {
     if (!this.registrationOpen) {
-      throw new AgentMeshError(ErrorCode.Forbidden, 'Registration is closed on this server.');
+      throw new TandryxError(ErrorCode.Forbidden, 'Registration is closed on this server.');
     }
     const problems = passwordProblems(input.password);
     if (problems.length > 0) {
-      throw new AgentMeshError(ErrorCode.ValidationFailed, `Password ${problems.join(', ')}.`);
+      throw new TandryxError(ErrorCode.ValidationFailed, `Password ${problems.join(', ')}.`);
     }
 
     const email = input.email.trim().toLowerCase();
     const existing = await this.db.selectFrom('users').select('id').where('email', '=', email).executeTakeFirst();
     if (existing) {
-      throw new AgentMeshError(ErrorCode.Conflict, 'An account with this email already exists.');
+      throw new TandryxError(ErrorCode.Conflict, 'An account with this email already exists.');
     }
 
     const row = await this.db
@@ -63,7 +63,7 @@ export class UserService {
     const passwordHash = row?.password_hash ?? DUMMY_HASH;
     const ok = await verifyPassword(input.password, passwordHash);
     if (!row || !ok) {
-      throw new AgentMeshError(ErrorCode.Unauthorized, 'Email or password is incorrect.');
+      throw new TandryxError(ErrorCode.Unauthorized, 'Email or password is incorrect.');
     }
     return this.issueTokens(toUser(row), userAgent);
   }
@@ -83,7 +83,7 @@ export class UserService {
       .where('token_hash', '=', hash)
       .executeTakeFirst();
 
-    if (!row) throw new AgentMeshError(ErrorCode.InvalidToken, 'Refresh token is not valid.');
+    if (!row) throw new TandryxError(ErrorCode.InvalidToken, 'Refresh token is not valid.');
 
     if (row.revoked_at !== null) {
       // Two tabs refreshing at the same moment cannot coordinate, and both
@@ -101,7 +101,7 @@ export class UserService {
           .where('user_id', '=', row.user_id)
           .where('revoked_at', 'is', null)
           .execute();
-        throw new AgentMeshError(
+        throw new TandryxError(
           ErrorCode.InvalidToken,
           'Refresh token was already used. All sessions for this account have been revoked.',
         );
@@ -109,7 +109,7 @@ export class UserService {
     }
 
     if (new Date(row.expires_at).getTime() <= Date.now()) {
-      throw new AgentMeshError(ErrorCode.TokenExpired, 'Refresh token has expired.');
+      throw new TandryxError(ErrorCode.TokenExpired, 'Refresh token has expired.');
     }
 
     const user = await this.db
@@ -117,7 +117,7 @@ export class UserService {
       .selectAll()
       .where('id', '=', row.user_id)
       .executeTakeFirst();
-    if (!user) throw new AgentMeshError(ErrorCode.InvalidToken, 'Account no longer exists.');
+    if (!user) throw new TandryxError(ErrorCode.InvalidToken, 'Account no longer exists.');
 
     const issued = await this.issueTokens(toUser(user), userAgent);
     await this.db
@@ -139,7 +139,7 @@ export class UserService {
 
   async byId(userId: string): Promise<User> {
     const row = await this.db.selectFrom('users').selectAll().where('id', '=', userId).executeTakeFirst();
-    if (!row) throw new AgentMeshError(ErrorCode.Unauthorized, 'Account no longer exists.');
+    if (!row) throw new TandryxError(ErrorCode.Unauthorized, 'Account no longer exists.');
     return toUser(row);
   }
 

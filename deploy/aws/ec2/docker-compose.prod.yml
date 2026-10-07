@@ -1,4 +1,4 @@
-# Production stack for the AWS deployment: the AgentMesh server and its
+# Production stack for the AWS deployment: the Tandryx server and its
 # database on one host. TLS is terminated by CloudFront in front, so nothing
 # here needs certificates.
 #
@@ -10,19 +10,19 @@ services:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: agentmesh
+      POSTGRES_USER: tandryx
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      POSTGRES_DB: agentmesh
+      POSTGRES_DB: tandryx
     volumes:
-      - agentmesh-data:/var/lib/postgresql/data
+      - tandryx-data:/var/lib/postgresql/data
     # Not published: only the server container needs to reach it.
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U agentmesh -d agentmesh']
+      test: ['CMD-SHELL', 'pg_isready -U tandryx -d tandryx']
       interval: 5s
       timeout: 5s
       retries: 20
 
-  agentmesh:
+  tandryx:
     build:
       context: ../../..
       dockerfile: Dockerfile
@@ -50,4 +50,4 @@ services:
         max-file: '5'
 
 volumes:
-  agentmesh-data:
+  tandryx-data:

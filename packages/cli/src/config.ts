@@ -10,7 +10,7 @@ export interface CliProfile {
   displayName?: string;
   /** Session the CLI acts on when `--session` is not given. */
   currentSession?: string;
-  /** Agent tokens keyed by `sessionId:agentName`, for `agentmesh agent connect`. */
+  /** Agent tokens keyed by `sessionId:agentName`, for `tandryx agent connect`. */
   agentTokens?: Record<string, string>;
 }
 
@@ -19,12 +19,12 @@ export interface CliConfig {
   profiles: Record<string, CliProfile>;
 }
 
-const DEFAULT_URL = process.env.AGENTMESH_URL ?? 'http://localhost:4000';
+const DEFAULT_URL = process.env.TANDRYX_URL ?? 'http://localhost:4000';
 
 export function configPath(): string {
-  const override = process.env.AGENTMESH_CONFIG;
+  const override = process.env.TANDRYX_CONFIG;
   if (override) return override;
-  return join(process.env.AGENTMESH_HOME ?? join(homedir(), '.agentmesh'), 'config.json');
+  return join(process.env.TANDRYX_HOME ?? join(homedir(), '.tandryx'), 'config.json');
 }
 
 export function loadConfig(): CliConfig {

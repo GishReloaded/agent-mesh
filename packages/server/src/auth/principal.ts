@@ -1,4 +1,4 @@
-import type { Actor, SessionRole } from '@gish_reloaded/agentmesh-protocol';
+import type { Actor, SessionRole } from '@gish_reloaded/tandryx-protocol';
 
 /**
  * Who is making a request.
@@ -24,7 +24,7 @@ export function principalActor(principal: Principal): Actor {
 }
 
 export function systemActor(): Actor {
-  return { type: 'system', id: null, name: 'AgentMesh' };
+  return { type: 'system', id: null, name: 'Tandryx' };
 }
 
 /** A principal's access to one session, resolved per request. */

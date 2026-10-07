@@ -203,7 +203,7 @@ export type GitRef = z.infer<typeof gitRefSchema>;
 /**
  * Reference to a file in the participant's own workspace.
  *
- * AgentMesh stores paths and metadata only — never file contents. The project's
+ * Tandryx stores paths and metadata only — never file contents. The project's
  * source of truth stays in the project's own repository.
  */
 export const fileRefSchema = z.object({

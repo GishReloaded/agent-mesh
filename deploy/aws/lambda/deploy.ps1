@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Deploy AgentMesh to AWS Lambda: build, upload to S3, update the stack,
+  Deploy Tandryx to AWS Lambda: build, upload to S3, update the stack,
   apply migrations.
 
 .DESCRIPTION
@@ -15,7 +15,7 @@
   ./deploy/aws/lambda/deploy.ps1 -Destroy
 #>
 param(
-  [string]$StackName = 'agentmesh',
+  [string]$StackName = 'tandryx',
   [string]$Region = '',
   [string]$DatabaseUrl = '',
   [ValidateSet('true', 'false')]
@@ -75,20 +75,20 @@ function Set-Secret($name, $value, $description) {
 }
 
 Step 'Resolving configuration'
-$dbParam = "/agentmesh/$StackName/database-url"
-$jwtParam = "/agentmesh/$StackName/jwt-secret"
+$dbParam = "/tandryx/$StackName/database-url"
+$jwtParam = "/tandryx/$StackName/jwt-secret"
 
 if (-not $DatabaseUrl) { $DatabaseUrl = Get-Secret $dbParam }
 if (-not $DatabaseUrl) {
   throw @'
 No database configured. Pass it once and it will be remembered:
-  ./deploy/aws/lambda/deploy.ps1 -DatabaseUrl "postgres://user:pass@host:5432/agentmesh?sslmode=require"
+  ./deploy/aws/lambda/deploy.ps1 -DatabaseUrl "postgres://user:pass@host:5432/tandryx?sslmode=require"
 
 Any managed PostgreSQL works. Pick one that tolerates short-lived connections
 from Lambda - Neon, Supabase and RDS with a small pool all do.
 '@
 } else {
-  Set-Secret $dbParam $DatabaseUrl 'AgentMesh database connection string'
+  Set-Secret $dbParam $DatabaseUrl 'Tandryx database connection string'
 }
 Note ("database: " + ($DatabaseUrl -replace '://([^:]+):[^@]*@', '://$1:****@'))
 
@@ -98,7 +98,7 @@ if (-not $jwtSecret) {
   $bytes = New-Object byte[] 32
   [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
   $jwtSecret = -join ($bytes | ForEach-Object { $_.ToString('x2') })
-  Set-Secret $jwtParam $jwtSecret 'AgentMesh access token signing key'
+  Set-Secret $jwtParam $jwtSecret 'Tandryx access token signing key'
   Note 'generated a new JWT secret and stored it in SSM'
 } else {
   Note 'reusing the stored JWT secret'
@@ -112,7 +112,7 @@ if (-not $SkipBuild) {
   try {
     npm run build:libs
     if ($LASTEXITCODE -ne 0) { throw 'library build failed' }
-    npm run build -w @agentmesh/web
+    npm run build -w @tandryx/web
     if ($LASTEXITCODE -ne 0) { throw 'web build failed' }
     node deploy/aws/lambda/build.mjs
     if ($LASTEXITCODE -ne 0) { throw 'lambda bundle failed' }
@@ -125,15 +125,15 @@ $distDir = Join-Path $repoRoot 'dist-lambda'
 if (-not (Test-Path (Join-Path $distDir 'http.mjs'))) { throw "No bundle in $distDir. Run without -SkipBuild." }
 
 Step 'Packaging'
-$zipPath = Join-Path $env:TEMP 'agentmesh-lambda.zip'
+$zipPath = Join-Path $env:TEMP 'tandryx-lambda.zip'
 if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 Compress-Archive -Path (Join-Path $distDir '*') -DestinationPath $zipPath -CompressionLevel Optimal
 $sizeMb = [Math]::Round((Get-Item $zipPath).Length / 1MB, 2)
 Note "$zipPath ($sizeMb MB)"
 
-$bucket = "agentmesh-deploy-$account-$Region"
+$bucket = "tandryx-deploy-$account-$Region"
 $sha = (git -C $repoRoot rev-parse --short HEAD)
-$key = "lambda/agentmesh-$sha-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()).zip"
+$key = "lambda/tandryx-$sha-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()).zip"
 
 Step "Uploading to s3://$bucket/$key"
 $ErrorActionPreference = 'Continue'
@@ -168,7 +168,7 @@ aws cloudformation deploy `
     "DatabaseUrl=$DatabaseUrl" `
     "JwtSecret=$jwtSecret" `
     "AllowRegistration=$AllowRegistration" `
-  --tags project=agentmesh
+  --tags project=tandryx
 
 if ($LASTEXITCODE -ne 0) { throw 'Stack deployment failed. Check the CloudFormation events in the console.' }
 

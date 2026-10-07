@@ -1,4 +1,4 @@
-import type { SessionSummary } from '@gish_reloaded/agentmesh-sdk';
+import type { SessionSummary } from '@gish_reloaded/tandryx-sdk';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, clearAuth, storedUser } from '../lib/auth.js';
@@ -54,7 +54,7 @@ export function SessionsPage() {
     <div className="app">
       {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
       <header className="topbar">
-        <span className="brand">AgentMesh</span>
+        <span className="brand">Tandryx</span>
         <span className="spacer" />
         <ConnectionBadge state={connection} />
         <button className="ghost profile-button" onClick={() => setProfileOpen(true)} title="Edit your profile">

@@ -1,4 +1,4 @@
-import { API_PREFIX, AgentMeshError, ErrorCode, type ErrorResponse } from '@gish_reloaded/agentmesh-protocol';
+import { API_PREFIX, TandryxError, ErrorCode, type ErrorResponse } from '@gish_reloaded/tandryx-protocol';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
@@ -6,7 +6,7 @@ import { z } from 'zod';
 export function parse<T extends z.ZodTypeAny>(schema: T, value: unknown): z.infer<T> {
   const result = schema.safeParse(value);
   if (!result.success) {
-    throw new AgentMeshError(ErrorCode.ValidationFailed, 'Request payload is not valid.', {
+    throw new TandryxError(ErrorCode.ValidationFailed, 'Request payload is not valid.', {
       details: result.error.issues.map((issue) => ({
         path: issue.path.join('.'),
         message: issue.message,
@@ -16,7 +16,7 @@ export function parse<T extends z.ZodTypeAny>(schema: T, value: unknown): z.infe
   return result.data;
 }
 
-function toResponse(error: AgentMeshError): ErrorResponse {
+function toResponse(error: TandryxError): ErrorResponse {
   return { error: error.toBody() };
 }
 
@@ -32,11 +32,11 @@ export function registerErrorHandler(app: FastifyInstance, options: { serveSpa?:
     }
     reply
       .code(404)
-      .send(toResponse(new AgentMeshError(ErrorCode.NotFound, `No route for ${request.method} ${request.url}.`)));
+      .send(toResponse(new TandryxError(ErrorCode.NotFound, `No route for ${request.method} ${request.url}.`)));
   });
 
   app.setErrorHandler((error, request, reply) => {
-    if (error instanceof AgentMeshError) {
+    if (error instanceof TandryxError) {
       if (error.httpStatus >= 500) request.log.error({ err: error }, 'request failed');
       reply.code(error.httpStatus).send(toResponse(error));
       return;
@@ -45,7 +45,7 @@ export function registerErrorHandler(app: FastifyInstance, options: { serveSpa?:
     if (error instanceof z.ZodError) {
       reply.code(400).send(
         toResponse(
-          new AgentMeshError(ErrorCode.ValidationFailed, 'Request payload is not valid.', {
+          new TandryxError(ErrorCode.ValidationFailed, 'Request payload is not valid.', {
             details: error.issues,
           }),
         ),
@@ -61,23 +61,23 @@ export function registerErrorHandler(app: FastifyInstance, options: { serveSpa?:
     if (status === 429) {
       reply
         .code(429)
-        .send(toResponse(new AgentMeshError(ErrorCode.RateLimited, 'Too many requests. Slow down.')));
+        .send(toResponse(new TandryxError(ErrorCode.RateLimited, 'Too many requests. Slow down.')));
       return;
     }
     if (status === 413) {
-      reply.code(413).send(toResponse(new AgentMeshError(ErrorCode.PayloadTooLarge, 'Request body is too large.')));
+      reply.code(413).send(toResponse(new TandryxError(ErrorCode.PayloadTooLarge, 'Request body is too large.')));
       return;
     }
     if (status === 400) {
       reply
         .code(400)
-        .send(toResponse(new AgentMeshError(ErrorCode.ValidationFailed, message || 'Malformed request.')));
+        .send(toResponse(new TandryxError(ErrorCode.ValidationFailed, message || 'Malformed request.')));
       return;
     }
 
     request.log.error({ err: error }, 'unhandled error');
     reply
       .code(status >= 400 && status < 600 ? status : 500)
-      .send(toResponse(new AgentMeshError(ErrorCode.Internal, 'Internal server error.')));
+      .send(toResponse(new TandryxError(ErrorCode.Internal, 'Internal server error.')));
   });
 }

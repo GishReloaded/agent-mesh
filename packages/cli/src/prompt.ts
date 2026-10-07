@@ -37,7 +37,7 @@ export async function confirm(question: string): Promise<boolean> {
   return /^y(es)?$/i.test(answer);
 }
 
-/** Read piped stdin, for `echo "..." | agentmesh send`. */
+/** Read piped stdin, for `echo "..." | tandryx send`. */
 export async function readStdin(): Promise<string | null> {
   if (stdin.isTTY) return null;
   const chunks: Buffer[] = [];

@@ -1,5 +1,5 @@
 import {
-  AgentMeshError,
+  TandryxError,
   ErrorCode,
   LifecycleEventType,
   type Actor,
@@ -7,7 +7,7 @@ import {
   type Task,
   type TaskListQuery,
   type UpdateTaskRequest,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import { jsonb, type Db } from '../db/client.js';
 import type { SessionAccess } from '../auth/principal.js';
 import { IdPrefix, newId } from '../ids.js';
@@ -53,7 +53,7 @@ export class TaskService {
       .where('id', '=', taskId)
       .where('session_id', '=', sessionId)
       .executeTakeFirst();
-    if (!row) throw new AgentMeshError(ErrorCode.NotFound, 'Task not found.');
+    if (!row) throw new TandryxError(ErrorCode.NotFound, 'Task not found.');
     return toTask(row);
   }
 
@@ -179,7 +179,7 @@ export class TaskService {
         .where('session_id', '=', sessionId)
         .where('revoked_at', 'is', null)
         .executeTakeFirst();
-      if (!row) throw new AgentMeshError(ErrorCode.ValidationFailed, 'Assignee agent is not in this session.');
+      if (!row) throw new TandryxError(ErrorCode.ValidationFailed, 'Assignee agent is not in this session.');
       return { type: 'agent', id: row.id, name: row.name };
     }
 
@@ -190,7 +190,7 @@ export class TaskService {
       .where('session_members.session_id', '=', sessionId)
       .where('session_members.user_id', '=', assignee.id)
       .executeTakeFirst();
-    if (!row) throw new AgentMeshError(ErrorCode.ValidationFailed, 'Assignee user is not in this session.');
+    if (!row) throw new TandryxError(ErrorCode.ValidationFailed, 'Assignee user is not in this session.');
     return { type: 'user', id: row.id, name: row.display_name };
   }
 }

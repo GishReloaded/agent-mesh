@@ -1,12 +1,12 @@
 /**
- * Protocol version identifier carried by every AgentMesh frame.
+ * Protocol version identifier carried by every Tandryx frame.
  *
- * Format: `agentmesh/v<major>`. Clients and servers negotiate on the major
+ * Format: `tandryx/v<major>`. Clients and servers negotiate on the major
  * version only: a server rejects frames whose major version it does not
  * implement, and additive changes (new event types, new optional fields)
  * never bump the major.
  */
-export const PROTOCOL_VERSION = 'agentmesh/v1' as const;
+export const PROTOCOL_VERSION = 'tandryx/v1' as const;
 
 export type ProtocolVersion = typeof PROTOCOL_VERSION;
 

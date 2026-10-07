@@ -9,7 +9,7 @@ import { loadEnvFiles } from '../env.js';
 /**
  * A deliberately small migration runner: plain `.sql` files applied in
  * lexicographic order, each inside its own transaction, recorded in
- * `_agentmesh_migrations`. No ORM, no codegen, no rollback DSL — for a project
+ * `_tandryx_migrations`. No ORM, no codegen, no rollback DSL — for a project
  * whose schema fits on one screen, a migration tool would be more moving parts
  * than the thing it manages.
  */
@@ -52,13 +52,13 @@ export async function runMigrations(
   await client.connect();
   try {
     await client.query(`
-      CREATE TABLE IF NOT EXISTS _agentmesh_migrations (
+      CREATE TABLE IF NOT EXISTS _tandryx_migrations (
         name TEXT PRIMARY KEY,
         applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `);
     const applied = new Set(
-      (await client.query<{ name: string }>('SELECT name FROM _agentmesh_migrations')).rows.map((r) => r.name),
+      (await client.query<{ name: string }>('SELECT name FROM _tandryx_migrations')).rows.map((r) => r.name),
     );
 
     let count = 0;
@@ -68,7 +68,7 @@ export async function runMigrations(
       await client.query('BEGIN');
       try {
         await client.query(sql);
-        await client.query('INSERT INTO _agentmesh_migrations (name) VALUES ($1)', [file]);
+        await client.query('INSERT INTO _tandryx_migrations (name) VALUES ($1)', [file]);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -83,7 +83,7 @@ export async function runMigrations(
   }
 }
 
-/** Drops every AgentMesh table. Destructive; intended for local development. */
+/** Drops every Tandryx table. Destructive; intended for local development. */
 export async function resetDatabase(
   connectionString: string,
   log: (message: string) => void = console.log,

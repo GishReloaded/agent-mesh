@@ -8,7 +8,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const temporary = mkdtempSync(join(tmpdir(), 'agentmesh-pack-'));
+const temporary = mkdtempSync(join(tmpdir(), 'tandryx-pack-'));
 const outputIndex = process.argv.indexOf('--output');
 const output = outputIndex >= 0 ? resolve(root, process.argv[outputIndex + 1]) : join(temporary, 'packages');
 mkdirSync(output, { recursive: true });
@@ -28,7 +28,7 @@ for (const name of ['protocol', 'sdk', 'cli']) {
   const manifest = JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8'));
   assert.equal(manifest.version, version, `${name}: release versions must match`);
   for (const [dependency, dependencyVersion] of Object.entries(manifest.dependencies ?? {})) {
-    if (dependency.startsWith('@gish_reloaded/agentmesh-')) assert.equal(dependencyVersion, version);
+    if (dependency.startsWith('@gish_reloaded/tandryx-')) assert.equal(dependencyVersion, version);
   }
   const [pack] = JSON.parse(npm(['pack', '--json', '--pack-destination', output], directory));
   const files = new Set(pack.files.map((file) => file.path));
@@ -59,9 +59,9 @@ execFileSync(
     '-e',
     `
   import assert from 'node:assert/strict';
-  import { PROTOCOL_VERSION, clientFrameSchema } from '@gish_reloaded/agentmesh-protocol';
-  import { RestClient, connect } from '@gish_reloaded/agentmesh-sdk';
-  assert.equal(PROTOCOL_VERSION, 'agentmesh/v1');
+  import { PROTOCOL_VERSION, clientFrameSchema } from '@gish_reloaded/tandryx-protocol';
+  import { RestClient, connect } from '@gish_reloaded/tandryx-sdk';
+  assert.equal(PROTOCOL_VERSION, 'tandryx/v1');
   assert.equal(typeof clientFrameSchema.safeParse, 'function');
   assert.equal(new RestClient({ url: 'http://localhost:4000' }).baseUrl, 'http://localhost:4000');
   assert.equal(typeof connect, 'function');
@@ -69,7 +69,7 @@ execFileSync(
   ],
   { cwd: consumer, stdio: 'pipe' },
 );
-const cli = join(consumer, 'node_modules', '@gish_reloaded', 'agentmesh-cli', 'dist', 'index.js');
+const cli = join(consumer, 'node_modules', '@gish_reloaded', 'tandryx-cli', 'dist', 'index.js');
 const help = execFileSync(process.execPath, [cli, '--help'], { cwd: consumer, encoding: 'utf8' });
 assert(help.includes('agent') && help.includes('session'), 'Packed CLI does not expose expected commands');
 const reportedVersion = execFileSync(process.execPath, [cli, '--version'], {
@@ -77,7 +77,7 @@ const reportedVersion = execFileSync(process.execPath, [cli, '--version'], {
   encoding: 'utf8',
 }).trim();
 assert.equal(reportedVersion, version, 'Packed CLI version differs from release');
-const commandVersion = npm(['exec', '--offline', '--', 'agentmesh', '--version'], consumer).trim();
+const commandVersion = npm(['exec', '--offline', '--', 'tandryx', '--version'], consumer).trim();
 assert.equal(commandVersion, version, 'Installed CLI command is missing or has the wrong version');
 const sums = tarballs.map(
   (path) => `${createHash('sha256').update(readFileSync(path)).digest('hex')}  ${path.split(/[\\/]/).at(-1)}`,
@@ -85,5 +85,5 @@ const sums = tarballs.map(
 writeFileSync(join(output, 'SHA256SUMS'), `${sums.join('\n')}\n`);
 console.log(`Clean consumer install, SDK imports and CLI checks passed.${outputIndex >= 0 ? ` Packages: ${output}` : ''}`);
 assert.equal(dirname(resolve(temporary)), resolve(tmpdir()));
-assert(temporary.startsWith(join(tmpdir(), 'agentmesh-pack-')));
+assert(temporary.startsWith(join(tmpdir(), 'tandryx-pack-')));
 rmSync(temporary, { recursive: true, force: true });

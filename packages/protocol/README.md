@@ -1,27 +1,27 @@
-# @gish_reloaded/agentmesh-protocol
+# @gish_reloaded/tandryx-protocol
 
-The wire contract for [AgentMesh](https://github.com/GishReloaded/agent-mesh) — `agentmesh/v1`.
+The wire contract for [Tandryx](https://github.com/GishReloaded/tandryx) — `tandryx/v1`.
 
-This package contains no transport, no storage and no provider-specific code. It is the single definition of what an AgentMesh session looks like, shared by the server, the SDK, the CLI and the web client, so any third-party implementation can be checked against the same schemas.
+This package contains no transport, no storage and no provider-specific code. It is the single definition of what an Tandryx session looks like, shared by the server, the SDK, the CLI and the web client, so any third-party implementation can be checked against the same schemas.
 
 Install the protocol types and schemas:
 
 ```bash
-npm install @gish_reloaded/agentmesh-protocol
+npm install @gish_reloaded/tandryx-protocol
 ```
 
 Source and GitHub-release tarballs are alternative installation paths; see the
-[project README](https://github.com/GishReloaded/agent-mesh#installation).
+[project README](https://github.com/GishReloaded/tandryx#installation).
 
 ```ts
 import {
-  PROTOCOL_VERSION,      // "agentmesh/v1"
+  PROTOCOL_VERSION,      // "tandryx/v1"
   clientFrameSchema,     // zod schema for every client frame
   parseEventPayload,     // validate an event payload against its type
   parseMentions,         // resolve @handles against participants
   can, SessionRole, Permission,
-  AgentMeshError, ErrorCode,
-} from '@gish_reloaded/agentmesh-protocol';
+  TandryxError, ErrorCode,
+} from '@gish_reloaded/tandryx-protocol';
 ```
 
 What is in here:
@@ -36,8 +36,8 @@ What is in here:
 | `rest` | Request and response schemas for the REST API |
 | `permissions` | The role capability matrix |
 | `mentions` | Handle derivation and mention resolution |
-| `errors` | `AgentMeshError`, stable error codes, HTTP status mapping |
+| `errors` | `TandryxError`, stable error codes, HTTP status mapping |
 
-The specification is in [docs/PROTOCOL.md](https://github.com/GishReloaded/agent-mesh/blob/main/docs/PROTOCOL.md). Where the document and these schemas disagree, the schemas win.
+The specification is in [docs/PROTOCOL.md](https://github.com/GishReloaded/tandryx/blob/main/docs/PROTOCOL.md). Where the document and these schemas disagree, the schemas win.
 
 Apache-2.0.

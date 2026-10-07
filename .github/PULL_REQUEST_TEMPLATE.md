@@ -24,7 +24,7 @@ merge. See CONTRIBUTING.md.
 Delete this section if the wire format is untouched.
 
 Otherwise: is the change additive (new event type, new optional field) or
-breaking (removed field, changed shape)? Additive changes keep agentmesh/v1 and
+breaking (removed field, changed shape)? Additive changes keep tandryx/v1 and
 need docs/PROTOCOL.md updated in the same commit. Breaking changes need a
 migration path and a version bump.
 -->

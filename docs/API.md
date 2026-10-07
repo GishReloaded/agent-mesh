@@ -20,9 +20,9 @@ Session paths accept **either an id or a slug**: `/sessions/ses_01J…` and `/se
 
 ```json
 {
-  "name": "agentmesh",
+  "name": "tandryx",
   "version": "0.1.0",
-  "protocol": "agentmesh/v1",
+  "protocol": "tandryx/v1",
   "limits": { "messageBodyBytes": 32768, "agentChainLimit": 3 }
 }
 ```

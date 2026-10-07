@@ -1,7 +1,7 @@
 import type { IncomingMessage, Server } from 'node:http';
 import type { Duplex } from 'node:stream';
 import {
-  AgentMeshError,
+  TandryxError,
   ClientFrameType,
   CloseCode,
   ErrorCode,
@@ -10,7 +10,7 @@ import {
   PROTOCOL_VERSION,
   ServerFrameType,
   type ClientFrame,
-} from '@gish_reloaded/agentmesh-protocol';
+} from '@gish_reloaded/tandryx-protocol';
 import type { FastifyBaseLogger } from 'fastify';
 import { WebSocketServer, type WebSocket } from 'ws';
 import type { Principal } from '../auth/principal.js';
@@ -70,7 +70,7 @@ class Connection implements ConnectionHandle {
     );
   }
 
-  sendError(error: AgentMeshError, ref?: string): void {
+  sendError(error: TandryxError, ref?: string): void {
     this.send({ type: ServerFrameType.Error, payload: { ...error.toBody(), ...(ref ? { ref } : {}) } });
   }
 
@@ -114,7 +114,7 @@ export function attachGateway(server: Server, services: Services, log: FastifyBa
     // end up in proxy logs, browser history and error reports.
     const helloTimer = setTimeout(() => {
       if (!connection.authenticated) {
-        connection.sendError(new AgentMeshError(ErrorCode.Unauthorized, 'No hello frame received.'));
+        connection.sendError(new TandryxError(ErrorCode.Unauthorized, 'No hello frame received.'));
         connection.close(CloseCode.Unauthorized, 'hello timeout');
       }
     }, HELLO_TIMEOUT_MS);
@@ -178,7 +178,7 @@ async function handleMessage(
   log: FastifyBaseLogger,
 ): Promise<void> {
   if (!connection.takeToken()) {
-    connection.sendError(new AgentMeshError(ErrorCode.RateLimited, 'Too many frames.'));
+    connection.sendError(new TandryxError(ErrorCode.RateLimited, 'Too many frames.'));
     connection.close(CloseCode.RateLimited, 'rate limited');
     return;
   }
@@ -201,15 +201,15 @@ async function handleMessage(
       return;
     }
     if (!connection.authenticated) {
-      throw new AgentMeshError(ErrorCode.Unauthorized, 'Send a hello frame first.');
+      throw new TandryxError(ErrorCode.Unauthorized, 'Send a hello frame first.');
     }
     await dispatchCommand(services, connection, frame);
   } catch (caught) {
-    if (caught instanceof AgentMeshError) {
+    if (caught instanceof TandryxError) {
       connection.sendError(caught, frame.id);
     } else {
       log.error({ err: caught }, 'websocket command failed');
-      connection.sendError(new AgentMeshError(ErrorCode.Internal, 'Internal server error.'), frame.id);
+      connection.sendError(new TandryxError(ErrorCode.Internal, 'Internal server error.'), frame.id);
     }
   }
 }
@@ -221,7 +221,7 @@ async function handleHello(
   log: FastifyBaseLogger,
 ): Promise<void> {
   if (connection.authenticated) {
-    connection.sendError(new AgentMeshError(ErrorCode.Conflict, 'Already authenticated.'), frame.id);
+    connection.sendError(new TandryxError(ErrorCode.Conflict, 'Already authenticated.'), frame.id);
     return;
   }
 
@@ -230,7 +230,7 @@ async function handleHello(
     principal = await authenticate(services, frame.payload.token);
   } catch (error) {
     const failure =
-      error instanceof AgentMeshError ? error : new AgentMeshError(ErrorCode.Unauthorized, 'Authentication failed.');
+      error instanceof TandryxError ? error : new TandryxError(ErrorCode.Unauthorized, 'Authentication failed.');
     connection.sendError(failure, frame.id);
     connection.close(CloseCode.Unauthorized, failure.code);
     return;

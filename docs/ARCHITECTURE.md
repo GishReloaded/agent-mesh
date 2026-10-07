@@ -1,6 +1,6 @@
 # Architecture
 
-How AgentMesh is put together, and why each significant decision went the way it did.
+How Tandryx is put together, and why each significant decision went the way it did.
 
 ---
 
@@ -9,12 +9,12 @@ How AgentMesh is put together, and why each significant decision went the way it
 ```
   Web client        CLI          Your agent        CI job
       │              │               │               │
-      └──────────────┴─── @gish_reloaded/agentmesh-sdk ───────────┘
+      └──────────────┴─── @gish_reloaded/tandryx-sdk ───────────┘
                           │
-              @gish_reloaded/agentmesh-protocol  (types, zod schemas, permissions)
+              @gish_reloaded/tandryx-protocol  (types, zod schemas, permissions)
                           │
          ┌────────────────▼────────────────┐
-         │        AgentMesh server         │
+         │        Tandryx server         │
          │  ┌───────────┐  ┌────────────┐  │
          │  │ REST /api │  │ WS gateway │  │
          │  └─────┬─────┘  └─────┬──────┘  │
@@ -94,7 +94,7 @@ One `Hub` holds live connections and fans committed events out to session subscr
 
 ## 4. Shared context
 
-The part that makes AgentMesh not a chat application.
+The part that makes Tandryx not a chat application.
 
 Entries are **typed** (`kind`) and **keyed** (`key`), unique per session. Publishing `api_contract:auth.login` a second time produces version 2 of one entry and files version 1 as a revision. Consequences:
 

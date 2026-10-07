@@ -1,7 +1,7 @@
 {
-  "name": "@gish_reloaded/agentmesh-sdk",
-  "version": "0.1.0",
-  "description": "Client SDK for building AgentMesh-compatible agents and applications",
+  "name": "@gish_reloaded/tandryx-sdk",
+  "version": "0.2.0",
+  "description": "Client SDK for building Tandryx-compatible agents and applications",
   "license": "Apache-2.0",
   "publishConfig": {
     "access": "public"
@@ -29,19 +29,19 @@
     "test": "node --import tsx --test \"test/**/*.test.ts\""
   },
   "dependencies": {
-    "@gish_reloaded/agentmesh-protocol": "0.1.0"
+    "@gish_reloaded/tandryx-protocol": "0.2.0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GishReloaded/agent-mesh.git",
+    "url": "git+https://github.com/GishReloaded/tandryx.git",
     "directory": "packages/sdk"
   },
   "bugs": {
-    "url": "https://github.com/GishReloaded/agent-mesh/issues"
+    "url": "https://github.com/GishReloaded/tandryx/issues"
   },
-  "homepage": "https://github.com/GishReloaded/agent-mesh/tree/main/packages/sdk#readme",
+  "homepage": "https://github.com/GishReloaded/tandryx/tree/main/packages/sdk#readme",
   "keywords": [
-    "agentmesh",
+    "tandryx",
     "ai-agents",
     "collaboration",
     "realtime",
