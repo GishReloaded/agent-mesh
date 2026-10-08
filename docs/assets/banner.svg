@@ -1,35 +1,59 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400" role="img" aria-labelledby="title desc">
-  <title id="title">Tandryx — one shared session for your coding agents</title>
-  <desc id="desc">Developers and local coding agents connect to shared contracts, tasks and development events.</desc>
-  <defs>
-    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#0c1927"/><stop offset="1" stop-color="#111a31"/></linearGradient>
-    <linearGradient id="accent" x2="1"><stop stop-color="#68e5be"/><stop offset="1" stop-color="#9badff"/></linearGradient>
-    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#26354b" stroke-width="0.5"/></pattern>
-  </defs>
-  <rect width="1280" height="400" rx="20" fill="url(#bg)"/>
-  <rect width="1280" height="400" rx="20" fill="url(#grid)" opacity="0.5"/>
+  <title id="title">Tandryx — your agents, one shared session</title>
+  <desc id="desc">Local Claude Code, Codex and Gemini CLI tools share messages, versioned context and tasks through Tandryx, with human direction and review.</desc>
+  <rect width="1280" height="400" rx="20" fill="#20251f"/>
   <g font-family="Segoe UI,Inter,Arial,sans-serif">
-    <g transform="translate(60 58)" fill="none" stroke="url(#accent)" stroke-width="3">
-      <path d="M12 12L42 0L70 20L58 52L26 62L0 38Z M12 12L58 52 M42 0L26 62 M0 38L70 20"/>
-      <g fill="#83ddcf" stroke="none"><circle cx="12" cy="12" r="5"/><circle cx="42" r="5"/><circle cx="70" cy="20" r="5"/><circle cx="58" cy="52" r="5"/><circle cx="26" cy="62" r="5"/><circle cy="38" r="5"/></g>
+    <g transform="translate(56 48) scale(1.5)">
+      <rect width="40" height="40" rx="11" fill="#30382b"/>
+      <path d="M10 12h20v5h-7v13h-6V17h-7z" fill="#d6f386"/>
+      <path d="m27 22 5 5-5 5-5-5z" fill="#b9afe8"/>
     </g>
-    <text x="152" y="104" fill="#f0f4ff" font-size="46" font-weight="700">Tandryx</text>
-    <text x="60" y="182" fill="#f0f4ff" font-size="34" font-weight="600">Your agents. One shared session.</text>
-    <text x="60" y="226" fill="#aab8ce" font-size="20">Contracts, tasks and context across people,</text>
-    <text x="60" y="256" fill="#aab8ce" font-size="20">machines and model providers.</text>
-    <text x="60" y="336" fill="#79dfc5" font-size="16" letter-spacing="2">OPEN PROTOCOL  /  SELF-HOSTED  /  APACHE-2.0</text>
-    <g fill="#15243a" stroke="#3b526f" stroke-width="1.5">
-      <rect x="757" y="56" width="195" height="54" rx="12"/>
-      <rect x="1012" y="56" width="195" height="54" rx="12"/>
-      <rect x="757" y="290" width="195" height="54" rx="12"/>
-      <rect x="1012" y="290" width="195" height="54" rx="12"/>
+    <text x="132" y="92" fill="#f5f5ee" font-size="42" font-weight="700" letter-spacing="-1.5">Tandryx</text>
+    <text x="56" y="183" fill="#f5f5ee" font-size="46" font-weight="650" letter-spacing="-1.5">Your agents.</text>
+    <text x="56" y="233" fill="#d6f386" font-size="46" font-weight="650" letter-spacing="-1.5">One shared session.</text>
+    <text x="56" y="278" fill="#bbc4b4" font-size="20">Contracts, tasks and context across people,</text>
+    <text x="56" y="308" fill="#bbc4b4" font-size="20">machines and model providers.</text>
+    <text x="56" y="358" fill="#d6f386" font-size="13" letter-spacing="1.6">OPEN PROTOCOL  /  SELF-HOSTED  /  APACHE-2.0</text>
+    <circle cx="724" cy="42" r="3" fill="#d6f386"/>
+    <text x="735" y="46" fill="#bbc4b4" font-size="11" letter-spacing="1">ONE SHARED SESSION</text>
+    <text x="1196" y="46" text-anchor="end" fill="#bbc4b4" font-size="11" letter-spacing="1">MANY LOCAL TOOLS</text>
+    <g fill="#20251f" stroke="#59614f" stroke-width="1.5">
+      <rect x="720" y="70" width="148" height="106" rx="10"/>
+      <rect x="884" y="70" width="148" height="106" rx="10"/>
+      <rect x="1048" y="70" width="148" height="106" rx="10"/>
     </g>
-    <g fill="none" stroke="#639cac" stroke-width="2"><path d="M855 110V144L982 180 M1110 110V144L982 180 M855 290V257L982 220 M1110 290V257L982 220"/></g>
-    <rect x="832" y="166" width="302" height="68" rx="16" fill="#203b49" stroke="#77d8bf" stroke-width="2"/>
-    <g text-anchor="middle" fill="#e2ecfb" font-size="18">
-      <text x="854" y="90">Developers</text><text x="1110" y="90">Claude Code</text>
-      <text x="854" y="324">Codex</text><text x="1110" y="324">Gemini / custom</text>
-      <text x="983" y="207" font-weight="600">Shared development state</text>
+    <g fill="none" stroke="#d6f386" stroke-width="2" transform="translate(794 101)">
+      <path d="M-12 0h24M0-12v24M-8.5-8.5l17 17M-8.5 8.5l17-17"/>
     </g>
+    <g text-anchor="middle" fill="#d6f386" font-family="Consolas,monospace" font-size="27">
+      <text x="958" y="110">&lt;/&gt;</text>
+      <text x="1122" y="110">&gt;_</text>
+    </g>
+    <g text-anchor="middle" fill="#f5f5ee" font-size="16">
+      <text x="794" y="138">Claude Code</text>
+      <text x="958" y="138">Codex</text>
+      <text x="1122" y="138">Gemini CLI</text>
+    </g>
+    <g text-anchor="middle" fill="#bbc4b4" font-size="11">
+      <text x="794" y="158">Your machine</text>
+      <text x="958" y="158">Your machine</text>
+      <text x="1122" y="158">Your machine</text>
+    </g>
+    <path d="M794 176v20h328v-20M958 176v35" fill="none" stroke="#748265" stroke-width="1.5"/>
+    <rect x="720" y="211" width="476" height="88" rx="11" fill="#d6f386"/>
+    <text x="742" y="242" fill="#20251f" font-size="21" font-weight="700">Tandryx</text>
+    <text x="1174" y="240" text-anchor="end" fill="#20251f" font-size="11" letter-spacing="1">SHARED SESSION</text>
+    <g fill="none" stroke="#a5bd67">
+      <rect x="742" y="258" width="88" height="25" rx="5"/>
+      <rect x="838" y="258" width="146" height="25" rx="5"/>
+      <rect x="992" y="258" width="57" height="25" rx="5"/>
+    </g>
+    <g fill="#20251f" text-anchor="middle" font-size="11">
+      <text x="786" y="275">Messages</text>
+      <text x="911" y="275">Versioned context</text>
+      <text x="1020" y="275">Tasks</text>
+    </g>
+    <rect x="764" y="321" width="388" height="36" rx="7" fill="#b9afe8"/>
+    <text x="958" y="344" text-anchor="middle" fill="#20251f" font-size="13" font-weight="600">You set the direction. You review the work.</text>
   </g>
 </svg>
