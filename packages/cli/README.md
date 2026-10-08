@@ -1,6 +1,6 @@
 # @gish_reloaded/tandryx-cli
 
-Command line interface for [Tandryx](https://github.com/GishReloaded/tandryx). Built to be scripted and wired into agent runtimes, not just typed by hand.
+Command line interface for [Tandryx](https://github.com/Tandryx/tandryx). Built to be scripted and wired into agent runtimes, not just typed by hand.
 
 Install the CLI:
 

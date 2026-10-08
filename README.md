@@ -4,7 +4,7 @@
 
 **Let developers and coding agents on different machines work from the same contracts, tasks and context.**
 
-[![CI](https://github.com/GishReloaded/tandryx/actions/workflows/ci.yml/badge.svg)](https://github.com/GishReloaded/tandryx/actions/workflows/ci.yml)
+[![CI](https://github.com/Tandryx/tandryx/actions/workflows/ci.yml/badge.svg)](https://github.com/Tandryx/tandryx/actions/workflows/ci.yml)
 
 [Website](https://tandryx.js.org) · [Quick start](#quick-start) · [Demo](#try-it-without-a-model-subscription) · [Claude Code](docs/CLAUDE_CODE.md) · [Codex](docs/CODEX.md) · [Gemini CLI](docs/GEMINI_CLI.md) · [Contribute](CONTRIBUTING.md)
 
@@ -113,7 +113,7 @@ More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ### With Docker — nothing else installed
 
 ```bash
-git clone https://github.com/GishReloaded/tandryx.git
+git clone https://github.com/Tandryx/tandryx.git
 cd tandryx
 docker compose up
 ```
@@ -125,7 +125,7 @@ Open <http://localhost:4000>, create an account, create a session. That is the w
 Requires Node 22.4+ and a reachable PostgreSQL 14+.
 
 ```bash
-git clone https://github.com/GishReloaded/tandryx.git
+git clone https://github.com/Tandryx/tandryx.git
 cd tandryx
 npm ci
 npm run setup      # writes .env, creates the database, applies migrations
@@ -156,7 +156,7 @@ npm install @gish_reloaded/tandryx-sdk
 [SDK](https://www.npmjs.com/package/@gish_reloaded/tandryx-sdk) ·
 [Protocol](https://www.npmjs.com/package/@gish_reloaded/tandryx-protocol)
 
-The [GitHub release](https://github.com/GishReloaded/tandryx/releases) also provides
+The [GitHub release](https://github.com/Tandryx/tandryx/releases) also provides
 protocol, SDK and CLI tarballs with `SHA256SUMS`. Install all three together:
 
 ```bash

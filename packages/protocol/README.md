@@ -1,6 +1,6 @@
 # @gish_reloaded/tandryx-protocol
 
-The wire contract for [Tandryx](https://github.com/GishReloaded/tandryx) — `tandryx/v1`.
+The wire contract for [Tandryx](https://github.com/Tandryx/tandryx) — `tandryx/v1`.
 
 This package contains no transport, no storage and no provider-specific code. It is the single definition of what an Tandryx session looks like, shared by the server, the SDK, the CLI and the web client, so any third-party implementation can be checked against the same schemas.
 
@@ -11,7 +11,7 @@ npm install @gish_reloaded/tandryx-protocol
 ```
 
 Source and GitHub-release tarballs are alternative installation paths; see the
-[project README](https://github.com/GishReloaded/tandryx#installation).
+[project README](https://github.com/Tandryx/tandryx#installation).
 
 ```ts
 import {
@@ -38,6 +38,6 @@ What is in here:
 | `mentions` | Handle derivation and mention resolution |
 | `errors` | `TandryxError`, stable error codes, HTTP status mapping |
 
-The specification is in [docs/PROTOCOL.md](https://github.com/GishReloaded/tandryx/blob/main/docs/PROTOCOL.md). Where the document and these schemas disagree, the schemas win.
+The specification is in [docs/PROTOCOL.md](https://github.com/Tandryx/tandryx/blob/main/docs/PROTOCOL.md). Where the document and these schemas disagree, the schemas win.
 
 Apache-2.0.

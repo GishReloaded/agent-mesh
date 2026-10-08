@@ -7,7 +7,7 @@ Tandryx is one Node process, one PostgreSQL database, and a static web bundle th
 ## Fastest path: Docker Compose
 
 ```bash
-git clone https://github.com/GishReloaded/tandryx.git
+git clone https://github.com/Tandryx/tandryx.git
 cd tandryx
 
 # Generate a real secret before anything long-lived.
@@ -42,7 +42,7 @@ The serverless variant keeps its connection registry in PostgreSQL instead of pr
 Requires Node 22.4+ and PostgreSQL 14+.
 
 ```bash
-git clone https://github.com/GishReloaded/tandryx.git
+git clone https://github.com/Tandryx/tandryx.git
 cd tandryx
 npm ci
 npm run setup                 # .env, database, migrations

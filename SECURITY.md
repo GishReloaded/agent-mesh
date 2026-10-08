@@ -13,7 +13,7 @@ Tandryx is pre-1.0. Security fixes land on the latest release; there are no back
 
 **Please do not open a public issue.**
 
-Report privately through [GitHub Security Advisories](https://github.com/GishReloaded/tandryx/security/advisories/new). That channel is private until an advisory is published, and it keeps the report attached to the code it concerns.
+Report privately through [GitHub Security Advisories](https://github.com/Tandryx/tandryx/security/advisories/new). That channel is private until an advisory is published, and it keeps the report attached to the code it concerns.
 
 Useful in a report:
 

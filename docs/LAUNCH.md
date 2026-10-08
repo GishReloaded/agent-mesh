@@ -34,14 +34,14 @@ scripted two-agent demo without calling a model. I am looking for first-run
 feedback and real examples of cross-machine collaboration, especially where
 current tools make contracts or handoffs confusing.
 
-Repo, demo and setup: https://github.com/GishReloaded/tandryx
+Repo, demo and setup: https://github.com/Tandryx/tandryx
 
 ## Short English post
 
 I released Tandryx: a self-hosted shared session for developers and local coding
 agents. Versioned contracts, context, tasks and mentions across machines; Claude
 Code / Codex / Gemini CLI adapters. Apache-2.0, early release, scripted demo included.
-Looking for first-run feedback: https://github.com/GishReloaded/tandryx
+Looking for first-run feedback: https://github.com/Tandryx/tandryx
 
 ## Русский анонс
 
@@ -60,7 +60,7 @@ Codex, Gemini CLI или своего агента через TypeScript SDK. У
 обратная связь: где первый запуск непонятен и какие реальные сценарии совместной
 работы пока неудобны.
 
-Репозиторий, демо и инструкции: https://github.com/GishReloaded/tandryx
+Репозиторий, демо и инструкции: https://github.com/Tandryx/tandryx
 
 ## Launch checklist
 

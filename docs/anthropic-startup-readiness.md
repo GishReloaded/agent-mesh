@@ -8,7 +8,7 @@ Last reviewed: October 7, 2026. This records preparation; no Anthropic applicati
 - Application website: **https://tandryx.top** — live over HTTPS and matches the company email domain.
 - Retained free website: **https://tandryx.js.org** — live over HTTPS. JS.ORG added the DNS records; [registration PR #12666](https://github.com/js-org/js.org/pull/12666) remains open for final maintainer verification. The technical CloudFront address also works.
 - Company email: **founder@tandryx.top** — created on Zoho Mail Free (EU); incoming delivery from an independent provider verified and a test reply sent. The owner confirmed the reply arrived in the Gmail inbox; Gmail shows tandryx.top as the signed-by domain and TLS transport. Full recipient Authentication-Results, particularly DMARC alignment, have not yet been independently inspected.
-- GitHub: **https://github.com/GishReloaded/tandryx**
+- GitHub: **https://github.com/Tandryx/tandryx**
 - Maintainer: **GishReloaded**. No legal entity, customer base, funding or partnership is represented here.
 - License: Apache 2.0. Current release: v0.2.0.
 
@@ -52,7 +52,7 @@ JS.ORG maintainers added the ACM validation record, AWS issued the free certific
 
 Anthropic currently asks for a company email matching the website domain. Use `https://tandryx.top` with `founder@tandryx.top` in the application, while retaining the working JS.ORG address. Domain and email matching alone does not establish program eligibility. See [current program requirements](https://claude.com/programs/startups).
 
-GitHub Actions builds on pull requests and deploys main using AWS OIDC. The AWS role trusts only `GishReloaded/tandryx` on `refs/heads/main`, can read/write website objects and invalidate only this distribution. It cannot create infrastructure, access the application's secrets or assume wider AWS permissions. Hashed assets have immutable caching; only changed stable paths are invalidated.
+GitHub Actions builds on pull requests and deploys main using AWS OIDC. The AWS role trusts only `Tandryx/tandryx` on `refs/heads/main`, can read/write website objects and invalidate only this distribution. It cannot create infrastructure, access the application's secrets or assume wider AWS permissions. Hashed assets have immutable caching; only changed stable paths are invalidated.
 
 ## Mailbox plan
 

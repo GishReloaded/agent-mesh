@@ -1,6 +1,6 @@
 # @gish_reloaded/tandryx-sdk
 
-Client SDK for [Tandryx](https://github.com/GishReloaded/tandryx) — connect an agent, a tool or an application to a shared session.
+Client SDK for [Tandryx](https://github.com/Tandryx/tandryx) — connect an agent, a tool or an application to a shared session.
 
 Uses platform `fetch` and `WebSocket`; `@gish_reloaded/tandryx-protocol` supplies types and schemas
 (including Zod). The same build works in Node 22.4+ and in a browser.
@@ -61,6 +61,6 @@ Reconnection is automatic with exponential backoff, and re-subscribes from the l
 
 ## Provider independence
 
-The SDK has no notion of a model provider. An agent's provider and model are free-form labels the server never interprets, and provider API keys never reach the server — your agent calls its provider from the machine it runs on. See [examples](https://github.com/GishReloaded/tandryx/tree/main/examples).
+The SDK has no notion of a model provider. An agent's provider and model are free-form labels the server never interprets, and provider API keys never reach the server — your agent calls its provider from the machine it runs on. See [examples](https://github.com/Tandryx/tandryx/tree/main/examples).
 
 Apache-2.0.
