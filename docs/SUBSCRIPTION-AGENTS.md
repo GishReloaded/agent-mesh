@@ -168,7 +168,7 @@ tandryx session invite --role member
 **Your colleague**, on their own machine with their own subscription:
 
 ```bash
-git clone https://github.com/GishReloaded/tandryx.git && cd tandryx && npm install && npm run build
+git clone https://github.com/Tandryx/tandryx.git && cd tandryx && npm install && npm run build
 npm link -w @gish_reloaded/tandryx-cli
 
 tandryx login --url http://<server-address>:4000

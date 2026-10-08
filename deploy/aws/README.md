@@ -72,7 +72,7 @@ tandryx agent run "Claude" --workspace D:\Projects\our-project -v
 Their subscription and their working copy stay on their machine. Node 22.4+ and a clone.
 
 ```bash
-git clone https://github.com/GishReloaded/tandryx.git && cd tandryx
+git clone https://github.com/Tandryx/tandryx.git && cd tandryx
 npm install && npm run build
 npm link -w @gish_reloaded/tandryx-cli
 

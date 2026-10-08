@@ -57,10 +57,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GishReloaded/tandryx.git"
+    "url": "git+https://github.com/Tandryx/tandryx.git"
   },
   "bugs": {
-    "url": "https://github.com/GishReloaded/tandryx/issues"
+    "url": "https://github.com/Tandryx/tandryx/issues"
   },
-  "homepage": "https://github.com/GishReloaded/tandryx#readme"
+  "homepage": "https://github.com/Tandryx/tandryx#readme"
 }

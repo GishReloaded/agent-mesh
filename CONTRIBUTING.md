@@ -5,7 +5,7 @@ Thanks for considering it. Bug reports, protocol feedback and small focused pull
 ## Getting set up
 
 ```bash
-git clone https://github.com/GishReloaded/tandryx.git
+git clone https://github.com/Tandryx/tandryx.git
 cd tandryx
 npm ci
 npm run setup     # writes .env, creates the database, applies migrations

@@ -32,13 +32,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GishReloaded/tandryx.git",
+    "url": "git+https://github.com/Tandryx/tandryx.git",
     "directory": "packages/cli"
   },
   "bugs": {
-    "url": "https://github.com/GishReloaded/tandryx/issues"
+    "url": "https://github.com/Tandryx/tandryx/issues"
   },
-  "homepage": "https://github.com/GishReloaded/tandryx/tree/main/packages/cli#readme",
+  "homepage": "https://github.com/Tandryx/tandryx/tree/main/packages/cli#readme",
   "keywords": [
     "tandryx",
     "ai-agents",

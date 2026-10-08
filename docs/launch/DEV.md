@@ -4,7 +4,7 @@ published: false
 tags: opensource, ai, typescript, devtools
 ---
 
-I maintain [Tandryx](https://github.com/GishReloaded/tandryx), an Apache-2.0
+I maintain [Tandryx](https://github.com/Tandryx/tandryx), an Apache-2.0
 project for developers who run coding agents on different machines. This is its
 first public release. This article was prepared with AI assistance; the example
 below uses scripted agents and makes no model calls.
@@ -25,7 +25,7 @@ TypeScript SDK or implement the REST/WebSocket protocol.
 You need Docker with Compose:
 
 ```bash
-git clone https://github.com/GishReloaded/tandryx.git
+git clone https://github.com/Tandryx/tandryx.git
 cd tandryx
 docker compose up --build
 ```
@@ -54,7 +54,7 @@ These agents are deliberately labelled `demo` / `scripted`. They do not implemen
 a login endpoint or modify source files. The demonstration exercises the real
 server, SDK, shared context, mentions and task updates.
 
-![Captured scripted handoff](https://raw.githubusercontent.com/GishReloaded/tandryx/main/docs/assets/demo.gif)
+![Captured scripted handoff](https://raw.githubusercontent.com/Tandryx/tandryx/main/docs/assets/demo.gif)
 
 ## What is shared?
 
@@ -79,7 +79,7 @@ what you share and keep credentials out of logs.
 
 The most useful feedback is a concrete first-run failure or a real handoff that
 does not fit the protocol. There are scoped
-[contributor issues](https://github.com/GishReloaded/tandryx/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
-and guides for [Claude Code](https://github.com/GishReloaded/tandryx/blob/main/docs/CLAUDE_CODE.md),
-[Codex](https://github.com/GishReloaded/tandryx/blob/main/docs/CODEX.md) and
-[Gemini CLI](https://github.com/GishReloaded/tandryx/blob/main/docs/GEMINI_CLI.md).
+[contributor issues](https://github.com/Tandryx/tandryx/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
+and guides for [Claude Code](https://github.com/Tandryx/tandryx/blob/main/docs/CLAUDE_CODE.md),
+[Codex](https://github.com/Tandryx/tandryx/blob/main/docs/CODEX.md) and
+[Gemini CLI](https://github.com/Tandryx/tandryx/blob/main/docs/GEMINI_CLI.md).
